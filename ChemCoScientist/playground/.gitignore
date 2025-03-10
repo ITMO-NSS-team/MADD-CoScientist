@@ -1,0 +1,12 @@
+venv
+venv310
+**/__pycache__/
+**/.pytest_cache/
+test**
+.env
+**checkpoints**
+**datasets**
+**generation_results**
+
+**.log
+.DS_Store
