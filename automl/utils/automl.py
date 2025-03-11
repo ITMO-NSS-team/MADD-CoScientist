@@ -18,7 +18,7 @@ from fedot.core.data.data_split import train_test_data_setup
 def input_data_preparing(case:str,
                          task:str = 'regression'):
     state = TrainState()
-    df = pd.read_csv(state(case,'ml')['data']['data_path'])#.iloc[:1000,:]
+    df = pd.read_csv(state(case,'ml')['data']['data_path']).iloc[:1000,:]
 
     df_x = df[state(case,'ml')['data']['feature_column']].apply(lambda x: Chem.MolFromSmiles(x))
     df_x = df_x.dropna().apply(

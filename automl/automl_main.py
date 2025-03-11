@@ -40,14 +40,14 @@ def run_train_automl(case:str,
                      timeout:int = 5,
                      path_to_save = r'generative_models_data/generative_models/transformer_auto'):
     state = TrainState()
-
+    state.ml_model_upd_status(case=case,model_weight_path=path_to_save+f'_{case}')
     train, test = input_data_preparing(case=case, task = state(case,'ml')['data']['problem'])
     available_secondary_operations = ['catboostreg','rfr', 'xgboostreg']
     if not os.path.isdir(path_to_save+f'_{case}'):
         os.mkdir(path_to_save+f'_{case}')
     if not os.path.isdir(path_to_save+f'_{case}'):
         os.mkdir(path_to_save+f'_{case}')
-    state.ml_model_upd_status(case=case,model_weight_path=path_to_save+f'_{case}')
+    
     model = Fedot(
         problem=state(case,'ml')['data']['problem'],
         preset='fast',  # Options: 'fast', 'stable', 'best_quality', etc.
