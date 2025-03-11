@@ -24,11 +24,11 @@ class TrainState:
         self.state_path = state_path
         if state_path is not None:
             self.current_state = self.__load_state()
-        elif os.path.isfile("automo/state/state.json"):
-            self.state_path = "automo/state/state.json"
+        elif os.path.isfile("automl/state/state.json"):
+            self.state_path = "automl/state/state.json"
             self.current_state = self.__load_state()
         else:
-            self.state_path = r'automo/new_state.json'
+            self.state_path = r'automl/new_state.json'
             self.current_state = {}
             self.__save_state()
 
@@ -188,10 +188,10 @@ class TrainState:
         self.__save_state()
 
     @staticmethod
-    def load_state(path:str = r'automo/state.json'):
+    def load_state(path:str = r'automl/state.json'):
         return json.load(open(path))
     
-    def save(self,path:str = r'automo/state.json'):
+    def save(self,path:str = r'automl/state.json'):
         json.dump(self.current_state, open( path, 'w' ) )
 
     def __save_state(self):
@@ -211,5 +211,5 @@ if __name__=='__main__':
     state.gen_model_upd_status(case=task)
     state.ml_model_upd_status(case=task)
     state.add_new_case("New task")
-    state.save(path= f"automo/state/state.json")
+    state.save(path= f"automl/state/state.json")
     print()

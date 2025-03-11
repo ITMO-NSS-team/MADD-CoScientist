@@ -3,7 +3,7 @@
 # Installation
 
 ```
-path/to/python3.10.exe -m vevn env
+path/to/python3.10.exe -m venv env
 
 pip install -r requirements.txt
 

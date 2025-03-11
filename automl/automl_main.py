@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 from fedot.core.pipelines.pipeline_builder import PipelineBuilder
-from automo.utils.read_state import *
+from automl.utils.read_state import *
 from fedot.api.main import Fedot
 import logging
 from fedot.core.data.data import InputData
