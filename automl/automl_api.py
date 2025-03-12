@@ -1,7 +1,8 @@
 from logging import debug
 from fastapi import FastAPI,Body
-import sys 
 import os
+import sys
+sys.path.append(os.getcwd())
 import uvicorn
 import json
 import_path = os.path.dirname(os.path.abspath(__file__))
@@ -42,8 +43,13 @@ if __name__=='__main__':
         return {'health_check': 'OK'}
 
     @app.post("/train_ml")
-    def train_ml_api(data:MLData):
+    def train_ml_api(data:MLData=Body()):
         train_ml(data)
+
+    @app.post("/predict_ml")
+    def predict_ml_api(data:MLData=Body()):
+        print(data)
+        return json.dumps(inference_ml(data).tolist())
     
 
     if is_public_API:

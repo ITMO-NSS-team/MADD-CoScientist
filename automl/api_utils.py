@@ -1,20 +1,18 @@
 from typing import List 
 from fastapi import Body
-import os
-import sys
 from pydantic import BaseModel
 from utils.read_state import TrainState
-from utils.automl import run_train_automl
+from automl.utils.automl_main import run_train_automl,run_predict_automl_from_list
 
 class MLData(BaseModel):
-        case:str 
-        data_path:str 
-        target_column:str
-        problem:str
+        case:str = None
+        data_path:str = None
+        target_column:str = None
+        problem:str = None
+        smiles_list: list = None
         timeout:int = 30 #30 min
         feature_column:str = 'Smiles'
         path_to_save:str = 'automl/trained_data'
-
 
 def train_ml(data:MLData=Body()):
         state = TrainState()
@@ -30,4 +28,5 @@ def train_ml(data:MLData=Body()):
                          timeout=data.timeout)
 
 def inference_ml(data:MLData=Body()):
-        pass
+        resutls = run_predict_automl_from_list(data.case,data=data.smiles_list)
+        return resutls
