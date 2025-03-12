@@ -7,7 +7,8 @@ class BaseState(BaseModel):
     weights_path:str = None 
     arch_type:str = None
     case_name: str = None
-    base_state:dict = {"generative_models": {"data":{"data_path":None,"feature_column":None,"target_column":None,"problem":None},'status':status,'weights_path':weights_path,'arch_type':arch_type,"metric":None},
+    base_state:dict = {"description" : None,
+                       "generative_models": {"data":{"data_path":None,"feature_column":None,"target_column":None,"problem":None},'status':status,'weights_path':weights_path,'arch_type':arch_type,"metric":None},
                      "ml_models":{"data":{"data_path":None,"feature_column":None,"target_column":None,"problem":None},'status':status,'weights_path':weights_path,"metric":None}}
 class TrainState:
     """A class representing a state with information about the available trained 
@@ -56,7 +57,11 @@ class TrainState:
             else: 
                 return self.current_state[case]
     
-    def add_new_case(self,case_name:str,rewrite=False,**kwargs):
+    def add_new_case(self,
+                     case_name:str,
+                     rewrite=False,
+                     description : str = 'Unknown case',
+                     **kwargs):
         """Add new case object to state dict with case name and defult parameters. After adding update and save state.
 
         Args:
@@ -72,6 +77,7 @@ class TrainState:
             return None
         
         self.current_state[case_name] = self.defult_parameters.base_state
+        self.current_state[case_name]['description'] = description
         self.__save_state()
 
     def gen_model_upd_data(self,

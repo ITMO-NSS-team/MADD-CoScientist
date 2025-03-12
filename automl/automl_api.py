@@ -9,6 +9,7 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 import socket
 import yaml
 from api_utils import *
+from utils.read_state import TrainState
 #sys.path.append('automl')
 
 with open("automl/config.yaml", "r") as file:
@@ -40,7 +41,9 @@ if __name__=='__main__':
     # API operations
     @app.get("/")
     def health_check():
-        return {'health_check': 'OK'}
+        state = TrainState()
+        return {'health_check': 'OK',
+                'ml_state': state()}
 
     @app.post("/train_ml")
     def train_ml_api(data:MLData=Body()):

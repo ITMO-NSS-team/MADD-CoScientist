@@ -16,10 +16,13 @@ class MLData(BaseModel):
         timeout:int = 30 #30 min
         feature_column:str = 'Smiles'
         path_to_save:str = 'automl/trained_data'
+        description:str = 'Unknown case.'
 
 def train_ml_with_data(data:MLData=Body()):
         state = TrainState()
-        state.add_new_case(case_name=data.case,rewrite=True)
+        state.add_new_case(case_name=data.case,
+                           rewrite=True,
+                           description=data.description)
         if data.data is not None:
                 df = pd.DataFrame(data.data)
                 data.data_path = f"automl/data/{data.case}"

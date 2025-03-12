@@ -37,12 +37,21 @@ def train_ml(
     print("--- %s seconds ---" % (time.time() - start_time))
     #return resp, json.loads(resp.json())
 
+def get_state_from_server(url:str):
+    url_ = url.split("http://")[1]
+    resp = requests.get("http://"+url_.split('/')[0]+"/")
+    if case in json.loads(resp.content)['ml_state']:
+        print("Case already trained!")
+    state = json.loads(resp.content)['ml_state']
+    return state
+
 def train_ml_with_data(
     case = "Brain_cancer",
     data_path = "automl/data/data_4j1r.csv",#path to client data folder
     feature_column = 'canonical_smiles',
     target_column = 'docking_score',
     problem = 'regression',
+    description = 'Case for Brain canser',
     timeout = 10, #30 min
     url: str = "http://10.64.4.243:81/train_ml",
     **kwargs,
@@ -56,9 +65,14 @@ def train_ml_with_data(
         'feature_column': feature_column,
         'problem': problem,
         'timeout': timeout,
+        'description' : description,
         **kwargs,
     }
-    #files = {'f': ('data.csv', open(data_path, 'rb'))}
+
+    #Get state from server
+    state = get_state_from_server(url) 
+    #Get state from server
+
     p = Process(target=requests.post,kwargs={"url":url,"data":json.dumps(params)})
     p.start()
     time.sleep(1)
