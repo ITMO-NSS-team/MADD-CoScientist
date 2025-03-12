@@ -44,7 +44,7 @@ if __name__=='__main__':
 
     @app.post("/train_ml")
     def train_ml_api(data:MLData=Body()):
-        train_ml(data)
+        train_ml_with_data(data)
 
     @app.post("/predict_ml")
     def predict_ml_api(data:MLData=Body()):
