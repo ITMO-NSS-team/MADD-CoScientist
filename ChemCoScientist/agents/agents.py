@@ -3,6 +3,20 @@ import yaml
 from openai import OpenAI
 import json
 from ChemCoScientist.agents.agents_prompts import ds_builder_prompt
+from langgraph.prebuilt import create_react_agent
+from ChemCoScientist.tools.ml_tools import predict_prop_by_smiles, train_ml_with_data, get_state_from_server
+from langchain_openai import ChatOpenAI
+
+
+
+worker_prompt = """You are AutoML agent. 
+You are obliged to call the tools (the most appropriate ones) for any user request and make your answer based on the results of the tools.
+
+Rules:
+1) Always call 'get_state_from_server' first to check if there is already a trained model with that name. 
+If there is and the user wants to predict properties, run the prediction!
+2) If you are asked to predict a property without a model name, you should get the state from the server (call 'get_state_from_server'), if it has a model that has a target with this property - call it!
+"""
 
 with open("./ChemCoScientist/conf/conf.yaml", "r") as file:
     conf = yaml.safe_load(file)
@@ -56,3 +70,33 @@ def dataset_builder_agent(state):
         return {"done": "validate", "responses": responses}
     else:
         return {"done": False, "pending_tasks": pending_tasks, "responses": responses}
+    
+    
+def ml_dl_agent(state):
+    pending_tasks = state["pending_tasks"]
+    responses = state["responses"]
+
+    if not pending_tasks:
+        return {"done": "validate", "responses": responses}
+
+    user_query = pending_tasks.pop(0)
+    prompt = worker_prompt 
+
+    llm_client = ChatOpenAI(
+        model="meta-llama/llama-3.1-70b-instruct",
+        base_url=base_url,
+        api_key=key,
+        temperature=0.0,
+        default_headers={"x-title": "DrugDesign"}
+    )
+    agent = create_react_agent(llm_client, [predict_prop_by_smiles, train_ml_with_data, get_state_from_server], state_modifier=prompt)
+    
+    response = agent.invoke({"messages": [("user", user_query)]})
+    print("========")
+    print(response['messages'][-1].content)
+    print("========")
+
+    if not pending_tasks:
+        return {"done": "validate", "responses": response['messages'][-1].content}
+    else:
+        return {"done": False, "pending_tasks": pending_tasks, "responses": response['messages'][-1].content}
