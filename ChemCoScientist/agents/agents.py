@@ -2,21 +2,11 @@ from ChemCoScientist.dataset_handler.chembl.chembl_utils import ChemblLoader
 import yaml
 from openai import OpenAI
 import json
-from ChemCoScientist.agents.agents_prompts import ds_builder_prompt
+from ChemCoScientist.agents.agents_prompts import ds_builder_prompt, automl_prompt
 from langgraph.prebuilt import create_react_agent
 from ChemCoScientist.tools.ml_tools import predict_prop_by_smiles, train_ml_with_data, get_state_from_server
 from langchain_openai import ChatOpenAI
 
-
-
-worker_prompt = """You are AutoML agent. 
-You are obliged to call the tools (the most appropriate ones) for any user request and make your answer based on the results of the tools.
-
-Rules:
-1) Always call 'get_state_from_server' first to check if there is already a trained model with that name. 
-If there is and the user wants to predict properties, run the prediction!
-2) If you are asked to predict a property without a model name, you should get the state from the server (call 'get_state_from_server'), if it has a model that has a target with this property - call it!
-"""
 
 with open("./ChemCoScientist/conf/conf.yaml", "r") as file:
     conf = yaml.safe_load(file)
@@ -80,7 +70,7 @@ def ml_dl_agent(state):
         return {"done": "validate", "responses": responses}
 
     user_query = pending_tasks.pop(0)
-    prompt = worker_prompt 
+    prompt = automl_prompt 
 
     llm_client = ChatOpenAI(
         model="meta-llama/llama-3.1-70b-instruct",
