@@ -67,7 +67,6 @@ planner_prompt = ChatPromptTemplate.from_messages(
             "system",
             """For the given objective, come up with a simple step by step plan how to answer the question. You can't answer yourself. Don't write any answers, only parts of the plan \
 This plan should involve individual tasks, that if executed correctly by other workers will yield the correct answer. Do not add any superfluous steps. 
-You must use automl only when user asks to train a model and gives you dataset description.  \
 The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps. Do no more than 1-5 steps.
 You must directly insert important information into your plan. 
 For example, if the task is: identify the SMILES representation of the molecule named <IUPAC> deuterio 3-[deuterio(1,1,3,3,4,4,4-heptadeuteriobutyl)amino]-5-(dideuteriosulfamoyl)-4-phenoxybenzoate </IUPAC>
@@ -80,6 +79,7 @@ ONLY return JSON in this exact format: {{"steps": ["Step 1", "Step 2", "Step 3"]
 
 
 
+#members = ['web_search', 'chemist', 'nanoparticles', 'automl']
 members = ['web_search', 'chemist', 'nanoparticles', 'automl']
 supervisor_system_prompt = (
     "You are a supervisor tasked with managing a conversation between the"
@@ -90,7 +90,6 @@ supervisor_system_prompt = (
     f" web_search has these tools: {web_tools_rendered}"
     f" chemist has these tools: {chem_tools_rendered}"
     f" nanoparticles has these tools: {nano_tools_rendered}"
-    f" You must use automl only when user asks to train a model and gives you dataset description"
 )
 supervisor_prompt = ChatPromptTemplate.from_messages([('system', supervisor_system_prompt), ('human', "{input}")]).partial(format_instructions=supervisor_parser.get_format_instructions())
 

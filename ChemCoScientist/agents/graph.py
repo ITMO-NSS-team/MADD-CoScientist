@@ -51,7 +51,7 @@ workflow.add_node("replan", replan_node)
 workflow.add_node("summary", summary_node)
 # Add the out_translator node
 workflow.add_node("retranslator", re_translator_node)
-workflow.add_node("automl", automl_node)
+#workflow.add_node("automl", automl_node)
 
 
 workflow.add_edge(START, "intranslator")
