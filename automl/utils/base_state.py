@@ -1,15 +1,21 @@
-import json 
+import json
+from typing import Union 
 from pydantic import BaseModel
 import os
+from automl.utils.calculateble_prop_funcs import config
+
 
 class BaseState(BaseModel):
     status:str = None
-    weights_path:str = None 
+    weights_path:str = {"regression" : None, "classification" : None} 
     arch_type:str = None
     case_name: str = None
     base_state:dict = {"description" : None,
-                       "generative_models": {"data":{"data_path":None,"feature_column":None,"target_column":None,"problem":None},'status':status,'weights_path':weights_path,'arch_type':arch_type,"metric":None},
-                     "ml_models":{"data":{"data_path":None,"feature_column":None,"target_column":None,"problem":None},'status':status,'weights_path':weights_path,"metric":None}}
+                       "generative_models": {"data_path":None,"feature_column":None,"target_column":None,"problem":None,'status':status,'weights_path':None,'arch_type':arch_type,"metric":None},
+                        "ml_models":{"data_path":None,"feature_column":None,"target_column":None,'status':status,'weights_path' : weights_path,"metric":None,
+                            "Predictable properties" : {}
+                                  }
+                        }
 class TrainState:
     """A class representing a state with information about the available trained 
     models for a multi-agent system. The main essence of its operation is the ability to load
@@ -29,8 +35,8 @@ class TrainState:
             self.state_path = "automl/state/state.json"
             self.current_state = self.__load_state()
         else:
-            self.state_path = r'automl/new_state.json'
-            self.current_state = {}
+            self.state_path = r'automl/state/state.json'
+            self.current_state = {"Calculateble properties" : config}
             self.__save_state()
 
     def __call__(self, case:str = None, 
@@ -73,7 +79,7 @@ class TrainState:
         """
         if case_name in self.current_state.keys() and not rewrite:
             print(f'Case already exist! Change name for new case, or use exist case state named {case_name}!')
-            print(f"Now using case named '{case_name}'")
+            print(f"Now using case named '{case_name}' - Case Description: {self.current_state[case_name]['description']}")
             return None
         
         self.current_state[case_name] = self.defult_parameters.base_state
@@ -83,9 +89,8 @@ class TrainState:
     def gen_model_upd_data(self,
                            case:str,
                            data_path:str=None,
-                           feature_column:str = None,
-                           target_column:str = None,
-                           problem:str = None
+                           feature_column:list[str] = None,
+                           target_column:list[str] = None
                            ):
         """Necessary to update the parameters of a generative model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -100,21 +105,19 @@ class TrainState:
             problem (str, optional): Problem ("regression" or "classification"). Defaults to None.
         """
         if data_path is not None:
-            self.current_state[case]["generative_models"]['data']["data_path"] = data_path
+            self.current_state[case]["generative_models"]["data_path"] = data_path
         if feature_column is not None:
-            self.current_state[case]["generative_models"]['data']["feature_column"] = feature_column
+            self.current_state[case]["generative_models"]["feature_column"] = feature_column
         if target_column is not None:
-            self.current_state[case]["generative_models"]['data']["target_column"] = target_column
-        if problem is not None:
-            self.current_state[case]["generative_models"]['data']["problem"] = problem
+            self.current_state[case]["generative_models"]["target_column"] = target_column
         self.__save_state()
 
     def ml_model_upd_data(self,
                         case:str,
                         data_path:str=None,
-                        feature_column:str = None,
-                        target_column:str = None,
-                        problem:str = None):
+                        feature_column:list[str] = None,
+                        target_column:list[str] = None,
+                        predictable_properties:dict = None):
         """Necessary to update the parameters of a ML model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
             with attributes and target parameters in the dataset can be specified.
@@ -125,22 +128,28 @@ class TrainState:
             data_path (str, optional): Path to training data. Defaults to None.
             feature_column (str, optional): Name of training data feature column. Defaults to None.
             target_column (str, optional): Name of training data target column. Defaults to None.
-            problem (str, optional): Problem ("regression" or "classification"). Defaults to None.
+            predictable_properties (dict, optional): May be give as dict with problem as keys, and propreties as values exmpl:\
+                  predictable_properties = {"regression":['LogP','QED'], "classification":['IC50','Num rings']} . Defaults to None.
         """
         if data_path is not None:
-            self.current_state[case]["ml_models"]['data']["data_path"] = data_path
+            self.current_state[case]["ml_models"]["data_path"] = data_path
         if feature_column is not None:
-            self.current_state[case]["ml_models"]['data']["feature_column"] = feature_column
+            self.current_state[case]["ml_models"]["feature_column"] = feature_column
         if target_column is not None:
-            self.current_state[case]["ml_models"]['data']["target_column"] = target_column
-        if problem is not None:
-            self.current_state[case]["ml_models"]['data']["problem"] = problem
+            self.current_state[case]["ml_models"]["target_column"] = target_column
+        if predictable_properties is not None:
+            self.current_state[case]["ml_models"]['Predictable properties'] = predictable_properties
+        self.__validate_properties(case)
+        print(f"Data for ML models training has been updated! \
+               \n Current predictable properties and tasks are {self.current_state[case]['ml_models']['Predictable properties']}")
         self.__save_state()
 
     def ml_model_upd_status(self,
                             case:str,
                             model_weight_path:str = None,
-                            metric = None):
+                            metric = None,
+                            status:int = None,
+                            problem:str = 'regression'):
         """Updates the training status of the machine learning model on each call.
           Additionally, you can specify the path to the folder where the model weights are saved after training.
         Also, you can specify the metric value after training.
@@ -149,18 +158,18 @@ class TrainState:
             case (str): Case name.
             model_weight_path (str, optional): Path to trained model weights save folder. Defaults to None.
             metric (_type_, optional): Value of metric after model training. Defaults to None.
+            status (int, optional): ID value of status. Where 0 - "Not Trained", 1 - Training, 2 - "Trained". Defaults to None.
         """
-        if self.current_state[case]["ml_models"]['status'] is None:
-            self.current_state[case]["ml_models"]['status'] = 'Training'
-        elif self.current_state[case]["ml_models"]['status'] == 'Training':
-            self.current_state[case]["ml_models"]['status'] = 'Trained'
-        else:
+        valid_status = ['Not Trained','Training','Trained']
+        if status is not None and self.current_state[case]["ml_models"]['status'] != 'Trained':
+            self.current_state[case]["ml_models"]['status'] = valid_status[status]
+        elif self.current_state[case]["ml_models"]['status'] == 'Trained':
             print(f'ML model for task "{case}" already trained!')
         if model_weight_path is not None:
             if not os.path.isdir(model_weight_path ):
                     os.mkdir(model_weight_path )
-        if self.current_state[case]["ml_models"]['weights_path'] is None and model_weight_path is not None:
-            self.current_state[case]["ml_models"]['weights_path'] = model_weight_path 
+        if self.current_state[case]["ml_models"]['weights_path'][problem] is None and model_weight_path is not None:
+            self.current_state[case]["ml_models"]['weights_path'][problem] = model_weight_path 
         if not metric is None:
            self.current_state[case]["ml_models"]['metric'] =  metric
         self.__save_state()
@@ -185,37 +194,78 @@ class TrainState:
             self.current_state[case]["generative_models"]['status'] = 'Trained'
         else:
             print(f'Generative model for task "{case}" already trained!')
-        if not os.path.isdir(model_weight_path ):
-            os.mkdir(model_weight_path )
+        if model_weight_path is not None:
+            if not os.path.isdir(model_weight_path):
+                os.mkdir(model_weight_path )
         if not self.current_state[case]["generative_models"]['weights_path'] is None and model_weight_path is not None:
             self.current_state[case]["generative_models"]['weights_path'] = model_weight_path
         if not metric is None:
            self.current_state[case]["generative_models"]['metric'] =  metric
         self.__save_state()
+    
+    def show_calculateble_propreties(self):
+        return self.current_state["Calculateble properties"].keys()
 
     @staticmethod
     def load_state(path:str = r'automl/state.json'):
-        return json.load(open(path))
+        state = json.load(open(path))
+        state["Calculateble properties"] = config
+        return state
     
     def save(self,path:str = r'automl/state.json'):
-        json.dump(self.current_state, open( path, 'w' ) )
+        saving_dict = self.current_state.copy()
+        del saving_dict["Calculateble properties"]
+        json.dump(self.current_state, open(saving_dict, 'w' ) )
 
     def __save_state(self):
-        json.dump(self.current_state, open(self.state_path, 'w' ) )
+        saving_dict = self.current_state.copy()
+        del saving_dict["Calculateble properties"]
+        json.dump(saving_dict, open(self.state_path, 'w' ) )
 
     def __load_state(self):
-        return json.load(open(self.state_path))
+        state = json.load(open(self.state_path))
+        state["Calculateble properties"] = config
+        return state
+    
+    def __validate_properties(self,case:str):
+        """The function checks if the calculated properties are in the list of predicted properties.\
+              It returns the list of predicted properties without calculated ones, so that further training\
+                  does not take into account those properties that can be calculated. \
+            
+            Important! The function works, provided that the names of properties in the columns of the training \
+                dataset match with the names of functions in the “config” file calculateble_prop_funcs.py.
 
+        Args:
+            case (str): Case name.
+        """
+        if self.current_state[case]["ml_models"]["feature_column"] is not None and self.current_state[case]["ml_models"]['Predictable properties'] != {}:
+            temp_predictable_properties = {}
+            for task in self.current_state[case]["ml_models"]['Predictable properties'].keys():
+                temp_predictable_properties[task] = [proper for proper in self.current_state[case]["ml_models"]['Predictable properties'][task] if proper not in self.show_calculateble_propreties()]
+                if len(temp_predictable_properties[task])==0:
+                    del temp_predictable_properties[task]
+            self.current_state[case]["ml_models"]['Predictable properties'] = temp_predictable_properties
 
 if __name__=='__main__':
-    task = 'Brain_cancer'
+    task = 'Brain_cancer_test'
+    feature_column=['canonical_smiles']
+    target_column=['docking_score','canonical_smiles','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
+    regression_props = ['LogP','docking_score',"Synthetic Accessibility",'QED']
+    classification_props = ['QED','QED']
+
     state = TrainState()
-    state.add_new_case(task)
-    state.gen_model_upd_data(case=task,data_path='docking_output_files/docking_output_files/data_result.csv')
+    state.add_new_case(task,rewrite=True)
+    state.ml_model_upd_data(case=task,
+                            feature_column=feature_column,
+                            target_column=target_column,
+                            predictable_properties={"regression":regression_props, "classification":classification_props})
+    print(state(task,'ml')['Predictable properties'])
+    state.gen_model_upd_data(case=task,data_path=r'D:\Projects\ChemCoScientist\Project\ChemCoScientist\automl\data\data_4j1r.csv')
     state.gen_model_upd_status(case=task)
     state.gen_model_upd_status(case=task)
     state.gen_model_upd_status(case=task)
     state.ml_model_upd_status(case=task)
-    state.add_new_case("New task")
-    state.save(path= f"automl/state/state.json")
+    state.ml_model_upd_status(case=task)
+
+    print(state.show_calculateble_propreties())
     print()

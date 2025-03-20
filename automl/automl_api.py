@@ -9,7 +9,7 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 import socket
 import yaml
 from api_utils import *
-from utils.read_state import TrainState
+from automl.utils.base_state import TrainState
 #sys.path.append('automl')
 
 with open("automl/config.yaml", "r") as file:
@@ -37,13 +37,20 @@ if __name__=='__main__':
     print("Starting...")
 
     app = FastAPI(debug=True)
-
-    # API operations
     @app.get("/")
     def health_check():
+        return {"health_check": "ok"}
+
+    # API operations
+    @app.get("/check_state")
+    def check_state():
         state = TrainState()
-        return {'health_check': 'OK',
-                'ml_state': state()}
+        calc_properies = state.show_calculateble_propreties()
+        current_state = state().copy()
+        
+        del current_state["Calculateble properties"]
+        return {'ml_state': current_state,
+                'calc_propreties':list(calc_properies)}
 
     @app.post("/train_ml")
     def train_ml_api(data:MLData=Body()):
@@ -52,7 +59,7 @@ if __name__=='__main__':
     @app.post("/predict_ml")
     def predict_ml_api(data:MLData=Body()):
         print(data)
-        return json.dumps(inference_ml(data).tolist())
+        return inference_ml(data)
     
 
     if is_public_API:
