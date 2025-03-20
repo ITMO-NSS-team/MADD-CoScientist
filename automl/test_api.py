@@ -18,7 +18,7 @@ def get_state_from_server(case:str,url:str):
         return
     if case in json.loads(resp.content)['ml_state']:
         print("Case already trained!")
-    state = json.loads(resp.content)['ml_state']
+    state = json.loads(resp.content)
     return state
 
 def train_ml_with_data(
@@ -49,14 +49,16 @@ def train_ml_with_data(
 
     #Get state from server
     state = get_state_from_server(case=case,url=url)
-    print(state) 
-    #Get state from server
-    resp = requests.post(url,json.dumps(params))
-    # p = Process(target=requests.post,args=[url,json.dumps(params)])
-    # p.start()
 
-    # time.sleep(1)
-    # p.terminate()
+    print(state['ml_state'])
+    print(state['calc_propreties']) 
+    #Get state from server
+    #resp = requests.post(url,json.dumps(params))
+    p = Process(target=requests.post,args=[url,json.dumps(params)])
+    p.start()
+
+    time.sleep(4)
+    p.terminate()
     #resp = requests.post(url, data=json.dumps(params))
     print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -79,14 +81,14 @@ def predict_smiles(smiles_list : List[str],
 if __name__=='__main__':
 ###############
 #Test train with default params
-    # train_ml_with_data(case="test_api")
-    # print('Process created')
+    train_ml_with_data(case="test_api2")
+    print('Process created')
 
 ################
 #Test predict
-    case = "test_api"
-    smiles = ["Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1","Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1"]
+    # case = "test_api"
+    # smiles = ["Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1","Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1"]
     
-    print(predict_smiles(smiles_list=smiles,case=case))
+    # print(predict_smiles(smiles_list=smiles,case=case))
     
 ####################
