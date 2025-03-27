@@ -52,7 +52,7 @@ def train_ml_with_data(
     regression_props=["Docking score"],
     classification_props=[],
     description="",
-    timeout=5,
+    timeout=5
 ) -> bool:
     """
     Trains a predictive machine learning model using user-provided or prepared by a special agent dataset.

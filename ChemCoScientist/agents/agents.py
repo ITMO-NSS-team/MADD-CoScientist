@@ -33,21 +33,23 @@ def dataset_builder_agent(state, config: dict):
         if state.get("language", "English") == "English"
         else state["translation"]
     )
-    llm = config["configurable"]["model"]
+    plan = state["plan"]
+    plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
+    task = plan[0]
+    
+    llm = config["configurable"]["llm"]
     chembl_client = ChemblLoader(True, file_path)
 
-    prompt = ds_builder_prompt + user_query + r"""You: """
+    prompt = ds_builder_prompt + task + r"""You: """
 
     response = llm.invoke([{"role": "system", "content": prompt}])
     print("========")
-    print(response.choices[0].message.content)
-    print("========")
 
     try:
-        query_params = eval(response.choices[0].message.content)
+        query_params = eval(response.content)
     except:
         try:
-            query_params = eval(response.choices[0].message.content.split("You: ")[-1])
+            query_params = eval(response.content.split("You: ")[-1])
         except:
             return {
                 "done": "error",
@@ -59,12 +61,15 @@ def dataset_builder_agent(state, config: dict):
     filters = query_params.get("filters", {})
 
     result_df = chembl_client.get_filtered_data(selected_columns, filters)
-    responses.append(result_df)
+    result_df.to_csv("./filtered_data.csv", index=False)
 
-    if not pending_tasks:
-        return {"done": "validate", "responses": responses}
-    else:
-        return {"done": False, "pending_tasks": pending_tasks, "responses": responses}
+    return Command(
+        goto="replan_node",
+        update={
+            "past_steps": [(task, 'Data successfully filtered and saved to path: ./filtered_data.csv. Dataset has next columns: ' + str(result_df.columns))],
+            "nodes_calls": [("dataset_builder_agent", 'Data successfully filtered and saved to path: ./filtered_data.csv. Dataset has next columns: ' + str(result_df.columns))],
+        },
+    )
 
 
 def ml_dl_agent(state, config: dict):
@@ -86,13 +91,13 @@ def ml_dl_agent(state, config: dict):
         state_modifier=prompt,
     )
 
-    agent_response = agent.invoke({"messages": [("user", user_query)]})
+    agent_response = agent.invoke({"messages": [("user", task)]})
 
     return Command(
         goto="replan_node",
         update={
             "past_steps": [(task, agent_response["messages"][-1].content)],
-            "nodes_calls": [("nanoparticle_node", agent_response["messages"])],
+            "nodes_calls": [("dataset_builder_agent", agent_response["messages"])],
         },
     )
     print("========")
@@ -125,6 +130,7 @@ def chemist_node(state, config: dict):
     plan_str: str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
 
     task: str = plan[0]
+    
     task_formatted = f"""For the following plan:
     {plan_str}\n\nYou are tasked with executing: {task}."""
 

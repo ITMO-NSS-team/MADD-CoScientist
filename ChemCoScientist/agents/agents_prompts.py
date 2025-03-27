@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from ChemCoScientist.dataset_handler.chembl.chembl_utils import ChemblLoader
 from ChemCoScientist.tools import (chem_tools_rendered, nano_tools_rendered,
                                    tools_rendered)
+from tools import dataset_handler_rendered
 
 ds_builder_prompt = (
     r"""
@@ -20,6 +21,8 @@ ds_builder_prompt = (
     Or:
     User request: "Show small molecules."
     You: {"selected_columns": ["Molecular Weight", "Type"], "filters": {"Type": "Small molecule"}}
+       
+    Description of available func:""" +   dataset_handler_rendered +  """
         
     User request: 
     """
@@ -32,6 +35,8 @@ Rules:
 1) Always call 'get_state_from_server' first to check if there is already a trained model with that name. 
 If there is and the user wants to predict properties, run the prediction!
 2) If you are asked to predict a property without a model name, you should get the state from the server (call 'get_state_from_server'), if it has a model that has a target with this property - call it!
+
+When you start training, ALWAYS pass the name to save the model through the case argument!!!
 """
 
 
