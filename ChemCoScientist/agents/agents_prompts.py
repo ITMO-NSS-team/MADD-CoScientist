@@ -1,8 +1,8 @@
-from ChemCoScientist.dataset_handler.chembl.chembl_utils import ChemblLoader
-
 from langchain_core.prompts import ChatPromptTemplate
-from ChemCoScientist.tools import tools_rendered, nano_tools_rendered, chem_tools_rendered
 
+from ChemCoScientist.dataset_handler.chembl.chembl_utils import ChemblLoader
+from ChemCoScientist.tools import (chem_tools_rendered, nano_tools_rendered,
+                                   tools_rendered)
 
 ds_builder_prompt = (
     r"""
@@ -36,7 +36,7 @@ If there is and the user wants to predict properties, run the prediction!
 
 
 memory_prompt = ChatPromptTemplate.from_template(
-"""If the response suffers from the lack of memory, adjust it. Don't add any of your comments
+    """If the response suffers from the lack of memory, adjust it. Don't add any of your comments
 
 Your objective is this:
 input: {input};

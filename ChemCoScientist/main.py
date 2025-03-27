@@ -1,43 +1,58 @@
-from langchain_openai import ChatOpenAI
 import os
 
+from langchain_openai import ChatOpenAI
 from protollm.agents.builder import GraphBuilder
-from protollm.connectors import create_llm_connector
-from ChemCoScientist.tools.web_tools import web_tools
-from tools import tools_rendered, web_tools_rendered, nano_tools_rendered, chem_tools_rendered, ml_dl_tools_rendered
-from ChemCoScientist.tools import predict_prop_by_smiles, train_ml_with_data, get_state_from_server
-from ChemCoScientist.agents.agents import (chemist_node, nanoparticle_node, ml_dl_agent)
 from protollm.agents.universal_agents import web_search_node
-        
-import os
-os.environ['OPENAI_API_KEY'] = 'YOUR_API_KEY'
-os.environ['PATH_TO_DATA']='tools/models/datasets/image_dataset_multi_filtered'
-os.environ['PATH_TO_CVAE_CHECKPOINT']='tools/models/checkpoints/cvae/model.pt'
-os.environ['PATH_TO_RESULTS'] = 'tools/generation_results'
-    
+from protollm.connectors import create_llm_connector
+
+from ChemCoScientist.agents.agents import (chemist_node, ml_dl_agent,
+                                           nanoparticle_node)
+from ChemCoScientist.tools import (get_state_from_server,
+                                   predict_prop_by_smiles, train_ml_with_data)
+from ChemCoScientist.tools.web_tools import web_tools
+from tools import (chem_tools_rendered, ml_dl_tools_rendered,
+                   nano_tools_rendered, tools_rendered, web_tools_rendered)
+
+os.environ["OPENAI_API_KEY"] = "YOUR_API_KEY"
+os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
+os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
+os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
+
 model = create_llm_connector(
-        "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
-    )
+    "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
+)
 
 visual_model = create_llm_connector(
-        "https://api.vsegpt.ru/v1;vis-meta-llama/llama-3.2-90b-vision-instruct"
-    )
+    "https://api.vsegpt.ru/v1;vis-meta-llama/llama-3.2-90b-vision-instruct"
+)
 
-conf = {"recursion_limit": 50,
-          "configurable": {'visual_model': visual_model,
-                           'img_path': 'image.png',
-                            "llm": model,
+conf = {
+    "recursion_limit": 50,
+    "configurable": {
+        "visual_model": visual_model,
+        "img_path": "image.png",
+        "llm": model,
         "max_retries": 1,
-        "scenario_agents": ["web_search", "chemist_node", "nanoparticle_node", "ml_dl_agent"],
-        "scenario_agent_funcs": {"chemist_node": chemist_node, "nanoparticle_node": nanoparticle_node, "ml_dl_agent": ml_dl_agent},
+        "scenario_agents": [
+            "web_search",
+            "chemist_node",
+            "nanoparticle_node",
+            "ml_dl_agent",
+        ],
+        "scenario_agent_funcs": {
+            "chemist_node": chemist_node,
+            "nanoparticle_node": nanoparticle_node,
+            "ml_dl_agent": ml_dl_agent,
+        },
         "tools_for_agents": {
-            "web_serach": [web_tools_rendered], 
-            "chemist_node": [chem_tools_rendered], 
+            "web_serach": [web_tools_rendered],
+            "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
-            "ml_dl_agent": [ml_dl_tools_rendered]
-            },
+            "ml_dl_agent": [ml_dl_tools_rendered],
+        },
         "web_tools": web_tools,
-        "tools_descp": tools_rendered}
+        "tools_descp": tools_rendered,
+    },
 }
 
 # UNCOMMENT the one you need
@@ -55,7 +70,4 @@ inputs = {"input": "Модель с названием DOCKING_SCORE еще об
 
 if __name__ == "__main__":
     graph = GraphBuilder(conf)
-    res_1 = graph.run(
-        inputs, debug=True
-    )
-
+    res_1 = graph.run(inputs, debug=True)

@@ -22,7 +22,6 @@ New synthesis: {synthesis}
 Shapes: """
 
 
-
 synthesis_generator_alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 ### Instruction:
 {}
@@ -34,12 +33,10 @@ synthesis_generator_alpaca_prompt = """Below is an instruction that describes a 
 synthesis_generator_system_prompt = "You are a scientist, working with nanomaterial synthesis. You have to create a nanomaterial with specific shape. You also have to use specific reagents such as polymer, solvent and surfactant. Please provide a synthesis methodic to create a nanomatrial with the specified shape and reagents."
 
 
-
 shape_detection_prompt = """What is the closest nanomaterial shape is the particle on the picture? Possible shapes are: Cube, Sphere, Stick, Flat, Amorphous. PLEASE ONLY ANSWER WITH ONE WORD THAT IS THE SHAPE OF NANOMATERIAL!"""
 
 
-
-synthesis_few_shot = '''
+synthesis_few_shot = """
 
 You are a scientist, working with nanomaterial synthesis. You have to create a nanomaterial with specific shape. You also have to use specific reagents such as polymer, solvent and surfactant. Please provide a synthesis methodic to create a nanomatrial with the specified shape and reagents. Here are several examples of user question and generated synthesis text.
 Example 1: 
@@ -65,12 +62,12 @@ AI: The co-precipitation technique was employed for the synthesis of all materia
 Your objective is:
 
 {query}
-'''
+"""
 
 synt_prompt = ChatPromptTemplate.from_template(synthesis_few_shot)
 
 
-entr_eff = '''
+entr_eff = """
 Your task is to predict the entrapment efficiency for specific nanoparticles based on their synthesis text and other parameters such as drug used or nanoparticle shape. Please answer only with the entrapment efficiency value which cannot exceed 100%. Here are several examples of syntheses provided by user and entrapment efficiencies that should be predicted:
 Example 1:
 Synthesis text: Synthesis of calcium carbonate nanocrystals were carried out in oil-in-water (O/W) microemulsions using a higher pressure homogeniser (HPH). In this technique, the particle sizes are reduced after leaving the homogenising gap by cavitations, particle collisions, and shear forces. Drug loaded calcium carbonate nanocrystals were prepared by adding an aqueous solution of doxorubicin hydrochloride (1 mg/mL) into the calcium carbonate nanocrystal suspension (containing 20 mg of nanocrystals). The encapsulation of Dox in CaCO3 nanocrystals was achieved by continuous stirring of the suspension mixture in the dark overnight at room temperature. Calcium carbonate nanocrystals containing Dox were washed, centrifuged and oven dried (FD 115, Fisher Scientific, Limburg, Germany) at 55 °C.
@@ -97,6 +94,6 @@ Entrapment efficiency: >90%
 Your objective is:
 
 {query}
-'''
+"""
 
 entr_eff_prompt = ChatPromptTemplate.from_template(entr_eff)
