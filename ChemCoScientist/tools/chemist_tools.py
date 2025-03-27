@@ -19,23 +19,6 @@ import os
 
 import logging
 
-
-# # Create a separate logger for tools.py
-# logger = logging.getLogger("tools_logger")
-# logger.setLevel(logging.INFO)
-
-# # Configure a file handler for the tools logger
-# file_handler = logging.FileHandler("tools.log")
-# file_handler.setLevel(logging.INFO)
-
-# # Set a formatter for the tools logger
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# file_handler.setFormatter(formatter)
-
-# # Add the handler to the tools logger
-# logger.addHandler(file_handler)
-
-# This executes code locally, which can be unsafe
 repl = PythonREPL()
 
 @tool

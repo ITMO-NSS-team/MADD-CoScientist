@@ -12,21 +12,6 @@ import time
 import re
 import logging
 
-# # Create a separate logger for tools.py
-# logger = logging.getLogger("tools_logger")
-# logger.setLevel(logging.INFO)
-
-# # Configure a file handler for the tools logger
-# file_handler = logging.FileHandler("tools.log")
-# file_handler.setLevel(logging.INFO)
-
-# # Set a formatter for the tools logger
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# file_handler.setFormatter(formatter)
-
-# # Add the handler to the tools logger
-# logger.addHandler(file_handler)
-
 
 def call_for_generation(
     synthesis_generator_system_prompt,
@@ -190,6 +175,5 @@ def analyse_nanoparticle_images(config: RunnableConfig) -> str:
     return cleaned_results
 
 nanoparticle_tools = [synthesis_generation, predict_nanoparticle_shape, generate_nanoparticle_images, analyse_nanoparticle_images, predict_nanoparticle_entrapment_eff]
-#nanoparticle_tools = [predict_nanoparticle_shape, generate_nanoparticle_images, analyse_nanoparticle_images]
 
 nano_tools_rendered = render_text_description(nanoparticle_tools)
