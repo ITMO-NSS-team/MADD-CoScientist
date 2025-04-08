@@ -7,12 +7,12 @@ from ChemCoScientist.tools.ml_tools import (get_state_from_server,
                                             train_ml_with_data)
 from ChemCoScientist.tools.nano_tools import (nano_tools_rendered,
                                               nanoparticle_tools)
-from CoScientist.tools.web_tools import web_tools, web_tools_rendered
+from protollm.tools.web_tools import web_tools
 from ChemCoScientist.dataset_handler.chembl.chembl_utils import get_filtered_data
 
 if web_tools:
     tools_rendered = render_text_description(
-        web_tools + chem_tools + nanoparticle_tools + get_filtered_data
+        web_tools + chem_tools + nanoparticle_tools + [get_filtered_data]
     )
 else:
     tools_rendered = render_text_description(chem_tools + nanoparticle_tools + [get_filtered_data])

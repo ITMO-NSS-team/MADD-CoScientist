@@ -1,4 +1,5 @@
 import pandas as pd
+from langchain_core.tools import tool
 
 
 class ChemblLoader:
@@ -89,7 +90,46 @@ class ChemblLoader:
         self, selected_columns: list, filters: dict = None
     ) -> pd.DataFrame:
         """
-        Filters the data based on the selected columns and filter conditions.
+        Filters the ChemBL data based on the selected columns and filter conditions.
+
+        Args:
+            selected_columns (list): A list of columns to include in the filtered data.
+            filters (dict, optional): A dictionary of filter conditions. The keys are column names, and the values are conditions.
+                                      Conditions can be:
+                                      - A tuple (min_val, max_val) for range filtering.
+                                      - A string or boolean for exact matching.
+
+        Returns:
+            pd.DataFrame: The filtered DataFrame.
+        """
+        if "Smiles" not in selected_columns:
+            selected_columns.append("Smiles")
+
+        if not self.data:
+            self._load_data()
+        
+        selected_columns = [i for i in selected_columns if i in self.columns.keys()]
+        
+        df = self.data[selected_columns]
+
+        if filters:
+            for column, condition in filters.items():
+                if column in df.columns:
+                    if isinstance(condition, tuple) and len(condition) == 2:
+                        min_val, max_val = condition
+                        df = df[(df[column] >= min_val) & (df[column] <= max_val)]
+                    elif isinstance(condition, (str, bool)):
+                        df = df[df[column] == condition]
+
+        return df
+    
+    
+@tool
+def get_filtered_data(
+        self, selected_columns: list, filters: dict = None
+    ) -> pd.DataFrame:
+        """
+        Filters the ChemBL data based on the selected columns and filter conditions.
 
         Args:
             selected_columns (list): A list of columns to include in the filtered data.
@@ -118,7 +158,7 @@ class ChemblLoader:
                         df = df[df[column] == condition]
 
         return df
-
+    
 
 if __name__ == "__main__":
     file_path = "./ChemCoScientist/dataset_handler/chembl/p1_short.csv"
@@ -129,3 +169,4 @@ if __name__ == "__main__":
     client = ChemblLoader(True, file_path)
     df = client.get_filtered_data(selected_columns, filters)
     print(df)
+
