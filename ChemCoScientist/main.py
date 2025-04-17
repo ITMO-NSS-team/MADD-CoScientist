@@ -1,6 +1,5 @@
 import os
 os.environ["OPENAI_API_KEY"] = "KEY"
-os.environ["TAVILY_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -26,6 +25,7 @@ visual_model = create_llm_connector(
 conf = {
     "recursion_limit": 50,
     "configurable": {
+        "user_id": '1',
         "visual_model": visual_model,
         "img_path": "image.png",
         "llm": model,
@@ -72,4 +72,4 @@ inputs = {"input": "Найди информацию о последних отк
 
 if __name__ == "__main__":
     graph = GraphBuilder(conf)
-    res_1 = graph.run(inputs, debug=True)
+    res_1 = graph.run(inputs, debug=True, user_id="1")
