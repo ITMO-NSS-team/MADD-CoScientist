@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from PIL import Image
 from protollm.connectors import create_llm_connector
 
-load_dotenv("config.env")
+load_dotenv("../config.env")
 
 sys_prompt = ("You are a helpful chemist assistant. Answer USER QUESTION in a direct tone. Be"
               " moderately concise. Your audience is an expert, so be highly specific. If there are"
@@ -51,13 +51,28 @@ def prompt_func(data):
     
     return HumanMessage(content=content_parts)
 
-file_paths = []  # Enter list of paths to images here
 
-images = list(map(convert_to_base64, file_paths))
+def query_llm(model_url: str, question: str, txt_context: str, img_paths: list[str]) -> tuple:
+    llm = create_llm_connector(model_url)
 
-llm = create_llm_connector("https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001")
+    img_context = list(map(convert_to_base64, img_paths))
+
+    messages = [
+        SystemMessage(content=sys_prompt),
+        prompt_func({"text": f"USER QUESTION: {question}\n\nCONTEXT: {txt_context}", "image": img_context})
+    ]
+
+    res = llm.invoke(messages)
+    return res.content, res.response_metadata
+
 
 if __name__ == "__main__":
+    file_paths = []  # Enter list of paths to images here
+
+    images = list(map(convert_to_base64, file_paths))
+
+    llm = create_llm_connector("https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001")
+
     # question = ("Какая реакция идет протекает на 6 стадии Total Synthesis of (−)-Glionitrin A/B? Какие реагенты"
     #             " участвовали в реакции и какой продукт получили? Какой получился выход?")
     question = ("I need all the compounds that were used in the experiments. Obligatorily I need all results to be in"

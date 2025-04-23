@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 from pydantic import AnyUrl
 
 _log = logging.getLogger(__name__)
-load_dotenv("config.env")
+load_dotenv("../config.env")
 
 IMAGE_RESOLUTION_SCALE = 2.0
 
@@ -25,7 +25,7 @@ def parse_and_clean(path):
     logging.basicConfig(level=logging.INFO)
     
     file_name = Path(path).stem
-    output_dir = Path("/home/kamilfatkhiev/work_data/parse_results", file_name)
+    output_dir = Path("./parse_results", file_name)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     pipeline_options = PdfPipelineOptions()
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     #     "10_1021_acs_joc_0c02350-with-images.json"
     # )
     
-    documents = loader(parse_and_clean("/home/kamilfatkhiev/work_data/papers/chem1-0-S0022231325000584-main.pdf"))
+    documents = loader(parse_and_clean("./papers/jirát_et_al_2025_surface_defects_and_crystal_growth_of_apremilast.pdf"))
     for document in documents:
         print(document)
         
