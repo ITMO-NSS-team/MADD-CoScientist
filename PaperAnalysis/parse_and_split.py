@@ -79,7 +79,7 @@ def loader(
             continue
         docs.append(
             Document(
-                page_content=chunker.serialize(chunk=chunk),  # contextualize() ????
+                page_content=chunker.serialize(chunk=chunk),
                 metadata={
                     "source": dl_doc.origin.filename,
                     "dl_meta": chunk.meta.export_json_dict(),
