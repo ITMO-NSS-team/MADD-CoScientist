@@ -91,5 +91,6 @@ def run_img2txt_rag():
     process_questions(questions_path, answers_path, chroma_collection, llm_url)
 
 
-run_mm_rag()
-run_img2txt_rag()
+if __name__ == "__main__":
+    # run_mm_rag()
+    run_img2txt_rag()

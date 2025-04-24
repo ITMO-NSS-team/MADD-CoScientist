@@ -21,7 +21,7 @@ def image_to_base64(image_path: str) -> str:
 
 
 def image_to_text(image_path: str) -> str:
-    url = 'https://api.vsegpt.ru/v1;google/gemma-3-27b-it'
+    url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
     sys_prompt = "This is an image from a scientific paper in chemistry. " \
                  "Write a short but succinct description of the image that reflects its essence." \
                  "Be as concise as possible. " \

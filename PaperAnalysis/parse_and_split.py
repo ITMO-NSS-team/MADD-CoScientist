@@ -115,7 +115,7 @@ def clean_up_doc(full_doc: str | DoclingDocument) -> DoclingDocument:
         for i in range(cut_index, appendix_index + 1):
             doc.texts[i].orig = ""
             doc.texts[i].text = ""
-    else:
+    elif cut_index:
         for i in range(cut_index, all_chunks_length):
             doc.texts[i].orig = ""
             doc.texts[i].text = ""
