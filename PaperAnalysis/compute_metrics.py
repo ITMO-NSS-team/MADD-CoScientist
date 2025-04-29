@@ -8,12 +8,11 @@ from deepeval.metrics import ContextualRecallMetric
 from deepeval.metrics import ContextualRelevancyMetric
 from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase
-from langchain_core.messages import SystemMessage
 import pandas as pd
-from protollm.connectors import create_llm_connector
 from protollm.metrics import model_for_metrics, correctness_metric
 
-from answer_question import prompt_func, sys_prompt, convert_to_base64
+from answer_question import query_llm
+from chroma_db_operations import query_chromadb
 
 path_to_data = ""
 all_questions = pd.read_csv(Path(path_to_data, "dataset.csv"))
@@ -33,8 +32,18 @@ _log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def retrieve_context(question: str) -> str:
-    return f"Context for: {question}"
+def retrieve_context(collection, question: str) -> (str, list):
+    txt_context = ''
+    img_paths = []
+    
+    context = query_chromadb(collection, question)
+    
+    for ind, chunk in enumerate(context['metadatas'][0]):
+        if chunk['type'] == 'image':
+            img_paths.append(chunk['image_path'])
+        if chunk['type'] == 'text':
+            txt_context += '\n\n' + context['documents'][0][ind]
+    return txt_context, img_paths
 
 
 class Timer:
@@ -110,6 +119,7 @@ def pipeline_test_with_save(
             question = row["question"].replace('"', "'")
             correct_answer = row["correct_answer"]
             correct_context = row["correct_context"]
+            col = row["collection_name"]
             
             row_data = {
                 "index": i,
@@ -128,22 +138,16 @@ def pipeline_test_with_save(
             
             with Timer() as t:
                 try:
-                    context = retrieve_context(question)
+                    context, imgs = retrieve_context(col, question)
                     row_data["context_retrieve_time"] = t.seconds_from_start
                 except Exception as e:
                     _log.error(f"Context retrieval failed: {str(e)}")
                     context = ""
                 row_data["context_from_db"] = context
-            
-            images = list(map(convert_to_base64, []))
-            messages = [
-                SystemMessage(content=sys_prompt),
-                prompt_func({"text": f"USER QUESTION: {question}\n\nCONTEXT: {context}", "image": images})
-            ]
+                
             with Timer() as t:
                 try:
-                    model_connector = create_llm_connector(model_url)
-                    llm_res = model_connector.invoke(messages)
+                    llm_res, _ = query_llm(model_url, question, context, imgs)
                     row_data["answer_from_model"] = llm_res
                 except Exception as e:
                     _log.error(f"Answer generation failed: {str(e)}")

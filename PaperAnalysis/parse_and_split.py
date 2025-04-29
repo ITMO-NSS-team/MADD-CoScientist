@@ -3,7 +3,7 @@ import os
 import time
 from pathlib import Path
 import re
-from typing import List
+from typing import List, Any, Optional
 
 from docling.chunking import HybridChunker
 from docling.datamodel.base_models import InputFormat
@@ -15,13 +15,20 @@ from dotenv import load_dotenv
 from langchain_core.documents import Document
 from pydantic import AnyUrl
 
+from docling_core.experimental.serializer.base import BaseDocSerializer, SerializationResult
+from docling_core.experimental.serializer.common import create_ser_result
+from docling_core.experimental.serializer.markdown import MarkdownPictureSerializer
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingSerializerProvider, ChunkingDocSerializer
+from docling_core.types.doc.document import PictureDescriptionData
+from typing_extensions import override
+
 _log = logging.getLogger(__name__)
 load_dotenv("../config.env")
 
 IMAGE_RESOLUTION_SCALE = 2.0
 
 
-def parse_and_clean(path):
+def parse_and_clean(path, annotate_pic: bool = False):
     logging.basicConfig(level=logging.INFO)
     
     file_name = Path(path).stem
@@ -32,6 +39,12 @@ def parse_and_clean(path):
     pipeline_options.images_scale = IMAGE_RESOLUTION_SCALE
     pipeline_options.generate_page_images = True
     pipeline_options.generate_picture_images = True
+    
+    if annotate_pic:  # Picture annotations
+        pipeline_options.enable_remote_services = True
+        pipeline_options.do_picture_description = True
+        pipeline_options.picture_description_options = vlm_options("vis-google/gemini-2.0-flash-001")
+    
     doc_converter = DocumentConverter(
         format_options={
             InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
@@ -43,6 +56,7 @@ def parse_and_clean(path):
     
     table_counter = 0
     picture_counter = 0
+    redundant_pics = []
     for element, _level in conv_res.document.iterate_items():
         if isinstance(element, TableItem):
             table_counter += 1
@@ -61,25 +75,34 @@ def parse_and_clean(path):
                 )
                 with element_image_filename.open("wb") as fp:
                     element.get_image(conv_res.document).save(fp, "PNG")
+            else:
+                redundant_pics.append(element.self_ref)
     
     conv_res.document = clean_up_doc(conv_res.document)
+    if annotate_pic:
+        conv_res.document = remove_redundant_desc(conv_res.document, redundant_pics)
     end_time = time.time() - start_time
     _log.info(f"Document converted and figures exported in {end_time:.2f} seconds.")
     return conv_res.document
 
 
 def loader(
-        dl_doc,
+        dl_doc, annotate_pic = False
 ) -> List[Document]:
     docs = []
-    chunker = HybridChunker()
+    if annotate_pic:
+        chunker = HybridChunker(
+            serializer_provider=ImgAnnotationSerializerProvider(),
+        )
+    else:
+        chunker = HybridChunker()
     chunk_iter = chunker.chunk(dl_doc=dl_doc)
     for chunk in chunk_iter:
         if chunk.text.startswith("\n" * 5):
             continue
         docs.append(
             Document(
-                page_content=chunker.serialize(chunk=chunk),
+                page_content=chunker.contextualize(chunk=chunk),
                 metadata={
                     "source": dl_doc.origin.filename,
                     "dl_meta": chunk.meta.export_json_dict(),
@@ -119,6 +142,21 @@ def clean_up_doc(full_doc: str | DoclingDocument) -> DoclingDocument:
         for i in range(cut_index, all_chunks_length):
             doc.texts[i].orig = ""
             doc.texts[i].text = ""
+    
+    return doc
+
+
+def remove_redundant_desc(full_doc: str | DoclingDocument, pics_to_clean: list[str]) -> DoclingDocument:
+    if isinstance(full_doc, str):
+        doc = DoclingDocument.load_from_json(full_doc)
+    else:
+        doc = full_doc
+    
+    for pic in doc.pictures:
+        if pic.self_ref in pics_to_clean:
+            for annotation in pic.annotations:
+                if isinstance(annotation, PictureDescriptionData):
+                    annotation.text = ""
     
     return doc
 
@@ -227,7 +265,7 @@ def paper_doc_chunk(doc: str | DoclingDocument):
         print(f"=== {i} ===")
         print(f"chunk.text:\n{repr(f'{chunk.text[:300]}…')}")
         
-        enriched_text = chunker.serialize(chunk=chunk)
+        enriched_text = chunker.contextualize(chunk=chunk)
         print(f"chunker.serialize(chunk):\n{repr(f'{enriched_text[:300]}…')}")
         
         print(f"chunk's metadata:\n{chunk.meta}")
@@ -243,6 +281,51 @@ def paper_doc_chunk(doc: str | DoclingDocument):
     
     with open(f'chunks/{doc.name}.txt', 'w', encoding='utf-8') as f:
         f.write('\n'.join(output_lines))
+        
+        
+def simple_conversion(path: str|Path):
+    converter = DocumentConverter()
+    result = converter.convert(path)
+    return result.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
+
+
+class AnnotationPictureSerializer(MarkdownPictureSerializer):
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: PictureItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        separator: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        
+        res_parts: list[SerializationResult] = []
+        
+        cap_res = doc_serializer.serialize_captions(
+            item=item,
+            **kwargs,
+        )
+        if cap_res.text:
+            res_parts.append(cap_res)
+        
+        for annotation in item.annotations:
+            if isinstance(annotation, PictureDescriptionData):
+                fig_desc = annotation.text if annotation.text else ""
+                res_parts.append(create_ser_result(text=f"Figure description: {fig_desc}", span_source=item))
+        
+        text_res = "\n\n".join([r.text for r in res_parts])
+        return create_ser_result(text=text_res, span_source=res_parts)
+    
+
+class ImgAnnotationSerializerProvider(ChunkingSerializerProvider):
+    def get_serializer(self, doc: DoclingDocument):
+        return ChunkingDocSerializer(
+            doc=doc,
+            picture_serializer=AnnotationPictureSerializer(),
+        )
 
 
 if __name__ == "__main__":

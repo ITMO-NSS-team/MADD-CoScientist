@@ -19,6 +19,23 @@ sys_prompt = ("You are a helpful chemist assistant. Answer USER QUESTION in a di
               " use the information from them as CONTEXT to answer.\n 6. Use valid IUPAC or SMILES "
               " notation if necessary to answer the question.")
 
+summarisation_prompt = ("Create a concise and informative summary of the following scientific article. Focus on the key"
+                        " elements:\n"
+                        "1. Objective : Describe the main problem, hypothesis, or research question addressed.\n"
+                        "2. Methodology : Highlight the key methods, experiments, or approaches used in the study.\n"
+                        "3. Results : Summarize the primary findings, data, or observations, including statistical"
+                        " significance (if applicable).\n"
+                        "4. Significance : Explain how the results contribute to the field, emphasizing practical"
+                        " or theoretical value.\n"
+                        "5. Limitations : Mention weaknesses of the study or conditions that may affect result"
+                        " interpretation.\n"
+                        "6. Future Directions : Note the authors’ recommendations for further research.\n\n"
+                        "Maintain a neutral tone, ensure logical flow. Emphasize the novelty of the work and how it"
+                        " differs from prior studies. Maximum length: 200 words. Don't add any comments at the"
+                        " beginning and end of the summary. Before the summary, indicate on a separate line all"
+                        " keywords/terms that characterise the article.\n\n"
+                        "Article in Markdown markup:\n")
+
 
 def convert_to_base64(file_path):
     """
