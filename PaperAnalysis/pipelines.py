@@ -13,7 +13,7 @@ from protollm.connectors import create_llm_connector
 
 from answer_question import query_llm, summarisation_prompt
 from chroma_db_operations import (get_or_create_chroma_collection, store_mm_embeddings_in_chromadb, query_chromadb,
-                                  store_txt_embeddings_in_chromadb, store_paper_summaries_in_chromadb)
+                                  store_txt_embeddings_in_chromadb)
 from parse_and_split import loader, parse_and_clean, simple_conversion
 
 
@@ -73,8 +73,7 @@ def load_data_to_chroma(papers_path: str,
 
 def load_summary_to_chroma(model_url: str,
                            papers_path: str,
-                           chroma_collection: Collection,
-                           store_function: Callable) -> None:
+                           chroma_collection: Collection) -> None:
     llm = create_llm_connector(model_url)
     for paper in os.listdir(papers_path):
         paper_path = os.path.join(papers_path, paper)
@@ -84,7 +83,6 @@ def load_summary_to_chroma(model_url: str,
             page_content=summary,
             metadata={"source": paper}
         )
-        store_function(chroma_collection, doc, paper)
         chroma_collection.add(
             ids=[str(uuid.uuid4())],
             documents=[doc.page_content],
@@ -142,7 +140,7 @@ def run_summary_rag():
         normalize_embeddings=True
     )
     chroma_collection = get_or_create_chroma_collection(collection_name, embedding_function)
-    load_summary_to_chroma(llm_url, papers_path, chroma_collection, store_paper_summaries_in_chromadb)
+    load_summary_to_chroma(llm_url, papers_path, chroma_collection)
     process_questions_on_summaries(questions_path, answer_path, chroma_collection)
     
 
