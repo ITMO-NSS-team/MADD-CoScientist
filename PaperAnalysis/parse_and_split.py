@@ -102,7 +102,7 @@ def loader(
             continue
         docs.append(
             Document(
-                page_content=chunker.contextualize(chunk=chunk),
+                page_content="passage: " + chunker.contextualize(chunk=chunk),
                 metadata={
                     "source": dl_doc.origin.filename,
                     "dl_meta": chunk.meta.export_json_dict(),
@@ -336,7 +336,8 @@ if __name__ == "__main__":
     #     "10_1021_acs_joc_0c02350-with-images.json"
     # )
     
-    documents = loader(parse_and_clean("./papers/jirát_et_al_2025_surface_defects_and_crystal_growth_of_apremilast.pdf"))
+    documents = loader(parse_and_clean(
+        "questions/jirát_et_al_2025_surface_defects_and_crystal_growth_of_apremilast.pdf"))
     for document in documents:
         print(document)
         
