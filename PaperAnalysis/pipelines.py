@@ -1,6 +1,7 @@
 import os
 import uuid
 from pathlib import Path
+import streamlit as st
 from typing import Callable
 
 from chromadb.api.models import Collection
@@ -23,6 +24,9 @@ IMAGES_PATH = './parse_results'
 load_dotenv('../config.env')
 
 
+logger = st.logger.get_logger(__name__)
+
+
 def process_questions(questions_path: str,
                       answers_path: str,
                       llm_url: str,
@@ -35,26 +39,42 @@ def process_questions(questions_path: str,
     df = pd.read_csv(questions_path)
     for index, row in df.iterrows():
         question = row.question
-        txt_data, img_data = retrieve_context(sum_collection, txt_collection, img_collection,
-                                              sum_chunk_num, txt_chunk_num, img_chunk_num, "query: " + question,
-                                              [row.paper_name])
-        txt_context = ''
-        img_paths = []
-
-        for chunk in txt_data['documents'][0]:
-            txt_context += '\n\n' + chunk.replace("passage: ", "")
-        for img in img_data['metadatas'][0]:
-            img_paths.append(img['image_path'])
-
-        ans, metadata = query_llm(llm_url, question, txt_context, img_paths)
+        txt_context, img_paths, ans, _ = process_question(sum_collection, txt_collection, img_collection,
+                                                          sum_chunk_num, txt_chunk_num, img_chunk_num,
+                                                          question, llm_url, [row.paper_name])
 
         df.at[index, 'chroma_text_context'] = txt_context
         df.at[index, 'chroma_images_context'] = str(img_paths)
         df.at[index, 'llm_answer'] = ans
 
     df.to_csv(answers_path, index=False)
-    
-    
+
+
+def process_question(sum_collection: Collection,
+                     txt_collection: Collection,
+                     img_collection: Collection,
+                     sum_chunk_num: int, txt_chunk_num: int, img_chunk_num: int,
+                     question: str, llm_url: str,
+                     paper_name: list[str] = None) -> tuple[str, list, str, dict]:
+    logger.info('Processing user query...')
+    txt_data, img_data = retrieve_context(sum_collection, txt_collection, img_collection,
+                                          sum_chunk_num, txt_chunk_num, img_chunk_num, "query: " + question,
+                                          paper_name)
+    logger.info('Retrieved context from ChromaDB')
+    txt_context = ''
+    img_paths = []
+
+    for chunk in txt_data['documents'][0]:
+        txt_context += '\n\n' + chunk.replace("passage: ", "")
+    for img in img_data['metadatas'][0]:
+        img_paths.append(img['image_path'])
+
+    ans, metadata = query_llm(llm_url, question, txt_context, img_paths)
+    logger.info('Finished processing user query')
+
+    return txt_context, img_paths, ans, metadata
+
+
 def process_questions_on_summaries(
         questions_path: str,
         answers_path: str,
@@ -73,10 +93,13 @@ def load_data_to_chroma(papers_path: str,
                         store_function: Callable) -> None:
     for paper in os.listdir(papers_path):
         paper_path = os.path.join(papers_path, paper)
-        parsed_images_path = os.path.join(IMAGES_PATH, Path(paper).stem)
+        load_document_to_chroma(paper_path, chroma_collection, store_function)
 
-        documents = loader(parse_and_clean(paper_path))
-        store_function(chroma_collection, documents, parsed_images_path, paper)
+
+def load_document_to_chroma(paper_path, chroma_collection, store_function):
+    parsed_images_path = os.path.join(IMAGES_PATH, Path(paper_path).stem)
+    documents = loader(parse_and_clean(paper_path))
+    store_function(chroma_collection, documents, parsed_images_path, os.path.basename(paper_path))
 
 
 def load_summary_to_chroma(model_url: str,
@@ -131,20 +154,34 @@ def prepare_db(sum_collection_name: str,
     image_collection = get_or_create_chroma_collection(img_collection_name, img_ef)
 
     for paper in os.listdir(papers_path):
+        logger.info(f'PAPER: {paper}')
         paper_path = os.path.join(papers_path, paper)
-
-        # Load summary for the paper
-        # add_paper_summary_to_db(sum_model_url, paper_path, summaries_collection)
-
-        # Load text chunks
-        documents = loader(parse_and_clean(paper_path))
-        store_text_chunks_in_chromadb(text_collection, documents, paper)
-
-        # Load images
-        parsed_images_path = os.path.join(IMAGES_PATH, Path(paper).stem)
-        process_img_func(image_collection, parsed_images_path, paper)
+        upload_paper(paper_path, summaries_collection, text_collection,
+                     image_collection, process_img_func, sum_model_url)
 
     return summaries_collection, text_collection, image_collection
+
+
+def upload_paper(paper_path: str,
+                 summaries_collection: Collection,
+                 text_collection: Collection,
+                 image_collection: Collection,
+                 process_img_func: Callable,
+                 sum_model_url: str,
+                 ):
+    # Load summary for the paper
+    add_paper_summary_to_db(sum_model_url, paper_path, summaries_collection)
+    logger.info('added summaries')
+
+    # Load text chunks
+    documents = loader(parse_and_clean(paper_path))
+    store_text_chunks_in_chromadb(text_collection, documents, os.path.basename(paper_path))
+    logger.info('added texts')
+
+    # Load images
+    parsed_images_path = os.path.join(IMAGES_PATH, Path(paper_path).stem)
+    process_img_func(image_collection, parsed_images_path, os.path.basename(paper_path))
+    logger.info('added images')
 
 
 def retrieve_context(sum_collection: Collection,
@@ -155,13 +192,14 @@ def retrieve_context(sum_collection: Collection,
                      img_chunk_num: int,
                      query: str,
                      relevant_papers: list = None) -> tuple[dict, dict]:
-    # docs = query_chromadb(sum_collection, query, chunk_num=sum_chunk_num)
-    # relevant_papers = [doc['source'] for doc in docs['metadatas'][0]]
+    if not relevant_papers:
+        docs = query_chromadb(sum_collection, query, chunk_num=sum_chunk_num)
+        relevant_papers = [doc['source'] for doc in docs['metadatas'][0]]
 
     text_context = query_chromadb(txt_collection, query, {"source": {"$in": relevant_papers}}, txt_chunk_num)
     image_context = query_chromadb(img_collection, query, {"source": {"$in": relevant_papers}}, img_chunk_num)
-    return text_context, image_context
 
+    return text_context, image_context
 
 
 def run_mm_rag():
@@ -182,7 +220,7 @@ def run_mm_rag():
     llm_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
 
     papers_path = './papers'
-    questions_path = './questions/complex_questions.csv'
+    questions_path = 'questions/complex_questions_altered.csv'
     answers_path = './questions/complex_mm_answers.csv'
 
     sum_col, txt_col, img_col = prepare_db(sum_collection_name, txt_collection_name, img_collection_name,
@@ -199,8 +237,8 @@ def run_img2txt_rag():
     txt_collection_name = 'text_context_img2txt'
     img_collection_name = 'image_context'
     sum_chunk_num = 1
-    txt_chunk_num = 3
-    img_chunk_num = 2
+    txt_chunk_num = 4
+    img_chunk_num = 4
 
     reg_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
         # model_name="intfloat/multilingual-e5-large",
@@ -211,16 +249,16 @@ def run_img2txt_rag():
     llm_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
 
     papers_path = './papers'
-    questions_path = './questions/complex_questions.csv'
-    answers_path = './questions/complex_text_answers.csv'
+    questions_path = 'questions/complex_questions_altered.csv'
+    answers_path = './questions/complex_text_answers_new_2.csv'
 
     sum_col, txt_col, img_col = prepare_db(sum_collection_name, txt_collection_name, img_collection_name,
                                            reg_embedding_function, reg_embedding_function, reg_embedding_function,
                                            store_images_in_chromadb_txt_format, papers_path, llm_url)
 
-    process_questions(questions_path, answers_path, llm_url,
-                      sum_col, txt_col, img_col,
-                      sum_chunk_num, txt_chunk_num, img_chunk_num)
+    # process_questions(questions_path, answers_path, llm_url,
+    #                   sum_col, txt_col, img_col,
+    #                   sum_chunk_num, txt_chunk_num, img_chunk_num)
 
     
 def run_summary_rag():
@@ -243,3 +281,4 @@ if __name__ == "__main__":
     # run_mm_rag()
     run_img2txt_rag()
     # run_summary_rag()
+

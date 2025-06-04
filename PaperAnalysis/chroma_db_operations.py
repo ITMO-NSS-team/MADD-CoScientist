@@ -56,7 +56,7 @@ def image_to_text(image_path: str) -> str:
 
 
 def get_or_create_chroma_collection(collection: str,
-                                    embedding_function: EmbeddingFunction[Documents]) -> Collection:
+                                    embedding_function: EmbeddingFunction[Documents] | None = None) -> Collection:
     return client.get_or_create_collection(
         name=collection,
         embedding_function=embedding_function,
