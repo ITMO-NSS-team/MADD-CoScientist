@@ -8,9 +8,9 @@ services:
     ports:
       - "8505:8501"
     volumes:
-      - /Users/lizzy/Documents/WORK/LLM/PubChemCoScientist/server/data/papers:/app/papers
-      - /Users/lizzy/Documents/WORK/LLM/PubChemCoScientist/server/data/parse_results:/app/streamlit_app/parse_results/
-      - /Users/lizzy/Documents/WORK/LLM/PubChemCoScientist/server/data/chromadb:/app/streamlit_app/chromadb
+      - /home/chem-paper-assistant/papers:/app/papers
+      - /home/chem-paper-assistant/parse_results:/app/streamlit_app/parse_results/
+      - /home/chem-paper-assistant/chromadb:/app/streamlit_app/chromadb
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped
