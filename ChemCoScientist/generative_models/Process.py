@@ -2,13 +2,13 @@ import pandas as pd
 import torch
 import torchtext
 from torchtext import data
-from generative_models.transformer.Tokenize import moltokenize
-from generative_models.transformer.Batch import MyIterator, batch_size_fn
+from ChemCoScientist.generative_models.Tokenize import moltokenize
+from ChemCoScientist.generative_models.Batch import MyIterator, batch_size_fn
 import os
 import dill as pickle
 import numpy as np
 import sys
-import generative_models.transformer as KOSTIL_FOR_PICKL
+import ChemCoScientist.generative_models as KOSTIL_FOR_PICKL
 sys.modules['generative_models.Sber_Alzheimer'] = KOSTIL_FOR_PICKL
 
 sys.path.append(os.path.dirname(__file__))

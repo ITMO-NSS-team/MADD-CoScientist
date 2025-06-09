@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from generative_models.transformer.Sublayers import FeedForward, MultiHeadAttention, Norm
+from ChemCoScientist.generative_models.Sublayers import FeedForward, MultiHeadAttention, Norm
 import numpy as np
 
 

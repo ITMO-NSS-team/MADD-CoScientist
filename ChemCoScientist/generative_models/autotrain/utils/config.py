@@ -1,7 +1,7 @@
 import argparse
 from pydantic import BaseModel,dataclasses
 from typing import Union,List,Optional
-from generative_models.transformer.Batch import MyIterator
+from ChemCoScientist.generative_models.Batch import MyIterator
 
 
 class Config_P(BaseModel):

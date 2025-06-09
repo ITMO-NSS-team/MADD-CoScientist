@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from generative_models.transformer.Layers import EncoderLayer, DecoderLayer
-from generative_models.transformer.Embed import Embedder, PositionalEncoder
-from generative_models.transformer.Sublayers import Norm
+from ChemCoScientist.generative_models.Layers import EncoderLayer, DecoderLayer
+from ChemCoScientist.generative_models.Embed import Embedder, PositionalEncoder
+from ChemCoScientist.generative_models.Sublayers import Norm
 import copy
 import numpy as np
 
