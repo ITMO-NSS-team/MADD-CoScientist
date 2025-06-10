@@ -34,7 +34,7 @@ def dataset_builder_agent(state: dict, config: dict):
         additional_authorized_imports=['*']
     )
 
-    response = agent.run(ds_builder_prompt + '\n' + task + additional_ds_builder_prompt)
+    response = agent.run(ds_builder_prompt["ds_dir"] + config_cur_agent["url"] + '\n' + task + additional_ds_builder_prompt)
 
     return Command(
         goto="replan_node",

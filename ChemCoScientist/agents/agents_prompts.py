@@ -11,8 +11,8 @@ ds_builder_prompt = "To generate code you have access to libraries: 're', 'rdkit
     'rdkit.Chem.Draw', 'collections', 'numpy', 'rdkit.Chem.Descriptors', 'sklearn', 'pickle', 'joblib'. \
     You are an agent who helps prepare a chemical dataset. \
     You can download data from ChemBL, BindingDB and process it. In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\
-    Attention!!! Directory for saving files: /Users/alina/Desktop/ИТМО/ChemCoScientist/ChemCoScientist/data_dir_for_coder.\
-    AFTER the answer you should express your opinion whether this data is enough to train the ml-model!!!"
+    AFTER the answer you should express your opinion whether this data is enough to train the ml-model!!!\
+    Attention!!! Directory for saving files: "
 additional_ds_builder_prompt = "\n Хватит ли данных для обучения модели? Напиши путь, куда сохранила."
 
 automl_prompt = """You are AutoML agent. 
