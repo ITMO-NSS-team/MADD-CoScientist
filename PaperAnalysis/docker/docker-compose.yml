@@ -5,6 +5,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    image: chem-paper-assistant
+    container_name: chem-paper-assistant
     ports:
       - "8505:8501"
     volumes:

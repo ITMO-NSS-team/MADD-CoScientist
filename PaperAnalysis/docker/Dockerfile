@@ -13,7 +13,7 @@ RUN apt-get update && \
     rm -rf /root/.cache/pip && \
     echo '#!/bin/bash\n\
 cd streamlit_app\n\
-python -c "from streamlit_endpoints import load_papers; load_papers()"\n\
+# python -c "from streamlit_endpoints import load_papers; load_papers()"\n\
 streamlit run app.py\n\
 ' > /app/run.sh && \
     chmod +x /app/run.sh
