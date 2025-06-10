@@ -1,5 +1,5 @@
 import os
-os.environ["OPENAI_API_KEY"] = "KEY"
+os.environ["OPENAI_API_KEY"] = "API_KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -52,12 +52,18 @@ conf = {
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
         "tools_descp": tools_rendered,
-        "web_search": True
+        # set True if you want to use web search like black-box
+        "web_search": True,
+        "additional_agents_info" : {"dataset_builder_agent": 
+            {"model_name": "deepseek/deepseek-chat-0324-alt-structured",
+             "url": "https://api.vsegpt.ru/v1",
+             "api_key": "API_KEY",
+            #  Change on your dir if another!
+             "ds_dir": "./data_dir_for_coder"}}
     },
 }
 
 # UNCOMMENT the one you need
-
 # inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
 # inputs = {"input": "Поищи с помощью поиска свежие статьи на тему онлайн-синтеза наноматериалов"}
 # inputs = {"input": "Generate an image for nanoparticles most optimal for catalysis."}
@@ -68,7 +74,10 @@ conf = {
 # inputs = {"input": "Предскажи Docking score для Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1 с помощью мл-модели."}
 # inputs = {"input": "Модель с названием DOCKING_SCORE еще обучается?"}
 # inputs = {"input": "Обучи модель на данных из ChemBl предсказывать значение IC50. Модель сохрани с названием 'chembl_ic50'."}
-inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака Легкого на последней стадии. Дай ссылку на контент."}
+# inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
+# inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
+inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+
 
 if __name__ == "__main__":
     graph = GraphBuilder(conf)

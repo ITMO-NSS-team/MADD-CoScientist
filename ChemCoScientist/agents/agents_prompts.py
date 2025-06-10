@@ -5,28 +5,15 @@ from ChemCoScientist.tools import (chem_tools_rendered, nano_tools_rendered,
                                    tools_rendered)
 from ChemCoScientist.tools import dataset_handler_rendered
 
-ds_builder_prompt = (
-    r"""
-    Extract relevant dataset filtering parameters from the following user request.
-    Available columns:"""
-    + str(ChemblLoader().get_columns())
-    + r"""
-    Return JSON in the format: {"selected_columns": [...], "filters": {{...}}}
-    It is not necessary to specify filters (the dictionary with filters can be empty. In filters, you can specify ranges, string values, and Booleans.
-    Required: Your answer must contain only language vocabulary (start answer from "{"). Use "float('-inf')" and "float('inf')" for negative and positive infinity (not None!).
-        
-    For example:
-    User request: "Show molecules with molecular weight between 150 and 500."
-    You: {'selected_columns': ['Molecular Weight"], "filters": {"Molecular Weight": (150, 500)}}
-    Or:
-    User request: "Show small molecules."
-    You: {"selected_columns": ["Molecular Weight", "Type"], "filters": {"Type": "Small molecule"}}
-       
-    Description of available func:""" +   dataset_handler_rendered +  """
-        
-    User request: 
-    """
-)
+ds_builder_prompt = "To generate code you have access to libraries: 're', 'rdkit', \
+    'smolagents', 'math', 'stat', 'datetime', 'os', 'time', 'requests', 'queue', \
+    'random', 'bs4', 'rdkit.Chem', 'unicodedata', 'itertools', 'statistics', 'pubchempy',\
+    'rdkit.Chem.Draw', 'collections', 'numpy', 'rdkit.Chem.Descriptors', 'sklearn', 'pickle', 'joblib'. \
+    You are an agent who helps prepare a chemical dataset. \
+    You can download data from ChemBL, BindingDB and process it. In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\
+    Attention!!! Directory for saving files: /Users/alina/Desktop/ИТМО/ChemCoScientist/ChemCoScientist/data_dir_for_coder.\
+    AFTER the answer you should express your opinion whether this data is enough to train the ml-model!!!"
+additional_ds_builder_prompt = "\n Хватит ли данных для обучения модели? Напиши путь, куда сохранила."
 
 automl_prompt = """You are AutoML agent. 
 You are obliged to call the tools (the most appropriate ones) for any user request and make your answer based on the results of the tools.

@@ -1,88 +1,55 @@
-import json
-import os
-import re
-import subprocess
 import time
-from pathlib import Path
-
-import yaml
+from smolagents import CodeAgent, OpenAIServerModel
+from smolagents import DuckDuckGoSearchTool
+from ChemCoScientist.tools.chemist_tools import fetch_chembl_data, fetch_BindingDB_data
 from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
-from protollm.agents.agent_utils.pydantic_models import Response
 
 from ChemCoScientist.agents.agents_prompts import (automl_prompt,
                                                    ds_builder_prompt,
-                                                   worker_prompt)
-from ChemCoScientist.dataset_handler.chembl.chembl_utils import ChemblLoader
+                                                   worker_prompt,
+                                                   additional_ds_builder_prompt)
 from ChemCoScientist.tools import (chem_tools, get_state_from_server,
                                    nanoparticle_tools, predict_prop_by_smiles,
                                    train_ml_with_data)
 
-with open("./ChemCoScientist/conf/conf.yaml", "r") as file:
-    conf = yaml.safe_load(file)
-    key = conf["api_key"]
-    base_url = conf["base_url"]
-    file_path = conf["chembl_csv_path"]
 
-
-def dataset_builder_agent(state, config: dict):
-    input = (
-        state["input"]
-        if state.get("language", "English") == "English"
-        else state["translation"]
-    )
+def dataset_builder_agent(state: dict, config: dict):
+    config_cur_agent = config["configurable"]["additional_agents_info"]["dataset_builder_agent"]
     plan = state["plan"]
-    plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
     task = plan[0]
     
-    llm = config["configurable"]["llm"]
-    chembl_client = ChemblLoader(True, file_path)
+    model = OpenAIServerModel(
+        api_base=config_cur_agent["url"], 
+        model_id=config_cur_agent["model_name"], 
+        api_key=config_cur_agent["api_key"]
+    )
+    agent = CodeAgent(
+        tools=[DuckDuckGoSearchTool(), 
+               fetch_BindingDB_data, 
+               fetch_chembl_data], 
+        model=model, 
+        additional_authorized_imports=['*']
+    )
 
-    prompt = ds_builder_prompt + task + r"""You: """
-
-    response = llm.invoke([{"role": "system", "content": prompt}])
-    print("========")
-
-    try:
-        query_params = eval(response.content)
-    except:
-        try:
-            query_params = eval(response.content.split("You: ")[-1])
-        except:
-            return {
-                "done": "error",
-                "message": "Failed to parse LLM response.",
-                "responses": None,
-            }
-
-    selected_columns = query_params.get("selected_columns", [])
-    filters = query_params.get("filters", {})
-
-    result_df = chembl_client.get_filtered_data(selected_columns, filters)
-    result_df.to_csv("./filtered_data.csv", index=False)
+    response = agent.run(ds_builder_prompt + '\n' + task + additional_ds_builder_prompt)
 
     return Command(
         goto="replan_node",
         update={
-            "past_steps": [(task, 'Data successfully filtered and saved to path: ./filtered_data.csv. Dataset has next columns: ' + str(result_df.columns))],
-            "nodes_calls": [("dataset_builder_agent", 'Data successfully filtered and saved to path: ./filtered_data.csv. Dataset has next columns: ' + str(result_df.columns))],
+            "past_steps": [(task, str(response))],
+            "nodes_calls": [("dataset_builder_agent", str(response))],
         },
     )
 
 
 def ml_dl_agent(state, config: dict):
-    user_query = (
-        state["input"]
-        if state.get("language", "English") == "English"
-        else state["translation"]
-    )
     prompt = automl_prompt
 
-    plan: list = state["plan"]
-    plan_str: str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
-    task: str = plan[0]
+    plan = state["plan"]
+    task = plan[0]
 
     llm: BaseChatModel = config["configurable"]["llm"]
     agent = create_react_agent(
@@ -100,9 +67,6 @@ def ml_dl_agent(state, config: dict):
             "nodes_calls": [("dataset_builder_agent", agent_response["messages"])],
         },
     )
-    print("========")
-    print(response["messages"][-1].content)
-    print("========")
 
 
 def chemist_node(state, config: dict):
@@ -150,8 +114,7 @@ def chemist_node(state, config: dict):
                 },
             )
 
-        except Exception as e:  # Handle OpenAI API errors
-            # logger.exception(f"Chemist failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
+        except Exception as e: 
             print(
                 f"Chemist failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )
@@ -193,7 +156,6 @@ def nanoparticle_node(state, config: dict):
     - If all retries fail, it returns a response indicating failure.
     """
     llm: BaseChatModel = config["configurable"]["llm"]
-    # add_prompt = 'if you are asked to predict nanoparticle shape, directly call corresponding tool'
     add_prompt = "You have to respond with results of tool call, do not repharse it"
     nanoparticle_agent = create_react_agent(
         llm, nanoparticle_tools, state_modifier=worker_prompt + add_prompt
@@ -221,8 +183,7 @@ def nanoparticle_node(state, config: dict):
                 },
             )
 
-        except Exception as e:  # Handle OpenAI API errors
-            # logger.exception(f"Nanoparticle failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
+        except Exception as e:  
             print(
                 f"Nanoparticle failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )
