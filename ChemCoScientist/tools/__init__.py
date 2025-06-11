@@ -12,8 +12,8 @@ from ChemCoScientist.dataset_handler.chembl.chembl_utils import get_filtered_dat
 
 if web_tools:
     tools_rendered = render_text_description(
-        web_tools + chem_tools + nanoparticle_tools + [get_filtered_data]
+        web_tools + chem_tools + nanoparticle_tools
     )
 else:
-    tools_rendered = render_text_description(chem_tools + nanoparticle_tools + [get_filtered_data])
+    tools_rendered = render_text_description(chem_tools + nanoparticle_tools)
 dataset_handler_rendered = render_text_description([get_filtered_data])

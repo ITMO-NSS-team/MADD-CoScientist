@@ -1,5 +1,5 @@
 import os
-os.environ["OPENAI_API_KEY"] = "API_KEY"
+os.environ["OPENAI_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -13,6 +13,8 @@ from ChemCoScientist.agents.agents import (chemist_node, ml_dl_agent,
 
 from tools import (chem_tools_rendered, ml_dl_tools_rendered,
                    nano_tools_rendered, tools_rendered, dataset_handler_rendered)
+from CoScientist.scientific_agents.agents import coder_agent
+
 
 model = create_llm_connector(
     "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
@@ -21,8 +23,16 @@ model = create_llm_connector(
 visual_model = create_llm_connector(
     "https://api.vsegpt.ru/v1;vis-meta-llama/llama-3.2-90b-vision-instruct"
 )
-
+# description for agent WITHOUT langchain-tools
+agent_rendered = "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
+    To collect data, it needs either the protein name or a specific id from a specific database. \
+        It can collect data from one specific database or from both. All data is saved locally. \
+            It can also write simple processing code if asked. \
+                'coder_agent' - can write any simple python scientific code. \
+                    Can use rdkit and other chemical libraries. Can perform calculations."
+                    
 conf = {
+    # maximum number of recursions
     "recursion_limit": 50,
     "configurable": {
         "user_id": '1',
@@ -30,17 +40,23 @@ conf = {
         "img_path": "image.png",
         "llm": model,
         "max_retries": 1,
+        # list of scenario agents
         "scenario_agents": [
             "chemist_node",
             "nanoparticle_node",
             "ml_dl_agent",
+            "dataset_builder_agent",
+            "coder_agent"
         ],
+        # nodes for scenario agents
         "scenario_agent_funcs": {
             "chemist_node": chemist_node,
             "nanoparticle_node": nanoparticle_node,
             "ml_dl_agent": ml_dl_agent,
             "dataset_builder_agent": dataset_builder_agent,
+            "coder_agent": coder_agent
         },
+        # descripton for agents tools (if exist!!!), optional
         "tools_for_agents": {
             # here can be description of langchain web tools (not TavilySearch)
             # "web_serach": [web_tools_rendered],
@@ -51,17 +67,33 @@ conf = {
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
+        
+        # full descripton for agents tools
         "tools_descp": tools_rendered,
+        # description of agents (if they don't have tools) in free format
+        "agents_descp": agent_rendered,
         # set True if you want to use web search like black-box
         "web_search": True,
-        "additional_agents_info" : {"dataset_builder_agent": 
-            {"model_name": "deepseek/deepseek-chat-0324-alt-structured",
-             "url": "https://api.vsegpt.ru/v1",
-             "api_key": "API_KEY",
+        # add a key with the agent node name if you need to pass something to it
+        "additional_agents_info" : {
+        "dataset_builder_agent": 
+            {
+                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
+                "url": "https://api.vsegpt.ru/v1",
+                "api_key": os.environ["OPENAI_API_KEY"],
             #  Change on your dir if another!
-             "ds_dir": "./data_dir_for_coder"}}
-    },
-}
+                "ds_dir": "./data_dir_for_coder"
+            },
+        "coder_agent":
+            {
+                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
+                "url": "https://api.vsegpt.ru/v1",
+                "api_key": os.environ["OPENAI_API_KEY"],
+            #  Change on your dir if another!
+                "ds_dir": "./data_dir_for_coder"
+            }
+    }
+}}
 
 # UNCOMMENT the one you need
 # inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
@@ -76,7 +108,8 @@ conf = {
 # inputs = {"input": "Обучи модель на данных из ChemBl предсказывать значение IC50. Модель сохрани с названием 'chembl_ic50'."}
 # inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
 # inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
-inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+# inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+inputs = {"input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"}
 
 
 if __name__ == "__main__":
