@@ -3,9 +3,11 @@ from fastapi import Body
 import os
 import sys
 from pydantic import BaseModel
+
+from autotrain.utils.base_state import TrainState
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
-from GAN.gan_lstm_refactoring.gen import generate
+from generative_models.GAN.gan_lstm_refactoring.gen import generate
 from generate.config import parsing
 from train_data.utils.config_generate import configurate_parser
 from train_data.generate import generator_for_agent_multi_prop as multi_generator
@@ -20,6 +22,7 @@ from utils.ic_50_models.drug_resis_classif_inference.inference_drug_clf import p
 from utils.ic_50_models.tyrosine_classif_inference.inference_tyrosine_clf import predict as dyslip_predict_ic50
 from utils.ki_models.tyrosine_regression_inference.tyrosine_inference_regr import predict as dyslip_predict_ki
 from utils.inference_BB_clf.BB_inference import predict as eval_bbb
+from autotrain.auto_train import main
 ###Docking
 from autodock_vina_python3.src.docking_score import docking_list
 from utils.check_novelty import check_novelty_chembl
@@ -32,12 +35,93 @@ class GenData(BaseModel):
         std_:float=1
         case_ : str = 'RNMD'
 
+class TrainData(BaseModel):
+        data:dict = None
+        case:str = None
+        data_path:str = None
+        target_column:list = None
+        #smiles_list: list = None
+        timeout:int = 30 #30 min
+        feature_column:list = ['Smiles']
+        path_to_save:str = 'automl/trained_data'
+        description:str = 'Unknown case.'
+        url:str = "http://10.64.4.247:81"
+        n_samples:int = 1000
+        fine_tune:bool = True
+        new_vocab:bool = False
+        # regression_props:list= None
+        # classification_props:list = None
+
 class Molecules(BaseModel):
     mol_list:List[str]
 
 class Docking_config(BaseModel):
     mol_list:List[str]
     receptor_case : str = 'Alzhmr'
+
+def case_trainer(data:TrainData=Body()):
+    # #####FOR TEST####
+    # if data.numb_mol>100:
+    #     data.numb_mol=100
+    # ##################
+    #Docking score
+    is_evalute_docking = False
+    """Main API func for train generative models.
+
+    Args:
+        numb_mol (int): Number of molecules to generating.
+        model (str, optional): What model need to use.Choose from [lstm,CVAE,TVAE]. Defaults to 'lstm'.
+        cuda (bool, optional): Choose cuda usage option. Defaults to False.
+        case_ (str): Choose what disease u want to generate molecules for. 
+
+    Returns:
+        _type_: _description_
+    """
+    state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+    if data.data is not None:
+                df = pd.DataFrame(data.data)
+                data.data_path = f"generative_models/transformer/autotrain/data/{data.case}"
+                if not os.path.isdir(data.data_path):
+                    os.mkdir(data.data_path)
+                data.data_path = data.data_path + '/data.csv'
+                df.to_csv(data.data_path) 
+    #CASE = 'CYK'
+    # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
+    # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
+    test_mode = False
+    
+   
+    if data.fine_tune==True:
+        load_weights = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+        load_weights_fields = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+        data.new_vocab = False
+    else:
+         load_weights=None
+         load_weights_fields = None
+         data.new_vocab = True
+    # if state(CASE) is None:#Check if case exist
+    #     state.add_new_case(CASE,rewrite=False)
+    
+    if state(data.case,'ml')['target_column'] is None:
+        state(data.case,'ml')['target_column']=  data.target_column
+    if state(data.case,'ml')['feature_column'] is None:
+        state(data.case,'ml')['feature_column'] = data.feature_column
+
+    use_cond2dec = False
+    main(
+         conditions = state(data.case,'ml')['target_column'],
+         case=data.case, 
+         server_dir = f'autotrain/train_{data.case}',
+         data_path_with_conds = data.data_path,
+         test_mode=test_mode,
+         state=state,
+         url=data.url,
+         n_samples = data.n_samples,
+         load_weights=load_weights,
+         load_weights_fields = load_weights_fields,
+         use_cond2dec=use_cond2dec,
+        new_vocab= data.new_vocab)
+
 
 def case_generator(data:GenData=Body()):
     #####FOR TEST####
