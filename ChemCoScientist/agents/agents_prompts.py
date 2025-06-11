@@ -9,7 +9,9 @@ ds_builder_prompt = "To generate code you have access to libraries: 're', 'rdkit
     You can download data from ChemBL, BindingDB and process it. In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\
     AFTER the answer you should express your opinion whether this data is enough to train the ml-model!!!\
     Attention!!! Directory for saving files: "
-additional_ds_builder_prompt = "\n Хватит ли данных для обучения модели? Напиши путь, куда сохранила."
+additional_ds_builder_prompt = (
+    "\n Хватит ли данных для обучения модели? Напиши путь, куда сохранила."
+)
 
 automl_prompt = """You are AutoML agent. 
 You are obliged to call the tools (the most appropriate ones) for any user request and make your answer based on the results of the tools.

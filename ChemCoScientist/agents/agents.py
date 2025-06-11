@@ -7,34 +7,46 @@ from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 
-from ChemCoScientist.agents.agents_prompts import (automl_prompt,
-                                                   ds_builder_prompt,
-                                                   worker_prompt,
-                                                   additional_ds_builder_prompt)
-from ChemCoScientist.tools import (chem_tools, get_state_from_server,
-                                   nanoparticle_tools, predict_prop_by_smiles,
-                                   train_ml_with_data)
+from ChemCoScientist.agents.agents_prompts import (
+    automl_prompt,
+    ds_builder_prompt,
+    worker_prompt,
+    additional_ds_builder_prompt,
+)
+from ChemCoScientist.tools import (
+    chem_tools,
+    get_state_from_server,
+    nanoparticle_tools,
+    predict_prop_by_smiles,
+    train_ml_with_data,
+)
 
 
 def dataset_builder_agent(state: dict, config: dict):
-    config_cur_agent = config["configurable"]["additional_agents_info"]["dataset_builder_agent"]
+    config_cur_agent = config["configurable"]["additional_agents_info"][
+        "dataset_builder_agent"
+    ]
     plan = state["plan"]
     task = plan[0]
-    
+
     model = OpenAIServerModel(
-        api_base=config_cur_agent["url"], 
-        model_id=config_cur_agent["model_name"], 
-        api_key=config_cur_agent["api_key"]
+        api_base=config_cur_agent["url"],
+        model_id=config_cur_agent["model_name"],
+        api_key=config_cur_agent["api_key"],
     )
     agent = CodeAgent(
-        tools=[DuckDuckGoSearchTool(), 
-               fetch_BindingDB_data, 
-               fetch_chembl_data], 
-        model=model, 
-        additional_authorized_imports=['*']
+        tools=[DuckDuckGoSearchTool(), fetch_BindingDB_data, fetch_chembl_data],
+        model=model,
+        additional_authorized_imports=["*"],
     )
 
-    response = agent.run(ds_builder_prompt + config_cur_agent["ds_dir"] + '\n' + task + additional_ds_builder_prompt)
+    response = agent.run(
+        ds_builder_prompt
+        + config_cur_agent["ds_dir"]
+        + "\n"
+        + task
+        + additional_ds_builder_prompt
+    )
 
     return Command(
         goto="replan_node",
@@ -94,7 +106,7 @@ def chemist_node(state, config: dict):
     plan_str: str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
 
     task: str = plan[0]
-    
+
     task_formatted = f"""For the following plan:
     {plan_str}\n\nYou are tasked with executing: {task}."""
 
@@ -114,7 +126,7 @@ def chemist_node(state, config: dict):
                 },
             )
 
-        except Exception as e: 
+        except Exception as e:
             print(
                 f"Chemist failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )
@@ -183,7 +195,7 @@ def nanoparticle_node(state, config: dict):
                 },
             )
 
-        except Exception as e:  
+        except Exception as e:
             print(
                 f"Nanoparticle failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )

@@ -1,4 +1,5 @@
 import os
+
 os.environ["OPENAI_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
@@ -8,11 +9,20 @@ os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
 from protollm.agents.builder import GraphBuilder
 from protollm.connectors import create_llm_connector
 
-from ChemCoScientist.agents.agents import (chemist_node, ml_dl_agent,
-                                           nanoparticle_node, dataset_builder_agent)
+from ChemCoScientist.agents.agents import (
+    chemist_node,
+    ml_dl_agent,
+    nanoparticle_node,
+    dataset_builder_agent,
+)
 
-from tools import (chem_tools_rendered, ml_dl_tools_rendered,
-                   nano_tools_rendered, tools_rendered, dataset_handler_rendered)
+from tools import (
+    chem_tools_rendered,
+    ml_dl_tools_rendered,
+    nano_tools_rendered,
+    tools_rendered,
+    dataset_handler_rendered,
+)
 from CoScientist.scientific_agents.agents import coder_agent
 
 
@@ -30,12 +40,12 @@ agent_rendered = "'dataset_builder_agent' - collects data from two databases - C
             It can also write simple processing code if asked. \
                 'coder_agent' - can write any simple python scientific code. \
                     Can use rdkit and other chemical libraries. Can perform calculations."
-                    
+
 conf = {
     # maximum number of recursions
     "recursion_limit": 50,
     "configurable": {
-        "user_id": '1',
+        "user_id": "1",
         "visual_model": visual_model,
         "img_path": "image.png",
         "llm": model,
@@ -46,7 +56,7 @@ conf = {
             "nanoparticle_node",
             "ml_dl_agent",
             "dataset_builder_agent",
-            "coder_agent"
+            "coder_agent",
         ],
         # nodes for scenario agents
         "scenario_agent_funcs": {
@@ -54,7 +64,7 @@ conf = {
             "nanoparticle_node": nanoparticle_node,
             "ml_dl_agent": ml_dl_agent,
             "dataset_builder_agent": dataset_builder_agent,
-            "coder_agent": coder_agent
+            "coder_agent": coder_agent,
         },
         # descripton for agents tools (if exist!!!), optional
         "tools_for_agents": {
@@ -63,11 +73,10 @@ conf = {
             "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
             "ml_dl_agent": [ml_dl_tools_rendered],
-            "dataset_builder_agent": [dataset_handler_rendered]
+            "dataset_builder_agent": [dataset_handler_rendered],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
-        
         # full descripton for agents tools
         "tools_descp": tools_rendered,
         # description of agents (if they don't have tools) in free format
@@ -75,25 +84,24 @@ conf = {
         # set True if you want to use web search like black-box
         "web_search": True,
         # add a key with the agent node name if you need to pass something to it
-        "additional_agents_info" : {
-        "dataset_builder_agent": 
-            {
+        "additional_agents_info": {
+            "dataset_builder_agent": {
                 "model_name": "deepseek/deepseek-chat-0324-alt-structured",
                 "url": "https://api.vsegpt.ru/v1",
                 "api_key": os.environ["OPENAI_API_KEY"],
-            #  Change on your dir if another!
-                "ds_dir": "./data_dir_for_coder"
+                #  Change on your dir if another!
+                "ds_dir": "./data_dir_for_coder",
             },
-        "coder_agent":
-            {
+            "coder_agent": {
                 "model_name": "deepseek/deepseek-chat-0324-alt-structured",
                 "url": "https://api.vsegpt.ru/v1",
                 "api_key": os.environ["OPENAI_API_KEY"],
-            #  Change on your dir if another!
-                "ds_dir": "./data_dir_for_coder"
-            }
-    }
-}}
+                #  Change on your dir if another!
+                "ds_dir": "./data_dir_for_coder",
+            },
+        },
+    },
+}
 
 # UNCOMMENT the one you need
 # inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
@@ -109,7 +117,9 @@ conf = {
 # inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
 # inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
 # inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
-inputs = {"input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"}
+inputs = {
+    "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
+}
 
 
 if __name__ == "__main__":

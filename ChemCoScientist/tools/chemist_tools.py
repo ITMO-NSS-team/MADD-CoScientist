@@ -14,7 +14,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.Descriptors import CalcMolDescriptors
 
 repl = PythonREPL()
-VALID_AFFINITY_TYPES = ['Ki', 'Kd', 'IC50']
+VALID_AFFINITY_TYPES = ["Ki", "Kd", "IC50"]
 
 from smolagents import tool
 
@@ -27,26 +27,26 @@ from typing import Dict, List, Optional
 def fetch_BindingDB_data(params: Dict) -> List[Dict]:
     """
     Tool for retrieving protein affinity data from BindingDB.
-    
+
     This tool:
     1. Takes a protein name as input or a UniProt ID
     2. Queries UniProt to find the corresponding UniProt ID (if not provided)
     3. Retrieves specified affinity values (Ki, Kd, or IC50) for the protein from BindingDB
     4. Returns structured data about ligands and their affinity measurements
-    
+
     Data source: BindingDB (https://www.bindingdb.org) - a public database of measured binding affinities
-    
+
     Args:
         params: Dictionary containing:
             - protein_name: Name of the target protein (required)
             - affinity_type: Type of affinity measurement (Ki, Kd, or IC50, default: Ki)
             - cutoff: Optional affinity threshold in nM (default: 10000)
             - id: Optional, UniProt ID
-                
+
     Returns:
         List[dict]: List of dictionaries containing affinity data for the specified protein.
     """
-    
+
     try:
         try:
             # parameter validation
@@ -55,14 +55,16 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
                 print("Protein name not provided")
         except:
             pass
-            
+
         affinity_type = params.get("affinity_type", "Ki")
         if affinity_type not in VALID_AFFINITY_TYPES:
-            print(f"Invalid affinity type. Must be one of: {', '.join(VALID_AFFINITY_TYPES)}")
+            print(
+                f"Invalid affinity type. Must be one of: {', '.join(VALID_AFFINITY_TYPES)}"
+            )
             return False
-            
+
         cutoff = params.get("cutoff", 10000)
-        
+
         # Step 1: Get UniProt ID
         uniprot_id = params.get("id", False)
         if not uniprot_id:
@@ -70,12 +72,12 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
             if not uniprot_id:
                 print(f"No UniProt ID found for {protein_name}")
                 return False
-        
+
         # Step 2: Retrieve affinity data from BindingDB
         affinity_entries = fetch_affinity_bindingdb(uniprot_id, affinity_type, cutoff)
-        
+
         return affinity_entries
-        
+
     except Exception as e:
         print(f"Processing error: {str(e)}")
         return False
@@ -87,10 +89,10 @@ def fetch_uniprot_id(protein_name: str) -> Optional[str]:
     """
     url = "https://rest.uniprot.org/uniprotkb/search"
     params = {
-        "query": f'{protein_name} AND organism_id:9606',  # человек
+        "query": f"{protein_name} AND organism_id:9606",  # человек
         "format": "json",
         "size": 1,
-        "fields": "accession"
+        "fields": "accession",
     }
 
     try:
@@ -106,7 +108,9 @@ def fetch_uniprot_id(protein_name: str) -> Optional[str]:
         return None
 
 
-def fetch_affinity_bindingdb(uniprot_id: str, affinity_type: str, cutoff: int) -> List[Dict]:
+def fetch_affinity_bindingdb(
+    uniprot_id: str, affinity_type: str, cutoff: int
+) -> List[Dict]:
     """
     Retrieve affinity values from BindingDB for the given UniProt ID.
 
@@ -124,31 +128,41 @@ def fetch_affinity_bindingdb(uniprot_id: str, affinity_type: str, cutoff: int) -
         response = requests.get(url, timeout=120)
         response.raise_for_status()
         data = response.json()
-        result = [i for i in data['getLindsByUniprotsResponse']['affinities'] if i['affinity_type'] == affinity_type]
-        print(f"Found {len(result)} affinities for {uniprot_id} with type {affinity_type}")
+        result = [
+            i
+            for i in data["getLindsByUniprotsResponse"]["affinities"]
+            if i["affinity_type"] == affinity_type
+        ]
+        print(
+            f"Found {len(result)} affinities for {uniprot_id} with type {affinity_type}"
+        )
         return result
-    
+
     except (requests.exceptions.RequestException, json.JSONDecodeError):
         return []
 
 
 @tool
-def fetch_chembl_data(target_name: str, target_id: str = "", affinity_type: str = 'Ki') -> list[dict]:
-    """Get Ki for activity by current protein from ChemBL database. Return 
+def fetch_chembl_data(
+    target_name: str, target_id: str = "", affinity_type: str = "Ki"
+) -> list[dict]:
+    """Get Ki for activity by current protein from ChemBL database. Return
     dict with smiles and Ki values, format: [{"smiles": smiles, affinity_type: affinity_valie, "affinity_units": affinity_units}, ...]
-    
+
     Args:
         target_name: str, name of protein,
         target_id: optional, id of current protein from ChemBL. Don't make it up yourself!!! Only user can ask!!!
         affinity_type: optional, str, type of affinity measurement (default: 'Ki').
     """
     BASE_URL = "https://www.ebi.ac.uk/chembl/api/data"
-    
+
     if target_id == "" or target_id == None or target_id == False:
-        # search target_id by protein name 
-        target_search = requests.get(f"{BASE_URL}/target/search?q={quote(target_name)}&format=json&limit=1000")
+        # search target_id by protein name
+        target_search = requests.get(
+            f"{BASE_URL}/target/search?q={quote(target_name)}&format=json&limit=1000"
+        )
         targets = target_search.json()["targets"]
-        
+
         if not targets:
             print(f"Target '{target_name}' not found in ChEMBL")
             return []
@@ -168,10 +182,10 @@ def fetch_chembl_data(target_name: str, target_id: str = "", affinity_type: str 
             f"offset={offset}&"
             "include=molecule"
         )
-        
+
         data = response.json()
         activities += data["activities"]
-        
+
         if not data["page_meta"]["next"]:
             break
         offset += len(data["activities"])
@@ -183,13 +197,21 @@ def fetch_chembl_data(target_name: str, target_id: str = "", affinity_type: str 
             smiles = act["canonical_smiles"]
             affinity_valie = act["standard_value"]
             affinity_units = act["standard_units"]
-            results.append({"smiles": smiles, affinity_type: affinity_valie, "affinity_units": affinity_units})
+            results.append(
+                {
+                    "smiles": smiles,
+                    affinity_type: affinity_valie,
+                    "affinity_units": affinity_units,
+                }
+            )
         except (KeyError, TypeError):
             continue
 
     return results
 
+
 from langchain_core.tools import tool
+
 
 @tool
 def python_repl_tool(

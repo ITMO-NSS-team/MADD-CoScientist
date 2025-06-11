@@ -9,10 +9,12 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 
-from ChemCoScientist.agents.tools_prompts import (entr_eff_prompt,
-                                                  properties_prediction_prompt,
-                                                  shape_detection_prompt,
-                                                  synt_prompt)
+from ChemCoScientist.agents.tools_prompts import (
+    entr_eff_prompt,
+    properties_prediction_prompt,
+    shape_detection_prompt,
+    synt_prompt,
+)
 from ChemCoScientist.tools.models.generative_inference import inference
 
 
