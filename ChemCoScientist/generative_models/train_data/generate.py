@@ -5,15 +5,15 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
 sys.path.append(os.getcwd())
 import lightgbm
-from generative_models.transformer.ic50_classifire_model.read_ic50 import Ic50
-from generative_models.transformer.inference import generate_alzh,generate_alzh_for_agent
-from generative_models.transformer.Process import *
+from ic50_classifire_model.read_ic50 import Ic50
+from inference import generate_alzh,generate_alzh_for_agent
+from Process import *
 import argparse
-from generative_models.transformer.Models import get_model
+from Models import get_model
 from rdkit import RDConfig
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
 #from pipeline.classifier import Classifier
-from generative_models.transformer.train_data.utils.config_generate import configurate_parser
+from train_data.utils.config_generate import configurate_parser
 
 def generator(opt,
               n_samples=10000,

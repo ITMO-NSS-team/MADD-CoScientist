@@ -3,14 +3,14 @@ import sys
 import os
 import_path = os.getcwd()
 sys.path.append(import_path)
-from ChemCoScientist.generative_models.train_data.utils.auto_train_loop import train_model,train_model_auto
-from ChemCoScientist.generative_models.train_data.utils.config import configurate_parser
-from ChemCoScientist.generative_models.Models import get_model
-from ChemCoScientist.generative_models.Process import *
-from ChemCoScientist.generative_models.Optim import CosineWithRestarts
+from generative_models.train_data.utils.auto_train_loop import train_model,train_model_auto
+from generative_models.train_data.utils.config import configurate_parser
+from generative_models.Models import get_model
+from generative_models.Process import *
+from generative_models.Optim import CosineWithRestarts
 import dill as pickle
 import pandas as pd
-from ChemCoScientist.generative_models.ic50_classifire_model.read_ic50 import Ic50
+from generative_models.ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')
@@ -106,7 +106,7 @@ def main(server_dir = 'generative_models/train_dislip',
 #                          timeout=data.timeout)
         
 if __name__ == "__main__":
-    state = TrainState(state_path='generative_models/autotrain/utils/state.json')
+    state = TrainState(state_path='autotrain/utils/state.json')
     CASE = 'CYK'
     train_data = '/projects/generative_models_data/generative_models/docked_data_for_train/data_cyk_short.csv'
     conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']

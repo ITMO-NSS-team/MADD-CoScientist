@@ -4,10 +4,10 @@ from vina import Vina
 import os
 import sys
 sys.path.append('..')
-from ChemCoScientist.generative_models.autodock_vina_python3.src.utils.paths import get_project_path
+from generative_models.autodock_vina_python3.src.utils.paths import get_project_path
 import numpy as np 
-from ChemCoScientist.generative_models.autodock_vina_python3.src.utils.prepare_receptor import prepare_pdb, get_center_of_protein, get_bounding_box
-from ChemCoScientist.generative_models.autodock_vina_python3.src.utils.prepare_ligand import preprocess_ligand
+from generative_models.autodock_vina_python3.src.utils.prepare_receptor import prepare_pdb, get_center_of_protein, get_bounding_box
+from generative_models.autodock_vina_python3.src.utils.prepare_ligand import preprocess_ligand
 import pandas as pd
 from tqdm import tqdm
 # Ligand SMILES (Apigenin)

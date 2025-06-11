@@ -2,14 +2,14 @@ import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
-from generative_models.transformer.train_data.utils.auto_train_loop import train_model
-from generative_models.transformer.train_data.utils.config import configurate_parser
-from generative_models.transformer.Models import get_model
-from generative_models.transformer.Process import *
-from generative_models.transformer.Optim import CosineWithRestarts
+from train_data.utils.auto_train_loop import train_model
+from train_data.utils.config import configurate_parser
+from Models import get_model
+from Process import *
+from Optim import CosineWithRestarts
 import dill as pickle
 import pandas as pd
-from generative_models.transformer.ic50_classifire_model.read_ic50 import Ic50
+from ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')

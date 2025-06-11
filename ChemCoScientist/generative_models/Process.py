@@ -2,8 +2,8 @@ import pandas as pd
 import torch
 import torchtext
 from torchtext import data
-from ChemCoScientist.generative_models.Tokenize import moltokenize
-from ChemCoScientist.generative_models.Batch import MyIterator, batch_size_fn
+from generative_models.Tokenize import moltokenize
+from generative_models.Batch import MyIterator, batch_size_fn
 import os
 import dill as pickle
 import numpy as np

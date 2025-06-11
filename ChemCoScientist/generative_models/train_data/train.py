@@ -2,15 +2,15 @@ import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
-from ChemCoScientist.generative_models.autotrain.utils.read_state import TrainState
-from ChemCoScientist.generative_models.train_data.utils.auto_train_loop import train_model
-from ChemCoScientist.generative_models.train_data.utils.config import configurate_parser
-from ChemCoScientist.generative_models.Models import get_model
-from ChemCoScientist.generative_models.Process import *
-from ChemCoScientist.generative_models.Optim import CosineWithRestarts
+from generative_models.autotrain.utils.read_state import TrainState
+from generative_models.train_data.utils.auto_train_loop import train_model
+from generative_models.train_data.utils.config import configurate_parser
+from generative_models.Models import get_model
+from generative_models.Process import *
+from generative_models.Optim import CosineWithRestarts
 import dill as pickle
 import pandas as pd
-from ChemCoScientist.generative_models.ic50_classifire_model.read_ic50 import Ic50
+from generative_models.ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')

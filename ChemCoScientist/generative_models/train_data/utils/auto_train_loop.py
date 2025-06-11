@@ -5,9 +5,9 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
 sys.path.append('~')
 import torch.nn as nn
-from ChemCoScientist.generative_models.Process import *
-from ChemCoScientist.generative_models.Batch import create_masks
-from ChemCoScientist.generative_models.inference import validate_docking, validate_props
+from generative_models.Process import *
+from generative_models.Batch import create_masks
+from generative_models.inference import validate_docking, validate_props
 import warnings
 warnings.filterwarnings('ignore')
 import torch.nn.functional as F

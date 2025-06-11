@@ -135,9 +135,9 @@ def run_predict_automl_from_list(case:str,
         resutls = pipeline.predict(input_data=data_preapred)
         for i,prop in enumerate(state(case,'ml')["Predictable properties"][problem]):
             if len(resutls.predict.shape)>1:
-                properties[prop] = list(resutls.predict[:,i])
+                properties[prop] = list(map(float,resutls.predict[:,i]))
             else:
-                properties[prop] = list(resutls.predict)
+                properties[prop] = list(map(float,resutls.predict))
 
     return properties
 

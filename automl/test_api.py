@@ -30,7 +30,7 @@ def train_ml_with_data(
     classification_props = ['IC50'], #Column name with data for classification tasks (That not include in calculcateble propreties)
     description = 'Case for Brain canser',
     timeout = 5, # min
-    url: str = "http://10.64.4.243:81/train_ml",
+    url: str = "http://10.64.4.247:81/train_ml",
     **kwargs,
 ):
     start_time = time.time()
@@ -81,7 +81,7 @@ def predict_smiles(smiles_list : List[str],
 if __name__=='__main__':
 ###############
 #Test train with default params
-    train_ml_with_data(case="test_api2")
+    train_ml_with_data(case="Alzheimer")
     print('Process created')
 
 ################

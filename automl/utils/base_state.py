@@ -1,5 +1,5 @@
 import json
-from typing import Union 
+from typing import List, Union 
 from pydantic import BaseModel
 import os
 from automl.utils.calculateble_prop_funcs import config
@@ -89,8 +89,8 @@ class TrainState:
     def gen_model_upd_data(self,
                            case:str,
                            data_path:str=None,
-                           feature_column:list[str] = None,
-                           target_column:list[str] = None
+                           feature_column:List[str] = None,
+                           target_column:List[str] = None
                            ):
         """Necessary to update the parameters of a generative model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -115,8 +115,8 @@ class TrainState:
     def ml_model_upd_data(self,
                         case:str,
                         data_path:str=None,
-                        feature_column:list[str] = None,
-                        target_column:list[str] = None,
+                        feature_column:List[str] = None,
+                        target_column:List[str] = None,
                         predictable_properties:dict = None):
         """Necessary to update the parameters of a ML model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns

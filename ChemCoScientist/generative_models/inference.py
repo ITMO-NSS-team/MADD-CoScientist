@@ -4,17 +4,17 @@ import os
 import_path = os.path.dirname(os.path.abspath(__file__))
 import statistics
 import time
-from ChemCoScientist.generative_models.Process import *
+from generative_models.Process import *
 import argparse
 from rdkit import Chem, DataStructs
 from rdkit.Chem import Descriptors, QED, rdDepictor, AllChem, Draw
-from ChemCoScientist.generative_models.Models import get_model
-from ChemCoScientist.generative_models.Beam import beam_search
+from generative_models.Models import get_model
+from generative_models.Beam import beam_search
 from torch.autograd import Variable
 import joblib
 import numpy as np
-from ChemCoScientist.generative_models.rand_gen import rand_gen_from_data_distribution, tokenlen_gen_from_data_distribution
-from ChemCoScientist.generative_models.dataDistibutionCheck import checkdata
+from generative_models.rand_gen import rand_gen_from_data_distribution, tokenlen_gen_from_data_distribution
+from generative_models.dataDistibutionCheck import checkdata
 from tqdm import tqdm
 from utils.check_novelty import check_novelty_mol_path
 import warnings
@@ -24,7 +24,7 @@ import sascorer
 from rdkit.Contrib.SA_Score import sascorer
 import pickle as pi
 import lightgbm
-from ChemCoScientist.generative_models.autodock_vina_python3.src.docking_score import docking_list
+from generative_models.autodock_vina_python3.src.docking_score import docking_list
 import random
 from utils.prop_calc import all_prop_calc_list
 from typing import List
