@@ -18,11 +18,11 @@ from ChemCoScientist.agents.agents import (
 
 from tools import (
     chem_tools_rendered,
-    ml_dl_tools_rendered,
     nano_tools_rendered,
     tools_rendered,
     dataset_handler_rendered,
 )
+from tools.ml_tools import ml_dl_tools_rendered
 from CoScientist.scientific_agents.agents import coder_agent
 
 
@@ -116,10 +116,10 @@ conf = {
 # inputs = {"input": "Обучи модель на данных из ChemBl предсказывать значение IC50. Модель сохрани с названием 'chembl_ic50'."}
 # inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
 # inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
-# inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
-inputs = {
-    "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
-}
+inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+# inputs = {
+#     "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
+# }
 
 
 if __name__ == "__main__":
