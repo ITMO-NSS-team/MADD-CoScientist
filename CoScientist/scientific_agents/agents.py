@@ -2,10 +2,12 @@ from smolagents import CodeAgent, OpenAIServerModel
 from smolagents import DuckDuckGoSearchTool
 
 from langgraph.types import Command
+from ChemCoScientist.memory import AgentMemory
 
 
 def coder_agent(state: dict, config: dict):
     config_cur_agent = config["configurable"]["additional_agents_info"]["coder_agent"]
+    memory = AgentMemory(state)
     plan = state["plan"]
     task = plan[0]
 
@@ -32,5 +34,6 @@ def coder_agent(state: dict, config: dict):
         update={
             "past_steps": [(task, str(response))],
             "nodes_calls": [("coder_agent", str(response))],
+            "agent_memory": state["agent_memory"],
         },
-    )
+    )   

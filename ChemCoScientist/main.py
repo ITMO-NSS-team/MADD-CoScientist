@@ -1,6 +1,6 @@
 import os
 
-os.environ["OPENAI_API_KEY"] = "KEY"
+os.environ["OPENAI_API_KEY"] = "API-key"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -16,13 +16,14 @@ from ChemCoScientist.agents.agents import (
     dataset_builder_agent,
 )
 
-from tools import (
+from ChemCoScientist.tools import (
     chem_tools_rendered,
     ml_dl_tools_rendered,
     nano_tools_rendered,
     tools_rendered,
     dataset_handler_rendered,
 )
+
 from CoScientist.scientific_agents.agents import coder_agent
 
 
@@ -125,3 +126,4 @@ inputs = {
 if __name__ == "__main__":
     graph = GraphBuilder(conf)
     res_1 = graph.run(inputs, debug=True, user_id="1")
+    res_2 = graph.run(inputs, debug=True, user_id="1")

@@ -3,7 +3,6 @@ from typing import Annotated, List, Tuple
 import operator
 
 
-
 class PlanExecute(TypedDict):
     input: str
     plan: List[str]
@@ -15,4 +14,4 @@ class PlanExecute(TypedDict):
     translation: str
     automl_results: str
     nodes_calls: Annotated[List[Tuple], operator.add]
-    #summary: Annotated[list[str], operator.add]
+    agent_memory: Annotated[dict, operator.or_]

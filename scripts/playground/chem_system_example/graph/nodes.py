@@ -1,4 +1,3 @@
-
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.exceptions import OutputParserException
 from langchain_openai import ChatOpenAI
@@ -8,7 +7,7 @@ from langgraph.prebuilt import create_react_agent
 
 import subprocess
 import json
-import re
+import re   
 import os
 from pathlib import Path
 
@@ -16,6 +15,7 @@ from graph.states import PlanExecute
 from prompts import worker_prompt, memory_prompt, chat_prompt, chat_parser, supervisor_prompt, supervisor_parser, summary_prompt, replanner_prompt, replanner_parser, planner_parser, planner_prompt, translate_prompt, translator_parser, retranslate_prompt
 from tools import chem_tools, web_tools, nanoparticle_tools
 from pydantic_models import Response
+from ChemCoScientist.memory import AgentMemory
 
 import time
 from typing import List
@@ -56,12 +56,12 @@ def in_translator_node(state: PlanExecute, config: dict):
             if output.language =='English':
                 return Command(
                     goto = 'chat',
-                    update= {'language': 'English'}
+                    update= {'language': 'English', 'agent_memory': state["agent_memory"]}
                 )
             else:
                 return Command(
                     goto='chat',
-                    update={'language': output.language, 'translation': output.translation}
+                    update={'language': output.language, 'translation': output.translation, 'agent_memory': state["agent_memory"]}
                 )
             
         except Exception as e:  # Handle OpenAI API errors
@@ -70,12 +70,12 @@ def in_translator_node(state: PlanExecute, config: dict):
             if 'api' in str(e).lower() and 'key' in str(e).lower():
                 return Command(
                     goto=END,
-                    update={"response": "Your api key is invalid"}
+                    update={"response": "Your api key is invalid", 'agent_memory': state["agent_memory"]}
                 )
             if '404' in str(e):
                 return Command(
                     goto=END,
-                    update={"response": "LLM is unavailabe right now, perhaps you should check your proxy"}
+                    update={"response": "LLM is unavailabe right now, perhaps you should check your proxy", 'agent_memory': state["agent_memory"]}
                 )
             time.sleep(2**attempt)  # Exponential backoff
     
@@ -99,10 +99,10 @@ def re_translator_node(state: PlanExecute, config: dict):
     for attempt in range(max_retries):
         try:
             output =  translator_agent.invoke({"input": input, "language": language})
-            return Command(
-                goto=END,
-                update = {'response': output.content}
-            )
+                return Command(
+                    goto=END,
+                    update = {'response': output.content, 'agent_memory': state["agent_memory"]}
+                )
             
         except Exception as e:  # Handle OpenAI API errors
             logger.exception(f"ReTranslator failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\n State: {state}")
@@ -111,7 +111,7 @@ def re_translator_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 
@@ -128,9 +128,9 @@ def chat_node(state: PlanExecute, config: dict):
             output =  chat_agent.invoke(input)
 
             if isinstance(output.action, Response):
-                return {"response": output.action.response, 'visualization': None} #we're setting visualization here to None to delete all previosly generated visualizatons
+                return {"response": output.action.response, 'visualization': None, 'agent_memory': state["agent_memory"]} #we're setting visualization here to None to delete all previosly generated visualizatons
             else:
-                return {"next": output.action.next, 'visualization': None}
+                return {"next": output.action.next, 'visualization': None, 'agent_memory': state["agent_memory"]}
             
         except Exception as e:  # Handle OpenAI API errors
             logger.exception(f"Chat failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
@@ -139,7 +139,7 @@ def chat_node(state: PlanExecute, config: dict):
 
     return Command(
         goto='planner',
-        update={"response": None}
+        update={"response": None, 'agent_memory': state["agent_memory"]}
     )
 
 def should_end_chat(state: PlanExecute):
@@ -159,7 +159,7 @@ def supervisor_node(state: PlanExecute, config: dict):
     if plan is None and not state.get('input'):
         return Command(
             goto=END,
-            update="I've couldn't answer to your question, could you ask me once more?-><-"
+            update={"response": "I've couldn't answer to your question, could you ask me once more?-><-", 'agent_memory': state["agent_memory"]}
         )
     plan_str: str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
 
@@ -176,7 +176,7 @@ def supervisor_node(state: PlanExecute, config: dict):
 
             return Command(
                 goto=agent_response.next,
-                update={"next": agent_response.next}
+                update={"next": agent_response.next, 'agent_memory': state["agent_memory"]}
             )
         except Exception as e:  # Handle OpenAI API errors
             logger.exception(f"Supervisor failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
@@ -185,7 +185,7 @@ def supervisor_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 
@@ -211,7 +211,8 @@ def chemist_node(state: PlanExecute, config: dict):
             return Command(
                 goto = 'replan',
                 update = {'past_steps':[(task, agent_response["messages"][-1].content)],
-                          'nodes_calls': [('chemist_node', agent_response["messages"])]}
+                          'nodes_calls': [('chemist_node', agent_response["messages"])],
+                          'agent_memory': state["agent_memory"]}
             )
 
         except Exception as e:  # Handle OpenAI API errors
@@ -221,7 +222,7 @@ def chemist_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 def nanoparticle_node(state: PlanExecute, config: dict):
@@ -246,7 +247,8 @@ def nanoparticle_node(state: PlanExecute, config: dict):
             return Command(
                 goto = 'replan',
                 update = {'past_steps':[(task, agent_response["messages"][-1].content)],
-                          'nodes_calls': [('nanoparticle_node', agent_response["messages"])]}
+                          'nodes_calls': [('nanoparticle_node', agent_response["messages"])],
+                          'agent_memory': state["agent_memory"]}
             )
 
         except Exception as e:  # Handle OpenAI API errors
@@ -256,7 +258,7 @@ def nanoparticle_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
     
 def automl_node(state: PlanExecute, config: dict):
@@ -273,7 +275,7 @@ def automl_node(state: PlanExecute, config: dict):
         response_text = 'There is no files of dataset to use. Do not call me again'
         return Command(
             goto='replan',
-            update={"past_steps": [(task, response_text)]}
+            update={"past_steps": [(task, response_text)], 'agent_memory': state["agent_memory"]}
         )
     
     try:
@@ -289,20 +291,21 @@ def automl_node(state: PlanExecute, config: dict):
         return Command(
             goto='replan',
             update={"past_steps": [(task, response_text)],
-                    'automl_results': response_text}
+                    'automl_results': response_text,
+                    'agent_memory': state["agent_memory"]}
         )
     
     except json.JSONDecodeError as e:
         response_text = "I've couldn't do automl job, don't call me again"
         return Command(
             goto='replan',
-            update={"past_steps": [(task, response_text)]}
+            update={"past_steps": [(task, response_text)], 'agent_memory': state["agent_memory"]}
         )
     except Exception as e:
         logger.exception(f"automl failed with error: {str(e)}.\tState: {state}")
         return Command(
             goto=END,
-            update={"response": f"I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+            update={"response": f"I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
         )
 
 def web_search_node(state: PlanExecute, config: dict):
@@ -327,7 +330,8 @@ def web_search_node(state: PlanExecute, config: dict):
             return Command(
                 goto = 'replan',
                 update = {'past_steps':[(task, agent_response["messages"][-1].content)],
-                          'nodes_calls': [('web_search_node', agent_response["messages"])]}
+                          'nodes_calls': [('web_search_node', agent_response["messages"])],
+                          'agent_memory': state["agent_memory"]}
             )
         except Exception as e:  # Handle OpenAI API errors
             logger.exception(f"Web_searcher failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
@@ -336,7 +340,7 @@ def web_search_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 def plan_node(state: PlanExecute, config):
@@ -350,7 +354,7 @@ def plan_node(state: PlanExecute, config):
     for attempt in range(max_retries):
         try:
             plan = planner.invoke({"messages": [("user", input)]})
-            return {"plan": plan.steps}
+            return {"plan": plan.steps, 'agent_memory': state["agent_memory"]}
         except OutputParserException as  e:
             match = re.search(r'\{\s*"steps"\s*:\s*\[\s*(?:"[^"]*"\s*,\s*)*"[^"]*"\s*\]\s*\}', str(e), re.DOTALL)
             if match:
@@ -358,7 +362,7 @@ def plan_node(state: PlanExecute, config):
                 json_str.replace("\\", "\\\\")
                 try:
                     structured_output = json.loads(json_str)
-                    return {"plan": structured_output['steps']}
+                    return {"plan": structured_output['steps'], 'agent_memory': state["agent_memory"]}
                 except json.JSONDecodeError as json_err:
                     logger.exception(f"Planner failed with error: {str(json_err), json_str}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
                     print(f"Planner failed with error: {str(json_err)}. Retrying... ({attempt+1}/{max_retries})")
@@ -369,7 +373,7 @@ def plan_node(state: PlanExecute, config):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 def replan_node(state: PlanExecute, config: dict):
@@ -383,9 +387,9 @@ def replan_node(state: PlanExecute, config: dict):
         try:
             output =  replanner.invoke({'input': input, 'plan': state['plan'], 'past_steps': state['past_steps']})
             if isinstance(output.action, Response):
-                return {"response": output.action.response}
+                return {"response": output.action.response, 'agent_memory': state["agent_memory"]}
             else:
-                return {"plan": output.action.steps}
+                return {"plan": output.action.steps, 'agent_memory': state["agent_memory"]}
             
         except OutputParserException as  e:
             match = re.search(r'\{\s*"steps"\s*:\s*\[\s*(?:"[^"]*"\s*,\s*)*"[^"]*"\s*\]\s*\}', str(e), re.DOTALL)
@@ -394,7 +398,7 @@ def replan_node(state: PlanExecute, config: dict):
                 json_str.replace("\\", "\\\\")
                 try:
                     structured_output = json.loads(json_str)
-                    return {"plan": structured_output['steps']}
+                    return {"plan": structured_output['steps'], 'agent_memory': state["agent_memory"]}
                 except json.JSONDecodeError as json_err:
                     logger.exception(f"Planner failed with error: {str(json_err), json_str}.\t Retrying... ({attempt+1}/{max_retries})\t State: {state}")
                     print(f"RePlanner failed with error: {str(json_err)}. Retrying... ({attempt+1}/{max_retries})")
@@ -406,7 +410,7 @@ def replan_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
     )
 
 def should_end(state: PlanExecute):
@@ -428,7 +432,7 @@ def summary_node(state: PlanExecute, config: dict):
     for attempt in range(max_retries):
         try:
             output =  summary_agent.invoke({'query': query, 'system_response': system_response, 'intermediate_thoughts': past_steps})
-            return {'response': output.content}
+            return {'response': output.content, 'agent_memory': state["agent_memory"]}
             
         except Exception as e:  # Handle OpenAI API errors
             logger.exception(f"Summary failed with error: {str(e)}.\t Retrying... ({attempt+1}/{max_retries})\n State: {state}")
@@ -437,5 +441,5 @@ def summary_node(state: PlanExecute, config: dict):
 
     return Command(
         goto=END,
-        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"}
-    )
+        update={"response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}
+    )can't answer to your question right now( Perhaps there is something else that I can help? -><-", 'agent_memory': state["agent_memory"]}

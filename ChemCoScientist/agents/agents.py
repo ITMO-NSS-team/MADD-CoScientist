@@ -13,6 +13,7 @@ from ChemCoScientist.agents.agents_prompts import (
     worker_prompt,
     additional_ds_builder_prompt,
 )
+from ChemCoScientist.memory import AgentMemory
 from ChemCoScientist.tools import (
     chem_tools,
     get_state_from_server,
@@ -26,8 +27,12 @@ def dataset_builder_agent(state: dict, config: dict):
     config_cur_agent = config["configurable"]["additional_agents_info"][
         "dataset_builder_agent"
     ]
+    memory = AgentMemory(state)
     plan = state["plan"]
     task = plan[0]
+    mem_str = memory.to_prompt("dataset_builder_agent")
+    if mem_str:
+        print(f"\033[92mMemory for dataset_builder_agent:\n{mem_str}\033[0m")
 
     model = OpenAIServerModel(
         api_base=config_cur_agent["url"],
@@ -53,6 +58,7 @@ def dataset_builder_agent(state: dict, config: dict):
         update={
             "past_steps": [(task, str(response))],
             "nodes_calls": [("dataset_builder_agent", str(response))],
+            "agent_memory": state["agent_memory"],
         },
     )
 
@@ -76,7 +82,8 @@ def ml_dl_agent(state, config: dict):
         goto="replan_node",
         update={
             "past_steps": [(task, agent_response["messages"][-1].content)],
-            "nodes_calls": [("dataset_builder_agent", agent_response["messages"])],
+            "nodes_calls": [("ml_dl_agent", agent_response["messages"])],
+            "agent_memory": state["agent_memory"],
         },
     )
 
@@ -123,6 +130,7 @@ def chemist_node(state, config: dict):
                 update={
                     "past_steps": [(task, agent_response["messages"][-1].content)],
                     "nodes_calls": [("chemist_node", agent_response["messages"])],
+                    "agent_memory": state["agent_memory"],
                 },
             )
 
@@ -167,8 +175,13 @@ def nanoparticle_node(state, config: dict):
     - If an exception occurs, it retries the operation with exponential backoff.
     - If all retries fail, it returns a response indicating failure.
     """
+    memory = AgentMemory(state)
     llm: BaseChatModel = config["configurable"]["llm"]
     add_prompt = "You have to respond with results of tool call, do not repharse it"
+    mem_str = memory.to_prompt("nanoparticle_node")
+    if mem_str:
+        print(f"\033[92mMemory for nanoparticle_node:\n{mem_str}\033[0m")
+        add_prompt += "\n" + mem_str
     nanoparticle_agent = create_react_agent(
         llm, nanoparticle_tools, state_modifier=worker_prompt + add_prompt
     )
@@ -186,12 +199,14 @@ def nanoparticle_node(state, config: dict):
             agent_response = nanoparticle_agent.invoke(
                 {"messages": [("user", task_formatted)]}
             )
+            memory.add("nanoparticle_node", agent_response["messages"][-1].content)
 
             return Command(
                 goto="replan_node",
                 update={
                     "past_steps": [(task, agent_response["messages"][-1].content)],
                     "nodes_calls": [("nanoparticle_node", agent_response["messages"])],
+                    "agent_memory": state["agent_memory"],
                 },
             )
 
