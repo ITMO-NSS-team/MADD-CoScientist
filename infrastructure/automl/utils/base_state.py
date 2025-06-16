@@ -1,8 +1,7 @@
 import json
-from typing import Union 
 from pydantic import BaseModel
 import os
-from automl.utils.calculateble_prop_funcs import config
+from infrastructure.automl.utils.calculateble_prop_funcs import config
 
 
 class BaseState(BaseModel):

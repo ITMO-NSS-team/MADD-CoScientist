@@ -2,18 +2,13 @@ import os
 import sys
 from typing import List
 
-from annotated_types import T
-from sklearn import metrics
 sys.path.append(os.getcwd())
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
-from fedot.core.pipelines.pipeline_builder import PipelineBuilder
-from automl.utils.base_state import *
+from infrastructure.automl.utils.base_state import *
 from fedot.api.main import Fedot,Pipeline
-import logging
 from fedot.core.data.data import InputData
 from fedot.core.data.data_split import train_test_data_setup
 import itertools

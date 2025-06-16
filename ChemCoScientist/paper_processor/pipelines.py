@@ -12,15 +12,15 @@ from langchain_core.messages import HumanMessage
 import pandas as pd
 from protollm.connectors import create_llm_connector
 
-from answer_question import query_llm, summarisation_prompt
-from chroma_db_operations import (get_or_create_chroma_collection, store_text_chunks_in_chromadb,
-                                  store_images_in_chromadb_txt_format, store_images_in_chromadb_mm_format,
-                                  query_chromadb)
-from parse_and_split import html_chunking, clean_up_html, parse_with_marker, parse_and_clean, simple_conversion, loader
+from ChemCoScientist.answer_question import query_llm, summarisation_prompt
+from chromadb.chroma_db_operations import (get_or_create_chroma_collection, store_text_chunks_in_chromadb,
+                                           store_images_in_chromadb_txt_format, store_images_in_chromadb_mm_format,
+                                           query_chromadb)
+from paper_parser.parse_and_split import html_chunking, clean_up_html, parse_with_marker, parse_and_clean, simple_conversion, loader
 
 
-IMAGES_PATH = './parse_results'
-load_dotenv('../config.env')
+IMAGES_PATH = '../../PaperAnalysis/parse_results'
+load_dotenv('../../config.env')
 
 
 def process_questions(questions_path: str,
@@ -185,9 +185,9 @@ def run_mm_rag():
 
     llm_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
 
-    papers_path = './papers'
+    papers_path = '../../PaperAnalysis/papers'
     questions_path = './questions/complex_questions.csv'
-    answers_path = './questions/complex_mm_answers.csv'
+    answers_path = '../../PaperAnalysis/questions/complex_mm_answers.csv'
 
     sum_col, txt_col, img_col = prepare_db(sum_collection_name, txt_collection_name, img_collection_name,
                                            reg_embedding_function, reg_embedding_function, mm_embedding_function,
@@ -213,9 +213,9 @@ def run_img2txt_rag():
 
     llm_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
 
-    papers_path = './papers'
+    papers_path = '../../PaperAnalysis/papers'
     questions_path = './questions/complex_questions.csv'
-    answers_path = './questions/complex_text_answers.csv'
+    answers_path = '../../PaperAnalysis/questions/complex_text_answers.csv'
 
     sum_col, txt_col, img_col = prepare_db(sum_collection_name, txt_collection_name, img_collection_name,
                                            reg_embedding_function, reg_embedding_function, reg_embedding_function,
@@ -229,7 +229,7 @@ def run_img2txt_rag():
 def run_summary_rag():
     llm_url = 'https://api.vsegpt.ru/v1;google/gemini-2.0-flash-lite-001'
     collection_name = "paper_summaries"
-    papers_path = './papers'
+    papers_path = '../../PaperAnalysis/papers'
     questions_path = './questions/simple_questions_summaries.csv'
     answer_path = './questions/simple_answers_on_summaries.csv'
     
