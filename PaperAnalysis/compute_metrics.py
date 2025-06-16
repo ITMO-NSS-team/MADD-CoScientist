@@ -11,8 +11,8 @@ from deepeval.test_case import LLMTestCase
 import pandas as pd
 from protollm.metrics import model_for_metrics, correctness_metric
 
-from answer_question import query_llm
-from chroma_db_operations import query_chromadb
+from ChemCoScientist.answer_question import query_llm
+from chromadb.chroma_db_operations import query_chromadb
 
 path_to_data = ""
 all_questions = pd.read_csv(Path(path_to_data, "dataset.csv"))

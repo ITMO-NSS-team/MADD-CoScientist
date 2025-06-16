@@ -101,7 +101,7 @@ def parse_and_clean(path, annotate_pic: bool = False):
     logging.basicConfig(level=logging.INFO)
     
     file_name = Path(path).stem
-    output_dir = Path("./parse_results", file_name)
+    output_dir = Path("../PaperAnalysis/parse_results", file_name)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     pipeline_options = PdfPipelineOptions()
@@ -418,7 +418,7 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     rendered = converter(paper_name)
     text, _, images = text_from_rendered(rendered)
     
-    output_dir = Path("./parse_results", str(file_name.stem) + "_marker")
+    output_dir = Path("../PaperAnalysis/parse_results", str(file_name.stem) + "_marker")
     output_dir.mkdir(parents=True, exist_ok=True)
     save_output(rendered, output_dir=str(output_dir), fname_base=f"{file_name.stem}")
     return file_name.stem, output_dir
@@ -523,7 +523,7 @@ if __name__ == "__main__":
     # for document in documents:
     #     print(document)
     
-    p_path = './papers'
+    p_path = '../PaperAnalysis/papers'
     paper = "kowalska-et-al-2023-visible-light-promoted-3-2-cycloaddition-for-the-synthesis-of-cyclopenta-b-chromenocarbonitrile.pdf"
     paper_path = os.path.join(p_path, paper)
     f_name, dir_name = parse_with_marker(paper_name=paper_path)

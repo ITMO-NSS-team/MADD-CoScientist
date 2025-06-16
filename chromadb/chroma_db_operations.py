@@ -10,8 +10,7 @@ from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
 from protollm.connectors import create_llm_connector
 
-# client = chromadb.Client()
-client = chromadb.PersistentClient(path='./chromadb')
+client = chromadb.PersistentClient(path='../PaperAnalysis/chromadb')
 DATA_LOADER = ImageLoader()
 
 image_decs_prompt = """Describe an image from a chemistry research paper by following these guidelines:
@@ -90,7 +89,6 @@ def store_images_in_chromadb_txt_format(collection: Collection,
                 documents=[image_to_text(img_path)],
                 metadatas=[{"type": "image", "source": paper_name, "image_path": img_path}]
             )
-
 
 
 def store_images_in_chromadb_mm_format(collection: Collection,

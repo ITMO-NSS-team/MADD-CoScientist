@@ -1,15 +1,14 @@
-from logging import debug
-from fastapi import FastAPI,Body
+from fastapi import FastAPI
 import os
 import sys
 sys.path.append(os.getcwd())
 import uvicorn
-import json
+
 import_path = os.path.dirname(os.path.abspath(__file__))
 import socket
 import yaml
 from api_utils import *
-from automl.utils.base_state import TrainState
+from infrastructure.automl.utils.base_state import TrainState
 #sys.path.append('automl')
 
 with open("automl/config.yaml", "r") as file:
