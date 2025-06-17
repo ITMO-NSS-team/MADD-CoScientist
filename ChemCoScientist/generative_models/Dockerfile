@@ -28,7 +28,7 @@ RUN mkdir -p ~/miniconda3 && \
     ~/miniconda3/bin/conda init bash && \
     ~/miniconda3/bin/conda init zsh
 
-
+ENV HF_TOKEN="HF_TOKEN"
 ENV PATH ~/miniconda3/miniconda/bin:$PATH
 ENV LB_LIBRARY_PATH="~/miniconda3/miniconda/lib:\$LB_LIBRARY_PATH"
 SHELL ["/bin/bash", "-ic"]
