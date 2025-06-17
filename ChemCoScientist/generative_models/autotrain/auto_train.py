@@ -120,7 +120,7 @@ if __name__ == "__main__":
     use_cond2dec = False
     main(conditions = state(CASE,'ml')['target_column'],
          case=CASE, 
-         server_dir = f'generative_models/autotrain/train_{CASE}',
+         server_dir = f'generative_models/autotrain/train_model_data/train_{CASE}',
          data_path_with_conds = train_data,
          test_mode=test_mode,
          state=state,

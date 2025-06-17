@@ -24,5 +24,6 @@ torchdata==0.4.1
 fastapi
 uvicorn
 lightgbm
-#vina
+vina
 bio
+huggingface_hub

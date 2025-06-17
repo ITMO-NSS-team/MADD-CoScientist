@@ -81,7 +81,7 @@ def predict_smiles(smiles_list : List[str],
 if __name__=='__main__':
 ###############
 #Test train with default params
-    train_ml_with_data(case="Alzheimer")
+    train_ml_with_data(case="Alzheimer22")
     print('Process created')
 
 ################

@@ -5,9 +5,9 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
 sys.path.append('~')
 import torch.nn as nn
-from generative_models.Process import *
-from generative_models.Batch import create_masks
-from generative_models.inference import validate_docking, validate_props
+from generative_models.transformer.Process import *
+from generative_models.transformer.Batch import create_masks
+from generative_models.transformer.inference import validate_docking, validate_props
 import warnings
 warnings.filterwarnings('ignore')
 import torch.nn.functional as F
@@ -176,7 +176,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
     """
     print("training model...")
     model.train()
-
+    best_cond_score = 10000
     start = time.time()
     if opt.checkpoint > 0:
         cptime = time.time()
@@ -302,11 +302,17 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
                 })#,**history_props)
         history = pd.DataFrame(data_dict
             )
-        history.to_csv(f'{opt.save_folder_name}/weights/History_{opt.latent_dim}_epo={opt.epochs}_{time.strftime("%Y%m%d")}.csv',index=True)
-
-        # Export weights every epoch
-        if not os.path.isdir('{}'.format(opt.save_folder_name)):
-            os.mkdir('{}'.format(opt.save_folder_name))
-        if not os.path.isdir('{}/epo{}'.format(f'{opt.save_folder_name}/weights', epoch + 1)):
-            os.mkdir('{}/epo{}'.format(f'{opt.save_folder_name}/weights', epoch + 1))
-        torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/epo{epoch+1}/model_weights')
+        history.to_csv(f'{opt.save_folder_name}/weights/History_{opt.latent_dim}_epo={opt.epochs}.csv',index=True)
+        history.to_csv(f'{opt.save_folder_name}/weights/History_{opt.latent_dim}_epo={opt.epochs}.csv',index=True)
+        if history['cond_score'][epoch]<best_cond_score:
+            best_cond_score = history['cond_score'][epoch]
+            state.ml_model_upd_status(case=case,metric=best_cond_score,status=1)
+            # Export weights every epoch
+            if not os.path.isdir('{}'.format(opt.save_folder_name)):
+                os.mkdir('{}'.format(opt.save_folder_name))
+            if not os.path.isdir('{}/epo{}'.format(f'{opt.save_folder_name}/weights', epoch + 1)):
+                os.mkdir('{}/epo{}'.format(f'{opt.save_folder_name}/weights', epoch + 1))
+            torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/epo{epoch+1}/model_weights')
+            torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/model_weights')
+        state.gen_model_upd_status(case=case,model_weight_path=f'{opt.save_folder_name}/weights',status=2)
+            

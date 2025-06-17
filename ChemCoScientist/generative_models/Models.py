@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from generative_models.Layers import EncoderLayer, DecoderLayer
-from generative_models.Embed import Embedder, PositionalEncoder
-from generative_models.Sublayers import Norm
+from generative_models.transformer.Layers import EncoderLayer, DecoderLayer
+from generative_models.transformer.Embed import Embedder, PositionalEncoder
+from generative_models.transformer.Sublayers import Norm
 import copy
 import numpy as np
 
@@ -244,7 +244,20 @@ def get_model(opt, src_vocab, trg_vocab):
             model.to(opt.device)
             print('matched layers applyed')
         else:
-            model.load_state_dict(torch.load(f'{opt.load_weights}/model_weights',map_location=torch.device(opt.device)))
+            print('getting matched layers...')
+            model_dict_pred_train = torch.load(f'{opt.load_weights}/model_weights',map_location=torch.device(opt.device))
+            model_dict = model.state_dict()
+            dict_matched = [i for i,k in zip(model_dict_pred_train,model_dict) if model_dict_pred_train[i].shape==model_dict[k].shape]
+            test_dict = {i:model_dict_pred_train[i] for i in dict_matched}
+            model_dict.update(test_dict)
+            model.load_state_dict(model_dict)
+            # pretrained_dict = {k: v for k, v in model_dict_pred_train.items() if k in model_dict}
+            # model_dict.update(pretrained_dict)
+            # model.load_state_dict(pretrained_dict)
+            #model = torch.nn.DataParallel(model)
+            model.to(opt.device)
+            print('matched layers applyed')
+            #model.load_state_dict(torch.load(f'{opt.load_weights}/model_weights',map_location=torch.device(opt.device)))
     else:
         for p in model.parameters():
             if p.dim() > 1:

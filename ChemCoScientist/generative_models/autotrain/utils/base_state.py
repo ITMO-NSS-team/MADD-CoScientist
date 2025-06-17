@@ -2,7 +2,7 @@ import json
 from typing import Union,List
 from pydantic import BaseModel
 import os
-from utils.calculateble_prop_funcs import config
+from autotrain.utils.calculateble_prop_funcs import config
 
 
 class BaseState(BaseModel):
@@ -199,8 +199,8 @@ class TrainState:
             print(f'Generative model for task "{case}" already trained!')
         if model_weight_path is not None:
             if not os.path.isdir(model_weight_path):
-                os.mkdir(model_weight_path )
-        if not self.current_state[case]["generative_models"]['weights_path'] is None and model_weight_path is not None:
+                os.mkdir(model_weight_path)
+        if  model_weight_path is not None: #not self.current_state[case]["generative_models"]['weights_path'] is None and
             self.current_state[case]["generative_models"]['weights_path'] = model_weight_path
         if not metric is None:
            self.current_state[case]["generative_models"]['metric'] =  metric

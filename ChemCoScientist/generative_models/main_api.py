@@ -11,14 +11,15 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 import numpy as np
 from api_utils import *
 import socket
-from ic50_classifire_model.read_ic50 import Ic50
+from generative_models.ic50_classifire_model.read_ic50 import Ic50
 import pandas as pd
 import threading
 import pickle as pi
 import lightgbm
+from huggingface_hub import hf_hub_download
 
 ###Docking
-from autodock_vina_python3.src.docking_score import docking_list
+from generative_models.autodock_vina_python3.src.docking_score import docking_list
 import yaml
 
 
@@ -185,17 +186,19 @@ if __name__=='__main__':
     
     @app.post("/train_gen_models")
     def case_run(data:TrainData=Body()):
+        
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='generative_models/transformer/autotrain/utils')
         case_trainer(data)
         #return json.dumps()
 
     @app.get("/check_state")
     def check_state():
-        state = TrainState(state_path='autotrain/utils/state.json')
+        state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
         del current_state["Calculateble properties"]
-        return {'ml_state': current_state,
+        return {'state': current_state,
                 'calc_propreties':list(calc_properies)}
 
     #############################################

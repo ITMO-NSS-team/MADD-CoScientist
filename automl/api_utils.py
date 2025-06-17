@@ -14,7 +14,7 @@ class MLData(BaseModel):
         smiles_list: list = None
         timeout:int = 30 #30 min
         feature_column:list = ['Smiles']
-        path_to_save:str = 'automl/trained_data'
+        path_to_save:str = 'automl/train_model_data/trained_data'
         description:str = 'Unknown case.'
         regression_props:list= None
         classification_props:list = None

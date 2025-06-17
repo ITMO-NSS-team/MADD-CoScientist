@@ -3,7 +3,7 @@ from typing import List, Union
 from pydantic import BaseModel
 import os
 from automl.utils.calculateble_prop_funcs import config
-
+from huggingface_hub import HfApi
 
 class BaseState(BaseModel):
     status:str = None
@@ -173,6 +173,13 @@ class TrainState:
         if not metric is None:
            self.current_state[case]["ml_models"]['metric'] =  metric
         self.__save_state()
+        if status==2:
+            api = HfApi(token=os.getenv("HF_TOKEN"))
+            api.upload_folder(
+                folder_path="automl/state/state.json",
+                repo_id="SoloWayG/Molecule_transformer",
+                repo_type="model",
+)
 
     def gen_model_upd_status(self,
                              case:str,

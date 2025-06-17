@@ -44,12 +44,12 @@ if __name__=='__main__':
     # API operations
     @app.get("/check_state")
     def check_state():
-        state = TrainState()
+        state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
         del current_state["Calculateble properties"]
-        return {'ml_state': current_state,
+        return {'state': current_state,
                 'calc_propreties':list(calc_properies)}
 
     @app.post("/train_ml")

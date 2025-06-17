@@ -119,9 +119,9 @@ def run_predict_automl_from_list(case:str,
                      data:List[str]):
     state = TrainState()
     properties = {}
-    state.ml_model_upd_data(case=case,
-                            target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50'],
-                           )
+    # state.ml_model_upd_data(case=case,
+    #                         target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50'],
+    #                        )
     predicteble_props = [state(case,'ml')['Predictable properties'][i] for i in state(case,'ml')['Predictable properties']]
     predicteble_props = list(itertools.chain(*predicteble_props))
     calc_props = [i for i in state(case,'ml')['target_column'] if i not in predicteble_props]
