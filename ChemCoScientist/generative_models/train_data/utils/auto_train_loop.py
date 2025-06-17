@@ -315,4 +315,11 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
             torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/epo{epoch+1}/model_weights')
             torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/model_weights')
         state.gen_model_upd_status(case=case,model_weight_path=f'{opt.save_folder_name}/weights',status=2)
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
             

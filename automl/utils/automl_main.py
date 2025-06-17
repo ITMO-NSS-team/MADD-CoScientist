@@ -17,6 +17,7 @@ import logging
 from fedot.core.data.data import InputData
 from fedot.core.data.data_split import train_test_data_setup
 import itertools
+from huggingface_hub import HfApi
 
 def input_data_preparing(case:str,
                          problem:str = 'regression',
@@ -102,6 +103,13 @@ def run_train_automl(case:str,
         model.predict(features=test.features)
         metrics[problem] = model.get_metrics(test.target)
     state.ml_model_upd_status(case=case,metric=metrics,status=2)
+    api = HfApi(token=os.getenv("HF_TOKEN"))
+    api.upload_file(
+        path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
+        repo_id="SoloWayG/Molecule_transformer",
+        repo_type="model",
+        path_in_repo = 'state.json'
+    )
         
 
 #Test function
