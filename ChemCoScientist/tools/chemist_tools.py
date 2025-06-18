@@ -7,7 +7,6 @@ import py3Dmol
 import rdkit.Chem as Chem
 import requests
 from langchain.tools.render import render_text_description
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables.config import RunnableConfig
 from langchain_experimental.utilities import PythonREPL
 from rdkit.Chem import AllChem
@@ -238,10 +237,7 @@ def calc_prop_tool(
     Can calculate refractive index and freezing point
     Do not call this tool more than once.
     Do not call another tool if this returns results."""
-    # try:
-    #    result = repl.run(code)
-    # except BaseException as e:
-    #    return f"Failed to execute. Error: {repr(e)}"
+
     result = 44.09
     result_str = f"Successfully calculated:\n\n{property}\n\nStdout: {result}"
     return result_str
@@ -359,36 +355,10 @@ def visualize_molecule(
         return f"Failed to execute. Error: {repr(e)}"
 
 
-@tool
-def generate_molecule(
-    params: Annotated[str, "Description of target molecule"], config: RunnableConfig
-):
-    """Use this to generate a molecule with given description. Returns smiles. Only use for organic molecules"""
-    llm: BaseChatModel = config["configurable"].get("model")
-    try:
-        prompt = (
-            "Generate smiles of molecule with given description. Answer only with smiles, nothing more: \
-            Question: The molecule is a nitrogen mustard drug indicated for use in the treatment of chronic lymphocytic leukemia (CLL) and indolent B-cell non-Hodgkin lymphoma (NHL) that has progressed during or within six months of treatment with rituximab or a rituximab-containing regimen.  Bendamustine is a bifunctional mechlorethamine derivative capable of forming electrophilic alkyl groups that covalently bond to other molecules. Through this function as an alkylating agent, bendamustine causes intra- and inter-strand crosslinks between DNA bases resulting in cell death.  It is active against both active and quiescent cells, although the exact mechanism of action is unknown. \
-            Answer: CN1C(CCCC(=O)O)=NC2=CC(N(CCCl)CCCl)=CC=C21 \
-            Question: The molecule is a mannosylinositol phosphorylceramide compound having a tetracosanoyl group amide-linked to a C20 phytosphingosine base, with hydroxylation at C-2 and C-3 of the C24 very-long-chain fatty acid. It is functionally related to an Ins-1-P-Cer(t20:0/2,3-OH-24:0).\
-            Answer: CCCCCCCCCCCCCCCCCCCCCC(O)C(O)C(=O)N[C@@H](COP(=O)(O)O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1OC1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O)[C@H](O)C(O)CCCCCCCCCCCCCCCC \
-            Question: "
-            + params
-            + "\n Answer: "
-        )
-        res = llm.invoke(prompt)
-        smiles = res.content
-        return smiles
-    except BaseException as e:
-        # logger.exception(f"'generate_smiles' failed with error: {e}")
-        return f"Failed to execute. Error: {repr(e)}"
-
-
 chem_tools = [
     name2smiles,
     smiles2name,
     smiles2prop,
-    generate_molecule,
     visualize_molecule,
 ]
 chem_tools_rendered = render_text_description(chem_tools)

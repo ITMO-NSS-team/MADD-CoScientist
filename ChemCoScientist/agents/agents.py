@@ -8,18 +8,15 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 
 from ChemCoScientist.agents.agents_prompts import (
-    automl_prompt,
     ds_builder_prompt,
     worker_prompt,
     additional_ds_builder_prompt,
 )
 from ChemCoScientist.tools import (
     chem_tools,
-    get_state_from_server,
     nanoparticle_tools,
-    predict_prop_by_smiles,
-    train_ml_with_data,
 )
+from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
 
 
 def dataset_builder_agent(state: dict, config: dict):
@@ -44,6 +41,7 @@ def dataset_builder_agent(state: dict, config: dict):
         ds_builder_prompt
         + config_cur_agent["ds_dir"]
         + "\n"
+        "So, user ask: \n"
         + task
         + additional_ds_builder_prompt
     )
@@ -55,28 +53,40 @@ def dataset_builder_agent(state: dict, config: dict):
             "nodes_calls": [("dataset_builder_agent", str(response))],
         },
     )
-
-
-def ml_dl_agent(state, config: dict):
-    prompt = automl_prompt
-
+    
+def ml_dl_agent(state: dict, config: dict):
+    config_cur_agent = config["configurable"]["additional_agents_info"][
+        "ml_dl_agent"
+    ]
     plan = state["plan"]
     task = plan[0]
 
-    llm: BaseChatModel = config["configurable"]["llm"]
-    agent = create_react_agent(
-        llm,
-        [predict_prop_by_smiles, train_ml_with_data, get_state_from_server],
-        state_modifier=prompt,
+    model = OpenAIServerModel(
+        api_base=config_cur_agent["url"],
+        model_id=config_cur_agent["model_name"],
+        api_key=config_cur_agent["api_key"],
+    )
+    agent = CodeAgent(
+        tools=[DuckDuckGoSearchTool()] + automl_tools,
+        model=model,
+        additional_authorized_imports=["*"],
     )
 
-    agent_response = agent.invoke({"messages": [("user", task)]})
+    response = agent.run(
+        """So, your options:
+        1) Start training if the case is not found in get_case_state_from_sever
+        2) Call model for inference (predict properties or generate new molecules or both)
+
+        First of all you should call get_state_from_sever to check existing cases!!!
+        Check feature_column name and format. It should be list.
+        So, your task from the user: """ + task
+    )
 
     return Command(
         goto="replan_node",
         update={
-            "past_steps": [(task, agent_response["messages"][-1].content)],
-            "nodes_calls": [("dataset_builder_agent", agent_response["messages"])],
+            "past_steps": [(task, str(response))],
+            "nodes_calls": [("ml_dl_agent", str(response))],
         },
     )
 

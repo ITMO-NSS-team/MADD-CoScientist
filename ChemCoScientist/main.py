@@ -20,9 +20,7 @@ from tools import (
     chem_tools_rendered,
     nano_tools_rendered,
     tools_rendered,
-    dataset_handler_rendered,
 )
-from tools.ml_tools import ml_dl_tools_rendered
 from CoScientist.scientific_agents.agents import coder_agent
 
 
@@ -33,13 +31,18 @@ model = create_llm_connector(
 visual_model = create_llm_connector(
     "https://api.vsegpt.ru/v1;vis-meta-llama/llama-3.2-90b-vision-instruct"
 )
+automl_agent_description = """
+'ml_dl_agent' - an agent that can run training of a generative model to generate SMILES, training of predictive models 
+to predict properties. It also already stores ready-made models for inference. You can also ask him to prepare an existing dataset (you need to be specific in your request).
+It can generate medicinal molecules. You must use thic agent for molecules generation!!!
+"""
 # description for agent WITHOUT langchain-tools
 agent_rendered = "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
     To collect data, it needs either the protein name or a specific id from a specific database. \
         It can collect data from one specific database or from both. All data is saved locally. \
             It can also write simple processing code if asked. \
                 'coder_agent' - can write any simple python scientific code. \
-                    Can use rdkit and other chemical libraries. Can perform calculations."
+                    Can use rdkit and other chemical libraries. Can perform calculations. " + automl_agent_description
 
 conf = {
     # maximum number of recursions
@@ -72,8 +75,9 @@ conf = {
             # "web_serach": [web_tools_rendered],
             "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
-            "ml_dl_agent": [ml_dl_tools_rendered],
-            "dataset_builder_agent": [dataset_handler_rendered],
+            "dataset_builder_agent": ["has tools for downloading datasets from the database"],
+            "coder_agent": ["has a python interpreter"],
+            "ml_dl_agent": ["has tools related to automatic learning of predictive, generative models, as well as status checking"]
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
@@ -99,9 +103,17 @@ conf = {
                 #  Change on your dir if another!
                 "ds_dir": "./data_dir_for_coder",
             },
+            "ml_dl_agent": {
+                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
+                "url": "https://api.vsegpt.ru/v1",
+                "api_key": os.environ["OPENAI_API_KEY"],
+                #  Change on your dir if another!
+                "ds_dir": "./data_dir_for_coder",
+            },
         },
     },
 }
+
 
 # UNCOMMENT the one you need
 # inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
@@ -113,15 +125,24 @@ conf = {
 # inputs = {"input": "Запусти обучение на данных из /Users/alina/Desktop/ИТМО/ChemCoScientist/ChemCoScientist/dataset_handler/chembl/docking.csv. В качестве таргета возьми Docking score. Обязательно назови кейс DOCKING_SCORE"}
 # inputs = {"input": "Предскажи Docking score для Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1 с помощью мл-модели."}
 # inputs = {"input": "Модель с названием DOCKING_SCORE еще обучается?"}
-# inputs = {"input": "Обучи модель на данных из ChemBl предсказывать значение IC50. Модель сохрани с названием 'chembl_ic50'."}
 # inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
 # inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
-inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+# inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+# inputs = {"input": "Сгенерируй мне какие-нибудь молекулы."}
+# inputs = {"input": "Сгенерируй молекулы для лечения Alzheimer."}
+# 
+
 # inputs = {
 #     "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
 # }
 
+# inputs = {"input": "Запусти обучение генеративной модели на данных '/Users/alina/Desktop/ИТМО/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', назови кейс IC50_chembl."}
+# inputs = {"input": "Какой статус обучения у кейса Docking_hight?"}
+# inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
+
 
 if __name__ == "__main__":
     graph = GraphBuilder(conf)
-    res_1 = graph.run(inputs, debug=True, user_id="1")
+    while True:
+        task = input()
+        res_1 = graph.run({"input": task}, debug=True, user_id="1")
