@@ -319,7 +319,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
         
         api = HfApi(token=os.getenv("HF_TOKEN"))
         api.upload_file(
-            path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
+            path_or_fileobj="autotrain/utils/state.json",
             repo_id="SoloWayG/Molecule_transformer",
             repo_type="model",
             path_in_repo = 'state.json'
@@ -328,7 +328,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
     time.sleep(4)
     api = HfApi(token=os.getenv("HF_TOKEN"))
     api.upload_file(
-        path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
+        path_or_fileobj="autotrain/utils/state.json",
         repo_id="SoloWayG/Molecule_transformer",
         repo_type="model",
         path_in_repo = 'state.json'
