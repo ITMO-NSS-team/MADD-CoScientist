@@ -16,7 +16,7 @@ def get_state_from_server(case:str,url:str):
     if resp.status_code ==500:
         print(f"Server error:{resp.status_code}")
         return
-    if case in json.loads(resp.content)['ml_state']:
+    if case in json.loads(resp.content)['state']:
         print("Case already trained!")
     state = json.loads(resp.content)
     return state
@@ -48,10 +48,7 @@ def train_ml_with_data(
     }
 
     #Get state from server
-    state = get_state_from_server(case=case,url=url)
 
-    print(state['ml_state'])
-    print(state['calc_propreties']) 
     #Get state from server
     #resp = requests.post(url,json.dumps(params))
     p = Process(target=requests.post,args=[url,json.dumps(params)])
@@ -79,9 +76,10 @@ def predict_smiles(smiles_list : List[str],
 
 
 if __name__=='__main__':
+    #get_state_from_server(case="QED",url='http://10.64.4.247:81')
 ###############
 #Test train with default params
-    train_ml_with_data(case="Alzheimer22")
+    train_ml_with_data(case="Test22",classification_props=[],target_column=["QED"])
     print('Process created')
 
 ################

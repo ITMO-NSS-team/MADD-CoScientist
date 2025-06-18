@@ -187,6 +187,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
 
     beta = 0
     current_step = 0
+    state.gen_model_upd_status(case=case,status=1)
     for epoch in range(opt.epochs):
         total_loss, RCE_mol_loss, RCE_prop_loss, KLD_loss= 0, 0, 0, 0
         accum_train_printevery_n, accum_test_n, accum_test_printevery_n = 0, 0, 0
@@ -306,7 +307,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
         history.to_csv(f'{opt.save_folder_name}/weights/History_{opt.latent_dim}_epo={opt.epochs}.csv',index=True)
         if history['cond_score'][epoch]<best_cond_score:
             best_cond_score = history['cond_score'][epoch]
-            state.ml_model_upd_status(case=case,metric=best_cond_score,status=1)
+            state.gen_model_upd_status(case=case,metric=best_cond_score,status=1)
             # Export weights every epoch
             if not os.path.isdir('{}'.format(opt.save_folder_name)):
                 os.mkdir('{}'.format(opt.save_folder_name))
@@ -314,7 +315,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
                 os.mkdir('{}/epo{}'.format(f'{opt.save_folder_name}/weights', epoch + 1))
             torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/epo{epoch+1}/model_weights')
             torch.save(model.state_dict(), f'{opt.save_folder_name}/weights/model_weights')
-        state.gen_model_upd_status(case=case,model_weight_path=f'{opt.save_folder_name}/weights',status=2)
+        
         api = HfApi(token=os.getenv("HF_TOKEN"))
         api.upload_file(
             path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
@@ -322,4 +323,12 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
             repo_type="model",
             path_in_repo = 'state.json'
         )
-            
+    state.gen_model_upd_status(case=case,model_weight_path=f'{opt.save_folder_name}/weights',status=2)
+    time.sleep(4)
+    api = HfApi(token=os.getenv("HF_TOKEN"))
+    api.upload_file(
+        path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
+        repo_id="SoloWayG/Molecule_transformer",
+        repo_type="model",
+        path_in_repo = 'state.json'
+    )       

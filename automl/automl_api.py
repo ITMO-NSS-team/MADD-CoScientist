@@ -10,7 +10,7 @@ import socket
 import yaml
 from api_utils import *
 from automl.utils.base_state import TrainState
-#sys.path.append('automl')
+from huggingface_hub import hf_hub_download
 
 with open("automl/config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -44,7 +44,7 @@ if __name__=='__main__':
     # API operations
     @app.get("/check_state")
     def check_state():
-        state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+        state = TrainState(state_path='automl/state/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
@@ -54,6 +54,10 @@ if __name__=='__main__':
 
     @app.post("/train_ml")
     def train_ml_api(data:MLData=Body()):
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir='automl/state',
+                         force_download=True)
         train_ml_with_data(data)
 
     @app.post("/predict_ml")

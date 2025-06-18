@@ -103,13 +103,7 @@ def run_train_automl(case:str,
         model.predict(features=test.features)
         metrics[problem] = model.get_metrics(test.target)
     state.ml_model_upd_status(case=case,metric=metrics,status=2)
-    api = HfApi(token=os.getenv("HF_TOKEN"))
-    api.upload_file(
-        path_or_fileobj="/projects/generative_models_data/generative_models/transformer/autotrain/utils/state.json",
-        repo_id="SoloWayG/Molecule_transformer",
-        repo_type="model",
-        path_in_repo = 'state.json'
-    )
+    
         
 
 #Test function

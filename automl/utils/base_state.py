@@ -143,6 +143,13 @@ class TrainState:
         print(f"Data for ML models training has been updated! \
                \n Current predictable properties and tasks are {self.current_state[case]['ml_models']['Predictable properties']}")
         self.__save_state()
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="D:/Projects/CoScientist/automl/state/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
 
     def ml_model_upd_status(self,
                             case:str,
@@ -173,13 +180,14 @@ class TrainState:
         if not metric is None:
            self.current_state[case]["ml_models"]['metric'] =  metric
         self.__save_state()
-        if status==2:
-            api = HfApi(token=os.getenv("HF_TOKEN"))
-            api.upload_folder(
-                folder_path="automl/state/state.json",
-                repo_id="SoloWayG/Molecule_transformer",
-                repo_type="model",
-)
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="automl/state/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
+            
 
     def gen_model_upd_status(self,
                              case:str,
