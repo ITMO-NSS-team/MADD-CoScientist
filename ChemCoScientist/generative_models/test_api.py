@@ -2,6 +2,78 @@ import requests
 import json
 import socket
 import time 
+import pandas as pd
+from multiprocessing import Process
+
+def get_state_from_server(case:str,url:str):
+    url_ = url.split("http://")[1]
+    resp = requests.get("http://"+url_.split('/')[0]+"/check_state")
+    if resp.status_code ==500:
+        print(f"Server error:{resp.status_code}")
+        return
+    state = json.loads(resp.content)
+    return state['state'][case]
+
+def train_gen_with_data(
+    case = "Alzheimer",
+    data_path = "generative_models/transformer/docked_data_for_train/data_4j1r.csv",#path to client data folder
+    feature_column=['canonical_smiles'],
+    target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50'], #All propreties from dataframe you want to calculate in the end
+    regression_props = ['docking_score'], #Column name with data for regression tasks (That not include in calculcateble propreties)
+    classification_props = ['IC50'], #Column name with data for classification tasks (That not include in calculcateble propreties)
+    description = 'Case for Brain canser',
+    timeout = 5, # min
+    url: str = "http://10.32.2.2:81/train_gen_models",
+    fine_tune:bool = True,
+    n_samples =10,
+    **kwargs,
+):
+    start_time = time.time()
+    df = pd.read_csv(data_path).to_dict() # Transfer df to dict for server data transfer
+    params = {
+        'case': case,
+        "data" : df,
+        'target_column': target_column,
+        'feature_column': feature_column,
+        'timeout': timeout,
+        # 'description' : description,
+        'regression_props' : regression_props,
+        #'classification_props' : classification_props,
+        "fine_tune" :fine_tune,
+        'n_samples':n_samples,
+        **kwargs,
+    }
+
+    #Get state from server
+    #state = get_state_from_server(case=case,url=url)
+
+    #print(state)
+    #print(state['calc_propreties']) 
+    #Get state from server
+    #resp = requests.post(url,json.dumps(params))
+    p = Process(target=requests.post,args=[url,json.dumps(params)])
+    p.start()
+
+    time.sleep(4)
+    #p.terminate()
+    #resp = requests.post(url, data=json.dumps(params))
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+
+def generate_mol_by_case(case = "Alzheimer",
+                         url: str = "http://10.32.2.2:81/generate_gen_models_by_case",
+                         n_samples =10,
+                         **kwargs):
+    params = {
+        'case': case,
+        'n_samples':n_samples,
+        **kwargs,
+    }
+    start_time = time.time()
+    resp = requests.post(url, data=json.dumps(params))
+    print("--- %s seconds ---" % (time.time() - start_time))
+    return json.loads(resp.json())
+
 
 def call_for_generation(
     numb_mol: int = 3,
@@ -61,5 +133,28 @@ def call_for_generation(
     print("--- %s seconds ---" % (time.time() - start_time))
     return resp, json.loads(resp.json())
 
-ret = call_for_generation()
+#ret = call_for_generation()
 
+
+if __name__=='__main__':
+    # train_gen_with_data(case = "QED",
+    #                     url = "http://10.32.2.2:81/train_gen_models",
+    #                     target_column=['QED'],
+    #                      regression_props = ['QED'], #All propreties from dataframe you want to calculate in the end
+    #                     fine_tune=True,
+    #                     data_path='/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv',
+    #                     epochs=3)
+    # train_gen_with_data(case = "QED_4version",
+    #                     url = "http://10.32.2.2:81/train_gen_models",
+    #                     target_column=["QED"],
+    #                      regression_props = ["QED"],
+    #                     #classification_props = ['IC50'], #All propreties from dataframe you want to calculate in the end
+    #                     fine_tune=True,
+    #                     data_path='/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv',
+    #                     epochs=2)
+    # print(get_state_from_server(url = "http://10.32.2.2:81",case = "Ki"))
+
+
+    print(generate_mol_by_case(case = "QED_4version",
+                        url = "http://10.32.2.2:81/generate_gen_models_by_case",
+                        n_samples=5))

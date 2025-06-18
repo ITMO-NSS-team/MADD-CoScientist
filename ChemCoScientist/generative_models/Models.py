@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from generative_models.Layers import EncoderLayer, DecoderLayer
-from generative_models.Embed import Embedder, PositionalEncoder
-from generative_models.Sublayers import Norm
+from Layers import EncoderLayer, DecoderLayer
+from Embed import Embedder, PositionalEncoder
+from Sublayers import Norm
 import copy
 import numpy as np
 

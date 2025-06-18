@@ -28,6 +28,7 @@ RUN mkdir -p ~/miniconda3 && \
     ~/miniconda3/bin/conda init bash && \
     ~/miniconda3/bin/conda init zsh
 
+ENV ML_MODEL_URL = 'http://10.64.4.247:81'
 ENV HF_TOKEN="HF_TOKEN"
 ENV PATH ~/miniconda3/miniconda/bin:$PATH
 ENV LB_LIBRARY_PATH="~/miniconda3/miniconda/lib:\$LB_LIBRARY_PATH"
@@ -45,6 +46,15 @@ RUN cd /projects/generative_models && \
     pip install -r requirements.txt && \
     pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116 && \
     chmod 777 /projects/generative_models/api.sh
+
+RUN cd /projects/generative_models/autotrain && \
+    huggingface-cli download SoloWayG/Molecule_transformer --local-dir . && \
+    rm state.json && \
+    rm .gitattributes && \
+    rm README.md
+
+
+
 
 
 WORKDIR /projects/generative_models

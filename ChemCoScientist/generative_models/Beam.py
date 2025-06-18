@@ -1,5 +1,5 @@
 import torch
-from generative_models.Batch import nopeak_mask
+from Batch import nopeak_mask
 import torch.nn.functional as F
 import math
 import numpy as np

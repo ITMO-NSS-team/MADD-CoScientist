@@ -77,10 +77,10 @@ def case_trainer(data:TrainData=Body()):
     Returns:
         _type_: _description_
     """
-    state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+    state = TrainState(state_path='autotrain/utils/state.json')
     if data.data is not None:
                 df = pd.DataFrame(data.data)
-                data.data_path = f"generative_models/transformer/autotrain/data/{data.case}"
+                data.data_path = f"autotrain/data/{data.case}"
                 if not os.path.isdir(data.data_path):
                     os.mkdir(data.data_path)
                 data.data_path = data.data_path + '/data.csv'
@@ -92,8 +92,8 @@ def case_trainer(data:TrainData=Body()):
     
    
     if data.fine_tune==True:
-        load_weights = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
-        load_weights_fields = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+        load_weights = 'autotrain/Alzheimer/weights'
+        load_weights_fields = 'autotrain/Alzheimer/weights'
         data.new_vocab = False
     else:
          load_weights=None
@@ -102,10 +102,9 @@ def case_trainer(data:TrainData=Body()):
     # if state(CASE) is None:#Check if case exist
     #     state.add_new_case(CASE,rewrite=False)
     
-    if state(data.case,'ml')['target_column'] is None:
-        state(data.case,'ml')['target_column']=  data.target_column
-    if state(data.case,'ml')['feature_column'] is None:
-        state(data.case,'ml')['feature_column'] = data.feature_column
+    if state(data.case,'ml') is None:
+        print(f"{data.case} is not exist! Train ML model before")
+        return 0
 
     use_cond2dec = False
     main(
@@ -120,7 +119,8 @@ def case_trainer(data:TrainData=Body()):
          load_weights=load_weights,
          load_weights_fields = load_weights_fields,
          use_cond2dec=use_cond2dec,
-        new_vocab= data.new_vocab)
+        new_vocab= data.new_vocab,
+        ml_model_url=os.getenv('ML_MODEL_URL'))
 
 
 def case_generator(data:GenData=Body()):

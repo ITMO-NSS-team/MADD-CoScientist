@@ -3,19 +3,19 @@ import sys
 import os
 import_path = os.getcwd()
 sys.path.append(import_path)
-from generative_models.train_data.utils.auto_train_loop import train_model,train_model_auto
-from generative_models.train_data.utils.config import configurate_parser
-from generative_models.Models import get_model
-from generative_models.Process import *
-from generative_models.Optim import CosineWithRestarts
+from train_data.utils.auto_train_loop import train_model,train_model_auto
+from train_data.utils.config import configurate_parser
+from Models import get_model
+from Process import *
+from Optim import CosineWithRestarts
 import dill as pickle
 import pandas as pd
-from generative_models.ic50_classifire_model.read_ic50 import Ic50
+from ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')
 from utils.base_state import TrainState
-from utils.config import Config
+from autotrain.utils.config import Config
 
 
 def main(server_dir = 'generative_models/train_dislip',
@@ -24,6 +24,7 @@ def main(server_dir = 'generative_models/train_dislip',
          data_path_with_conds = 'generative_models/docked_data_for_train/data_5vfi.csv',
          test_mode = False,
          state = None,
+         ml_model_url= 'http://10.64.4.247:81',
          *args,
          **kwargs):
     """Main function to start training.
@@ -49,7 +50,7 @@ def main(server_dir = 'generative_models/train_dislip',
                                 )
     opt.conditions = conditions
     state.gen_model_upd_status(case=case,model_weight_path=server_dir+f'/{case}')
-    opt.url_ml_model = url
+    opt.url_ml_model = ml_model_url
     opt.feature_col = state(case,'ml')['feature_column']
     
     opt.device = 'cuda' if opt.cuda else 'cpu'

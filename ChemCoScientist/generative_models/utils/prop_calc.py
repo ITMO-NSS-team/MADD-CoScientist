@@ -1,4 +1,4 @@
-from generative_models.transformer.autodock_vina_python3.src.docking_score import docking_list
+from autodock_vina_python3.src.docking_score import docking_list
 from utils.validation import check_chem_valid, eval_P_S_G, eval_qed, eval_sa, check_brenk
 import lightgbm
 from utils.check_novelty import check_novelty_chembl

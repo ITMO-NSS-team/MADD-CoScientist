@@ -5,10 +5,11 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
 sys.path.append('~')
 import torch.nn as nn
-from generative_models.transformer.Process import *
-from generative_models.transformer.Batch import create_masks
-from generative_models.transformer.inference import validate_docking, validate_props
+from Process import *
+from Batch import create_masks
+from inference import validate_docking, validate_props
 import warnings
+from huggingface_hub import HfApi
 warnings.filterwarnings('ignore')
 import torch.nn.functional as F
 #from generative_models.transformer.Optim import CosineWithRestarts

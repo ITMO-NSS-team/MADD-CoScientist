@@ -113,7 +113,7 @@ def configurate_parser(import_path : str,
     parser.add_argument('-verbose', type=bool, default=True)
     parser.add_argument('-save_folder_name', type=str, default=save_folder_name)
     parser.add_argument('-print_model', type=bool, default=False)
-    parser.add_argument('-printevery', type=int, default=5)
+    parser.add_argument('-printevery', type=int, default=1)
     parser.add_argument('-historyevery', type=int, default=5) # must be a multiple of printevery
     parser.add_argument('-load_weights',default=load_weights)
     parser.add_argument('-new_vocab',default=new_vocab)

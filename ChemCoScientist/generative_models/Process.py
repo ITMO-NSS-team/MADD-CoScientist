@@ -2,13 +2,13 @@ import pandas as pd
 import torch
 import torchtext
 from torchtext import data
-from generative_models.Tokenize import moltokenize
-from generative_models.Batch import MyIterator, batch_size_fn
+from Tokenize import moltokenize
+from Batch import MyIterator, batch_size_fn
 import os
 import dill as pickle
 import numpy as np
 import sys
-import ChemCoScientist.generative_models as KOSTIL_FOR_PICKL
+import dataDistibutionCheck as KOSTIL_FOR_PICKL
 sys.modules['generative_models.Sber_Alzheimer'] = KOSTIL_FOR_PICKL
 
 sys.path.append(os.path.dirname(__file__))
@@ -218,7 +218,8 @@ def create_dataset_auto(opt, SRC, TRG, PROP, tr_te,test_mode:bool = False, shuff
     except:
         pass
 
-
+    pickle.dump(SRC, open(f'{opt.save_folder_name}/weights/SRC.pkl', 'wb'))
+    pickle.dump(TRG, open(f'{opt.save_folder_name}/weights/TRG.pkl', 'wb'))
     if tr_te == "tr":
         if opt.load_weights_fields is None:
             print("     - building vocab from train data...")
