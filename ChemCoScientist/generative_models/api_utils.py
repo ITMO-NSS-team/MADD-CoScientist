@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from autotrain.utils.base_state import TrainState
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
-from generative_models.GAN.gan_lstm_refactoring.gen import generate
+from GAN.gan_lstm_refactoring.gen import generate
 from generate.config import parsing
 from train_data.utils.config_generate import configurate_parser
 from train_data.generate import generator_for_agent_multi_prop as multi_generator
