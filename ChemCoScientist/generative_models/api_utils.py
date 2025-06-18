@@ -49,6 +49,7 @@ class TrainData(BaseModel):
         n_samples:int = 1000
         fine_tune:bool = True
         new_vocab:bool = False
+        epochs:int = 10
         # regression_props:list= None
         # classification_props:list = None
 
@@ -107,7 +108,7 @@ def case_trainer(data:TrainData=Body()):
         return 0
 
     use_cond2dec = False
-    main(
+    main(epochs=data.epochs,
          conditions = state(data.case,'ml')['target_column'],
          case=data.case, 
          server_dir = f'autotrain/train_{data.case}',
