@@ -164,7 +164,7 @@ class TrainState:
             status (int, optional): ID value of status. Where 0 - "Not Trained", 1 - Training, 2 - "Trained". Defaults to None.
         """
         valid_status = ['Not Trained','Training','Trained']
-        if status is not None and self.current_state[case]["ml_models"]['status'] != 'Trained':
+        if status is not None:
             self.current_state[case]["ml_models"]['status'] = valid_status[status]
         elif self.current_state[case]["ml_models"]['status'] == 'Trained':
             print(f'ML model for task "{case}" already trained!')
@@ -180,7 +180,8 @@ class TrainState:
     def gen_model_upd_status(self,
                              case:str,
                              model_weight_path:str = None,
-                             metric = None):
+                             metric = None,
+                             status:int = None):
         """Updates the training status of the generative model on each call.
           Additionally, you can specify the path to the folder where the model weights are saved after training.
         Also, you can specify the metric value after training.
@@ -191,12 +192,9 @@ class TrainState:
             metric (_type_, optional): Value of metric after model training. Defaults to None.
         """
 
-        if self.current_state[case]["generative_models"]['status'] is None:
-            self.current_state[case]["generative_models"]['status'] = 'Training'
-        elif self.current_state[case]["generative_models"]['status'] == 'Training':
-            self.current_state[case]["generative_models"]['status'] = 'Trained'
-        else:
-            print(f'Generative model for task "{case}" already trained!')
+        valid_status = ['Not Trained','Training','Trained']
+        if status is not None:
+            self.current_state[case]["generative_models"]['status'] = valid_status[status]
         if model_weight_path is not None:
             if not os.path.isdir(model_weight_path):
                 os.mkdir(model_weight_path)

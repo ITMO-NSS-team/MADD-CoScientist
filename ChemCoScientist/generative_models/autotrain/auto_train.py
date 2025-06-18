@@ -14,7 +14,7 @@ from ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')
-from utils.base_state import TrainState
+from autotrain.utils.base_state import TrainState
 from autotrain.utils.config import Config
 
 
