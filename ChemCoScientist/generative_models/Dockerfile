@@ -29,7 +29,7 @@ RUN mkdir -p ~/miniconda3 && \
     ~/miniconda3/bin/conda init zsh
 
 ENV ML_MODEL_URL = 'http://10.64.4.247:81'
-ENV HF_TOKEN="HF_TOKEN"
+ENV HF_TOKEN=""
 ENV PATH ~/miniconda3/miniconda/bin:$PATH
 ENV LB_LIBRARY_PATH="~/miniconda3/miniconda/lib:\$LB_LIBRARY_PATH"
 SHELL ["/bin/bash", "-ic"]
@@ -48,15 +48,20 @@ RUN cd /projects/generative_models && \
     chmod 777 /projects/generative_models/api.sh
 
 RUN cd /projects/generative_models/autotrain && \
-    huggingface-cli download SoloWayG/Molecule_transformer --local-dir . && \
-    rm state.json && \
-    rm .gitattributes && \
-    rm README.md
+    conda deactivate && \
+    conda activate Mol_gen_env && \ 
+    pip install -U "huggingface_hub[cli]" && \
+    huggingface-cli download SoloWayG/Molecule_transformer --local-dir .
+    # && \
+    # rm state.json && \
+    # rm .gitattributes && \
+    # rm README.md
 
 
 
 
 
 WORKDIR /projects/generative_models
+ENV GEN_APP_PORT='93'
 ENTRYPOINT [ "/bin/bash", "/projects/generative_models/api.sh" ]
 

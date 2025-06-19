@@ -187,13 +187,13 @@ if __name__=='__main__':
     @app.post("/train_gen_models")
     def case_run(data:TrainData=Body()):
         
-        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='generative_models/transformer/autotrain/utils')
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='autotrain/utils')
         case_trainer(data)
         #return json.dumps()
 
     @app.get("/check_state")
     def check_state():
-        state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+        state = TrainState(state_path='autotrain/utils/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
@@ -228,4 +228,4 @@ if __name__=='__main__':
         uvicorn_ip = ip
     else:
         uvicorn_ip = '127.0.0.1' 
-    uvicorn.run(app,host=uvicorn_ip,port=81,log_level='info')
+    uvicorn.run(app,host=uvicorn_ip,port=int(os.getenv('GEN_APP_PORT')),log_level='info')
