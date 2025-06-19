@@ -19,3 +19,13 @@
 "Start generating molecules for the MEK1 case."
 "Predict the properties of COc1ccc(-c2cc3ncn(C)c(=O)c3c(NC3CC3)n2)cc1OC using the MEK1 ml model."
 "Find out for which cases there are generative models ready for inference?"
+```
+## Agent system diagram
+![Multi-Agent System](https://github.com/ITMO-NSS-team/CoScientist/tree/main/ChemCoScientist/diagram.png)
+
+
+
+
+
+
+
