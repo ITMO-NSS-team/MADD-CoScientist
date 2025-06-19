@@ -76,11 +76,11 @@ def predict_smiles(smiles_list : List[str],
 
 
 if __name__=='__main__':
-    #get_state_from_server(case="QED",url='http://10.64.4.247:81')
+    print(get_state_from_server(case="egfiction",url='http://10.64.4.247:81'))
 ###############
 #Test train with default params
-    train_ml_with_data(case="Test22",classification_props=[],target_column=["QED"])
-    print('Process created')
+    # train_ml_with_data(case="Test22",classification_props=[],target_column=["QED"])
+    # print('Process created')
 
 ################
 #Test predict

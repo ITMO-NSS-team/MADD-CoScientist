@@ -86,6 +86,8 @@ def case_trainer(data:TrainData=Body()):
                     if not os.path.isdir(data.data_path):
                         os.mkdir(data.data_path)
                     data.data_path = data.data_path + '/data.csv'
+                    df = df.dropna()
+                    df = df[df[data.feature_column[0]].str.len()<200]
                     df.to_csv(data.data_path) 
         #CASE = 'CYK'
         # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
