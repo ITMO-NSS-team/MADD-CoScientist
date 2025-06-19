@@ -31,6 +31,8 @@ def train_ml_with_data(data:MLData=Body()):
                 if not os.path.isdir(data.data_path):
                     os.mkdir(data.data_path)
                 data.data_path = data.data_path + '/data.csv'
+                df = df.dropna()
+                df = df[df[data.feature_column].str.len()<200]
                 df.to_csv(data.data_path) 
                       
         state.ml_model_upd_data(case=data.case,
