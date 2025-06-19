@@ -21,7 +21,7 @@
 "Find out for which cases there are generative models ready for inference?"
 ```
 ## Agent system diagram
-![Multi-Agent System](https://github.com/ITMO-NSS-team/CoScientist/tree/main/ChemCoScientist/diagram.png)
+![Multi-Agent System](./diagram.png)
 
 
 
