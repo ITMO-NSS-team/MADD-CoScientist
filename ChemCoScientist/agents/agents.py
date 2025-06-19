@@ -1,21 +1,19 @@
 import time
-from smolagents import CodeAgent, OpenAIServerModel
-from smolagents import DuckDuckGoSearchTool
-from ChemCoScientist.tools.chemist_tools import fetch_chembl_data, fetch_BindingDB_data
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
+from smolagents import CodeAgent, DuckDuckGoSearchTool, OpenAIServerModel
 
 from ChemCoScientist.agents.agents_prompts import (
+    additional_ds_builder_prompt,
+    automl_prompt,
     ds_builder_prompt,
     worker_prompt,
-    additional_ds_builder_prompt,
 )
-from ChemCoScientist.tools import (
-    chem_tools,
-    nanoparticle_tools,
-)
+from ChemCoScientist.tools import chem_tools, nanoparticle_tools
+from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
 from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
 
 
@@ -38,12 +36,8 @@ def dataset_builder_agent(state: dict, config: dict):
     )
 
     response = agent.run(
-        ds_builder_prompt
-        + config_cur_agent["ds_dir"]
-        + "\n"
-        "So, user ask: \n"
-        + task
-        + additional_ds_builder_prompt
+        ds_builder_prompt + config_cur_agent["ds_dir"] + "\n"
+        "So, user ask: \n" + task + additional_ds_builder_prompt
     )
 
     return Command(
@@ -53,11 +47,10 @@ def dataset_builder_agent(state: dict, config: dict):
             "nodes_calls": [("dataset_builder_agent", str(response))],
         },
     )
-    
+
+
 def ml_dl_agent(state: dict, config: dict):
-    config_cur_agent = config["configurable"]["additional_agents_info"][
-        "ml_dl_agent"
-    ]
+    config_cur_agent = config["configurable"]["additional_agents_info"]["ml_dl_agent"]
     plan = state["plan"]
     task = plan[0]
 
@@ -72,15 +65,7 @@ def ml_dl_agent(state: dict, config: dict):
         additional_authorized_imports=["*"],
     )
 
-    response = agent.run(
-        """So, your options:
-        1) Start training if the case is not found in get_case_state_from_sever
-        2) Call model for inference (predict properties or generate new molecules or both)
-
-        First of all you should call get_state_from_sever to check existing cases!!!
-        Check feature_column name and format. It should be list.
-        So, your task from the user: """ + task
-    )
+    response = agent.run(automl_prompt + task)
 
     return Command(
         goto="replan_node",
@@ -145,7 +130,7 @@ def chemist_node(state, config: dict):
     return Command(
         goto=END,
         update={
-            "response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"
+            "response": "I can't answer to your question right now. Perhaps there is something else that I can help?"
         },
     )
 
@@ -214,6 +199,6 @@ def nanoparticle_node(state, config: dict):
     return Command(
         goto=END,
         update={
-            "response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"
+            "response": "I can't answer to your question right now. Perhaps there is something else that I can help?"
         },
     )

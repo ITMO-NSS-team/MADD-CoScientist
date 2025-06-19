@@ -1,56 +1,67 @@
 import json
+import os
+import subprocess
+import sys
 import time
 from multiprocessing import Process
-from typing import List, Tuple
+from typing import List, Tuple, Union
+
 import pandas as pd
 import requests
-from typing import Union
 from smolagents import tool
-import os
-import sys
-import subprocess
 
+from ChemCoScientist.tools.utils import filter_valid_strings
 
 # TODO: make yaml conf
 conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:81"}
 
-# TODO: delete url for docstring and make yaml conf
+
 @tool
 def get_state_from_server(url: str = conf["url_pred"]) -> Union[dict, str]:
-    """Get information about all available models (cases), 
+    """Get information about all available models (cases),
     their status (training, trained), description, metrics.
-    
+
+    Important note: if the returned dictionary has the status key not Training, Trained, None, but text content.
+    Then an error occurred. And this is its description. Notify the user about it.
+
     Args:
-        url (str): Url for server, for predictive is http://10.64.4.247:81, for generative is http://10.32.2.2:81
+        url (str): Url for server, for predictive is 'http://10.64.4.247:81' , for generative is 'http://10.32.2.2:81'
     """
     url_ = url.split("http://")[1]
-    resp = requests.get("http://"+url_.split('/')[0]+"/check_state")
-    if resp.status_code ==500:
+    resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
+    if resp.status_code == 500:
         print(f"Server error:{resp.status_code}")
         return "Server error"
     state = json.loads(resp.content)
-    return state['state']
+    return state["state"]
 
-# TODO: delete url for docstring and make yaml conf
+
 @tool
-def get_case_state_from_server(case: str, url: str = conf["url_pred"]) -> Union[dict, str]:
-    """Get information about a specific case/model (if found), 
+def get_case_state_from_server(
+    case: str, url: str = conf["url_pred"]
+) -> Union[dict, str]:
+    """Get information about a specific case/model (if found),
     its status (in training, trained), metrics, etc.
-    
+
+    Important note: if the returned dictionary has the status key not Training, Trained, None, but text content.
+    Then an error occurred. And this is its description. Notify the user about it.
+
     Args:
         case (str): Name of case
-        url (str): Url for server, for predictive is http://10.64.4.247:81, for generative is http://10.32.2.2:81
+        url (str): Url for server, for predictive is 'http://10.64.4.247:81' , for generative is 'http://10.32.2.2:81'
     """
+
     url_ = url.split("http://")[1]
-    resp = requests.get("http://"+url_.split('/')[0]+"/check_state")
-    if resp.status_code ==500:
+    resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
+    if resp.status_code == 500:
         print(f"Server error:{resp.status_code}")
         return "Server error"
     state = json.loads(resp.content)
     try:
-        return state['state'][case]
+        return state["state"][case]
     except:
         return f"Case with name: {case} not found"
+
 
 @tool
 def predict_prop_by_smiles(
@@ -77,18 +88,30 @@ def predict_prop_by_smiles(
     resp = requests.post(url, json.dumps(params))
     return resp, resp.json()
 
+
 def train_gen_with_data(
-    case = "no_name",
-    data_path = "./data_dir_for_coder/kras_g12c_affinity_data.xlsx",#path to client data folder
-    feature_column=['smiles'],
-    target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50'], #All propreties from dataframe you want to calculate in the end
-    regression_props = ['docking_score'], #Column name with data for regression tasks (That not include in calculcateble propreties)
-    classification_props = [], #Column name with data for classification tasks (That not include in calculcateble propreties)
-    description = 'Descrption not provided',
-    timeout = 5, # min
+    case="no_name",
+    data_path="./data_dir_for_coder/kras_g12c_affinity_data.xlsx",  # path to client data folder
+    feature_column=["smiles"],
+    target_column=[
+        "docking_score",
+        "QED",
+        "Synthetic Accessibility",
+        "PAINS",
+        "SureChEMBL",
+        "Glaxo",
+        "Brenk",
+        "IC50",
+    ],  # All propreties from dataframe you want to calculate in the end
+    regression_props=[
+        "docking_score"
+    ],  # Column name with data for regression tasks (That not include in calculcateble propreties)
+    classification_props=[],  # Column name with data for classification tasks (That not include in calculcateble propreties)
+    description="Descrption not provided",
+    timeout=5,  # min
     url: str = "http://10.32.2.2:81/train_gen_models",
-    fine_tune:bool = True,
-    n_samples = 10,
+    fine_tune: bool = True,
+    n_samples=10,
     **kwargs,
 ):
     """
@@ -99,7 +122,7 @@ def train_gen_with_data(
         data_path (str): Path to data for training (in csv or excel format). Must consist SMILES!
         feature_column (list): Names of columns with features (input data) for training. Default is ['smiles'].
         target_column (list): Names of columns (properties) with target data for training. All propreties from dataframe you want to calculate in the end
-        regression_props (list): Names of columns with data for regression tasks. Skip if you dont need regression! 
+        regression_props (list): Names of columns with data for regression tasks. Skip if you dont need regression!
         classification_props (list): Names of columns with data for classification tasks. Skip if you dont need classification!
         description (str): Description of model/case.
         timeout (int): Timeout for training in minutes.
@@ -109,25 +132,27 @@ def train_gen_with_data(
     """
     start_time = time.time()
     try:
-        df = pd.read_csv(data_path).to_dict() # Transfer df to dict for server data transfer
+        df = pd.read_csv(
+            data_path
+        ).to_dict()  # Transfer df to dict for server data transfer
     except:
         df = pd.read_excel(data_path).to_dict()
-        
+
     params = {
-        'case': case,
-        "data" : df,
-        'target_column': target_column,
-        'feature_column': feature_column,
-        'timeout': timeout,
-        'description' : description,
-        'regression_props' : regression_props,
-        'classification_props' : classification_props,
-        "fine_tune" :fine_tune,
-        'n_samples':n_samples,
+        "case": case,
+        "data": df,
+        "target_column": target_column,
+        "feature_column": feature_column,
+        "timeout": timeout,
+        "description": description,
+        "regression_props": regression_props,
+        "classification_props": classification_props,
+        "fine_tune": fine_tune,
+        "n_samples": n_samples,
         **kwargs,
     }
 
-    p = Process(target=requests.post,args=[url,json.dumps(params)])
+    p = Process(target=requests.post, args=[url, json.dumps(params)])
     p.start()
 
     time.sleep(4)
@@ -167,7 +192,9 @@ def train_ml_with_data(
         bool (succces or not)"""
     start_time = time.time()
     try:
-        df = pd.read_csv(data_path).to_dict() # Transfer df to dict for server data transfer
+        df = pd.read_csv(
+            data_path
+        ).to_dict()  # Transfer df to dict for server data transfer
     except:
         df = pd.read_excel(data_path).to_dict()
     start_time = time.time()
@@ -195,43 +222,207 @@ def train_ml_with_data(
 
     return True
 
-def ml_dl_training(case: str, path: str, feature_column=['canonical_smiles'], 
-                       target_column=["docking_score"], regression_props=['docking_score'], 
-                       classification_props = []
-    ):
+
+def ml_dl_training(
+    case: str,
+    path: str,
+    feature_column=["canonical_smiles"],
+    target_column=["docking_score"],
+    regression_props=["docking_score"],
+    classification_props=[],
+):
     ml_ready = False
     train_ml_with_data(
-        case = case,
-        data_path = path,
-        feature_column = feature_column, 
-        target_column = target_column,
-        regression_props = regression_props,
-        classification_props = classification_props
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
     )
-    print('Start training ml model for case: ', case)
+    print("Start training ml model for case: ", case)
     while not ml_ready:
-        print('Training ml-model in progress for case: ', case)
+        print("Training ml-model in progress for case: ", case)
         st = get_case_state_from_server(case, conf["url_pred"])
         if isinstance(st, dict):
-            if st['ml_models']['status'] == 'Trained':
+            if st["ml_models"]["status"] == "Trained":
                 ml_ready = True
-        time.sleep(30)
-        
+        time.sleep(60)
+
     train_gen_with_data(
-        case = case,
-        data_path = path,
-        feature_column = feature_column, 
-        target_column = target_column,
-        regression_props = regression_props,
-        classification_props = classification_props
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+        # TODO: rm after testing automl pipeline
+        epoch=1,
     )
-    print('Start training gen model for case: ', case)
+    print("Start training gen model for case: ", case)
+
+
+def ml_dl_training(
+    case: str,
+    path: str,
+    feature_column=["canonical_smiles"],
+    target_column=["docking_score"],
+    regression_props=["docking_score"],
+    classification_props=[],
+):
+    ml_ready = False
+    train_ml_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+    )
+    print("Start training ml model for case: ", case)
+    while not ml_ready:
+        print("Training ml-model in progress for case: ", case)
+        st = get_case_state_from_server(case, conf["url_pred"])
+        if isinstance(st, dict):
+            if st["ml_models"]["status"] == "Trained":
+                ml_ready = True
+        time.sleep(60)
+
+    train_gen_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+        # TODO: rm after testing automl pipeline
+        epoch=1,
+    )
+    print("Start training gen model for case: ", case)
+
+
+def ml_dl_training(
+    case: str,
+    path: str,
+    feature_column=["canonical_smiles"],
+    target_column=["docking_score"],
+    regression_props=["docking_score"],
+    classification_props=[],
+):
+    ml_ready = False
+    train_ml_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+    )
+    print("Start training ml model for case: ", case)
+    while not ml_ready:
+        print("Training ml-model in progress for case: ", case)
+        st = get_case_state_from_server(case, conf["url_pred"])
+        if isinstance(st, dict):
+            if st["ml_models"]["status"] == "Trained":
+                ml_ready = True
+        time.sleep(60)
+
+    train_gen_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+        # TODO: rm after testing automl pipeline
+        epoch=1,
+    )
+    print("Start training gen model for case: ", case)
+
 
 @tool
-def generate_mol_by_case(case: str = "Alzheimer",
-                         url: str = "http://10.32.2.2:81/generate_gen_models_by_case",
-                         n_samples: int = 10
-                         ) -> dict:
+def just_ml_training(
+    case: str,
+    path: str,
+    feature_column: list = ["canonical_smiles"],
+    target_column: list = ["docking_score"],
+    regression_props: list = ["docking_score"],
+    classification_props: list = [],
+) -> bool:
+    """
+    Launch training of ONLY ML-model (predictive).
+
+    Use only as a last resort!
+
+    Args:
+        case (str): Name of model.
+        path (str): Path to the CSV file containing the dataset.
+        feature_column (list): The name of the column containing the input features. You must be sure that such a column exists!
+        target_column (list): All propreties from dataframe you want to calculate in the end. This field cannot be left blank (no empty list)!
+        regression_props (list, optional): Column names with data for regression tasks. Fill in the list! It should duplicate feature_column.
+        classification_props (list, optional): Column name with data for classification tasks. Set '[]' if you dont need classification!
+    """
+
+    if regression_props == [] and classification_props == []:
+        regression_props = target_column
+    if len(target_column) < 1:
+        raise ValueError(
+            "target_column is empty! You must set value. For example = ['IC50']"
+        )
+    if len(feature_column) < 1:
+        raise ValueError(
+            "feature_column is empty! You must set value. For example = ['smiles']"
+        )
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Data file not found: {path}")
+    try:
+        df = pd.read_csv(path)
+    except:
+        df = pd.read_excel(path)
+
+    if len(df.values.tolist()) < 300:
+        raise ValueError(
+            "Training on this data is impossible. The dataset is too small!"
+        )
+
+    for column in feature_column:
+        if column not in df.columns.tolist():
+            raise ValueError(
+                f'No "{column}" column in data! Change argument and run again! Avilable: '
+                + str(df.columns.tolist())
+            )
+    for column in target_column:
+        if column not in df.columns.tolist():
+            raise ValueError(
+                f'No "{column}" column in data! Change argument and run again! Avilable: '
+                + str(df.columns.tolist())
+            )
+
+    # delete molecules eith len more 200
+    clear_df = filter_valid_strings(df, feature_column[0])
+    if path.split(".")[-1] == "csv":
+        clear_df.to_csv(path)
+    else:
+        clear_df.to_excel(path)
+
+    train_ml_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+    )
+    print("Start training ml model for case: ", case)
+    return True
+
+
+@tool
+def generate_mol_by_case(
+    case: str = "Alzheimer",
+    url: str = "http://10.32.2.2:81/generate_gen_models_by_case",
+    n_samples: int = 10,
+) -> dict:
     """Runs molecules generation using inference-ready (previously trained) generative models.
 
     Args:
@@ -240,28 +431,33 @@ def generate_mol_by_case(case: str = "Alzheimer",
         n_samples (int, optional): Number of molecules to generate. Default is 1
     """
     params = {
-        'case': case,
-        'n_samples':n_samples,
+        "case": case,
+        "n_samples": n_samples,
     }
     start_time = time.time()
     resp = requests.post(url, data=json.dumps(params))
     print("--- %s seconds ---" % (time.time() - start_time))
     return json.loads(resp.json())
 
+
 @tool
-def run_ml_dl_training_by_daemon(case: str, path: str, feature_column: list = ['smiles'], 
-                       target_column: list = ["docking_score"], regression_props: list = ['docking_score'], 
-                       classification_props: list = []
-    ) -> Union[bool, str]:
+def run_ml_dl_training_by_daemon(
+    case: str,
+    path: str,
+    feature_column: list = ["smiles"],
+    target_column: list[str] = ["docking_score"],
+    regression_props: list[str] = ["docking_score"],
+    classification_props: list = [],
+) -> Union[bool, str]:
     """
     1) Trains a predictive machine learning model using user-provided or prepared by a special agent dataset.
     This function reads a dataset from a specified file, processes it into a dictionary,
     and sends it to a remote server for training.
     2) Then start a generative deep learning model using user-provided or prepared by a special agent dataset.
-    
-    The processes are running in the background (by daemon). This takes some time. 
+
+    The processes are running in the background (by daemon). This takes some time.
     The status can be checked with "get_state_case_from_server".
-    
+
     Args:
         case (str): Name of model.
         path (str): Path to the CSV file containing the dataset.
@@ -269,74 +465,97 @@ def run_ml_dl_training_by_daemon(case: str, path: str, feature_column: list = ['
         target_column (list): All propreties from dataframe you want to calculate in the end. This field cannot be left blank (no empty list)!
         regression_props (list, optional): Column names with data for regression tasks. Fill in the list! It should duplicate feature_column.
         classification_props (list, optional): Column name with data for classification tasks. Set '[]' if you dont need classification!
-    
+
     note: Either regression_props or classification_props must be filled in.
     """
-    
+
     if regression_props == [] and classification_props == []:
         regression_props = target_column
     if len(target_column) < 1:
-        raise ValueError("target_column is empty! You must set value. For example = ['IC50']")
+        raise ValueError(
+            "target_column is empty! You must set value. For example = ['IC50']"
+        )
     if len(feature_column) < 1:
-        raise ValueError("feature_column is empty! You must set value. For example = ['smiles']")
+        raise ValueError(
+            "feature_column is empty! You must set value. For example = ['smiles']"
+        )
     if not os.path.exists(path):
         raise FileNotFoundError(f"Data file not found: {path}")
     try:
         df = pd.read_csv(path)
     except:
         df = pd.read_excel(path)
-        
+
+    if len(df.values.tolist()) < 300:
+        raise ValueError(
+            "Training on this data is impossible. The dataset is too small!"
+        )
+
     for column in feature_column:
         if column not in df.columns.tolist():
-            raise ValueError(f'No "{column}" column in data! Change argument and run again! Avilable: ' + str(df.columns.tolist()))
+            raise ValueError(
+                f'No "{column}" column in data! Change argument and run again! Avilable: '
+                + str(df.columns.tolist())
+            )
     for column in target_column:
         if column not in df.columns.tolist():
-            raise ValueError(f'No "{column}" column in data! Change argument and run again! Avilable: ' + str(df.columns.tolist()))
-        
+            raise ValueError(
+                f'No "{column}" column in data! Change argument and run again! Avilable: '
+                + str(df.columns.tolist())
+            )
+
+    # delete molecules eith len more 200
+    clear_df = filter_valid_strings(df, feature_column[0])
+    if path.split(".")[-1] == "csv":
+        clear_df.to_csv(path)
+    else:
+        clear_df.to_excel(path)
+
     cmd = [
-            sys.executable, '-c',
-            (
-        "from ChemCoScientist.tools.ml_tools import ml_dl_training;"
-        "ml_dl_training("
-        f"case='{case}',"
-        f"path='{path}',"
-        f"feature_column={feature_column},"
-        f"target_column={target_column},"
-        f"regression_props={regression_props},"
-        f"classification_props={classification_props}"
-        ")"
-    )
-        ]
-        
+        sys.executable,
+        "-c",
+        (
+            "from ChemCoScientist.tools.ml_tools import ml_dl_training;"
+            "ml_dl_training("
+            f"case='{case}',"
+            f"path='{path}',"
+            f"feature_column={feature_column},"
+            f"target_column={target_column},"
+            f"regression_props={regression_props},"
+            f"classification_props={classification_props}"
+            ")"
+        ),
+    ]
+
     try:
         subprocess.Popen(
-                cmd,
-                stdout=open('/tmp/ml_training.log', 'a'),
-                stderr=open('/tmp/ml_training.err', 'a'),
-                cwd='/Users/alina/Desktop/ИТМО/ChemCoScientist'
-            )
+            cmd,
+            stdout=open("/tmp/ml_training.log", "a"),
+            stderr=open("/tmp/ml_training.err", "a"),
+            cwd="/Users/alina/Desktop/ИТМО/ChemCoScientist",
+        )
         time.sleep(5)
         return True
     except Exception as e:
         print(f"Failed to start process: {e}", file=sys.stderr)
         return False
-    
-    
-agents_tools = [run_ml_dl_training_by_daemon, get_case_state_from_server, get_state_from_server, generate_mol_by_case, predict_prop_by_smiles]
+
+
+agents_tools = [
+    run_ml_dl_training_by_daemon,
+    get_case_state_from_server,
+    get_state_from_server,
+    generate_mol_by_case,
+    predict_prop_by_smiles,
+]
 if __name__ == "__main__":
-    case_name = "EGFR_IC50"                                                                           
-    dataset_path = "./data_dir_for_coder/chembl_EGFR_IC50_filtered.xlsx"                              
-    feature_col = ["smiles"]        
-    target_col = ["IC50"]                                    
-    regression_props = ["IC50"]              
-    classification_props = []                              
-                                                                                                    
-    training_result = run_ml_dl_training_by_daemon(                                                   
-        case=case_name,                                                                               
-        path=dataset_path,                                                                            
-        feature_column=feature_col,                                                                   
-        target_column=target_col,                                                                     
-        regression_props=regression_props,                                                            
-        classification_props=classification_props                                                     
-    )           
- 
+
+    get_state_from_server("http://10.32.2.2:81")
+    train_gen_with_data(
+        "data_cyk_short_v2",
+        regression_props=["IC50"],
+        feature_column=["canonical_smiles"],
+        target_column=["IC50"],
+        data_path="./data_dir_for_coder/data_cyk_short.csv",
+        epoch=1,
+    )

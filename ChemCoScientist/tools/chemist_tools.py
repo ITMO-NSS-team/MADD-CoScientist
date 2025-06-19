@@ -15,11 +15,11 @@ from rdkit.Chem.Descriptors import CalcMolDescriptors
 repl = PythonREPL()
 VALID_AFFINITY_TYPES = ["Ki", "Kd", "IC50"]
 
-from smolagents import tool
-
-import requests
 import json
 from typing import Dict, List, Optional
+
+import requests
+from smolagents import tool
 
 
 @tool

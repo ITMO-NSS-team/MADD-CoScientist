@@ -1,6 +1,6 @@
 import os
 
-os.environ["OPENAI_API_KEY"] = "KEY"
+os.environ["OPENAI_API_KEY"] = "API_KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -11,18 +11,12 @@ from protollm.connectors import create_llm_connector
 
 from ChemCoScientist.agents.agents import (
     chemist_node,
+    dataset_builder_agent,
     ml_dl_agent,
     nanoparticle_node,
-    dataset_builder_agent,
-)
-
-from tools import (
-    chem_tools_rendered,
-    nano_tools_rendered,
-    tools_rendered,
 )
 from CoScientist.scientific_agents.agents import coder_agent
-
+from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
 
 model = create_llm_connector(
     "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
@@ -37,12 +31,15 @@ to predict properties. It also already stores ready-made models for inference. Y
 It can generate medicinal molecules. You must use thic agent for molecules generation!!!
 """
 # description for agent WITHOUT langchain-tools
-agent_rendered = "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
+agent_rendered = (
+    "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
     To collect data, it needs either the protein name or a specific id from a specific database. \
         It can collect data from one specific database or from both. All data is saved locally. \
             It can also write simple processing code if asked. \
                 'coder_agent' - can write any simple python scientific code. \
-                    Can use rdkit and other chemical libraries. Can perform calculations. " + automl_agent_description
+                    Can use rdkit and other chemical libraries. Can perform calculations. "
+    + automl_agent_description
+)
 
 conf = {
     # maximum number of recursions
@@ -75,9 +72,13 @@ conf = {
             # "web_serach": [web_tools_rendered],
             "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
-            "dataset_builder_agent": ["has tools for downloading datasets from the database"],
-            "coder_agent": ["has a python interpreter"],
-            "ml_dl_agent": ["has tools related to automatic learning of predictive, generative models, as well as status checking"]
+            "dataset_builder_agent": [
+                "has tools for downloading datasets from the chemical database"
+            ],
+            "coder_agent": [""],
+            "ml_dl_agent": [
+                "has tools related to automatic learning of predictive, generative models, as well as status checking"
+            ],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
@@ -111,11 +112,15 @@ conf = {
                 "ds_dir": "./data_dir_for_coder",
             },
         },
+        "prompts": {
+            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent"
+        },
     },
 }
 
 
 # UNCOMMENT the one you need
+
 # inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
 # inputs = {"input": "Поищи с помощью поиска свежие статьи на тему онлайн-синтеза наноматериалов"}
 # inputs = {"input": "Generate an image for nanoparticles most optimal for catalysis."}
@@ -130,7 +135,6 @@ conf = {
 # inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
 # inputs = {"input": "Сгенерируй мне какие-нибудь молекулы."}
 # inputs = {"input": "Сгенерируй молекулы для лечения Alzheimer."}
-# 
 
 # inputs = {
 #     "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
