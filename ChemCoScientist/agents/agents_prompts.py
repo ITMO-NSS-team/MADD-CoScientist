@@ -15,10 +15,11 @@ additional_ds_builder_prompt = (
 )
 
 automl_prompt = """So, your options:
-        1) Start training if the case is not found in get_case_state_from_sever
+        1) Start training generative or predictive model if user ask
         2) Call model for inference (predict properties or generate new molecules or both)
 
-        First of all you should call get_state_from_sever to check existing cases!!!
+        First of all you should call get_state_from_sever to check existing cases and status!!!
+        Even if there is a similar case but not absolutely same, still launch training if the user asks.
         Check feature_column name and format. It should be list.
         So, your task from the user: """
 

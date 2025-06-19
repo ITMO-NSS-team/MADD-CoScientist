@@ -1,6 +1,6 @@
 import os
 
-os.environ["OPENAI_API_KEY"] = "API_KEY"
+os.environ["OPENAI_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
 os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
@@ -25,25 +25,27 @@ model = create_llm_connector(
 visual_model = create_llm_connector(
     "https://api.vsegpt.ru/v1;vis-meta-llama/llama-3.2-90b-vision-instruct"
 )
+# description for agent WITHOUT langchain-tools
 automl_agent_description = """
 'ml_dl_agent' - an agent that can run training of a generative model to generate SMILES, training of predictive models 
 to predict properties. It also already stores ready-made models for inference. You can also ask him to prepare an existing dataset (you need to be specific in your request).
-It can generate medicinal molecules. You must use thic agent for molecules generation!!!
+It can generate medicinal molecules. You must use this agent for molecules generation!!!\n
+
 """
-# description for agent WITHOUT langchain-tools
-agent_rendered = (
-    "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
+dataset_builder_agent_description = "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
     To collect data, it needs either the protein name or a specific id from a specific database. \
         It can collect data from one specific database or from both. All data is saved locally. \
-            It can also write simple processing code if asked. \
-                'coder_agent' - can write any simple python scientific code. \
-                    Can use rdkit and other chemical libraries. Can perform calculations. "
-    + automl_agent_description
+        It also processes data: removes junk values, empty cells, and can filter if necessary.\n"
+coder_agent_description = "'coder_agent' - can write any simple python scientific code. Can use rdkit and other chemical libraries. Can perform calculations.\n "
+additional_agents_description = (
+    automl_agent_description
+    + dataset_builder_agent_description
+    + coder_agent_description
 )
 
 conf = {
     # maximum number of recursions
-    "recursion_limit": 50,
+    "recursion_limit": 25,
     "configurable": {
         "user_id": "1",
         "visual_model": visual_model,
@@ -66,26 +68,21 @@ conf = {
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
         },
-        # descripton for agents tools (if exist!!!), optional
+        # descripton for agents tools - if using langchain @tool
+        # or description of agent capabilities in free format
         "tools_for_agents": {
             # here can be description of langchain web tools (not TavilySearch)
             # "web_serach": [web_tools_rendered],
             "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
-            "dataset_builder_agent": [
-                "has tools for downloading datasets from the chemical database"
-            ],
-            "coder_agent": [""],
-            "ml_dl_agent": [
-                "has tools related to automatic learning of predictive, generative models, as well as status checking"
-            ],
+            "dataset_builder_agent": [dataset_builder_agent_description],
+            "coder_agent": [coder_agent_description],
+            "ml_dl_agent": [automl_agent_description],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
         # full descripton for agents tools
-        "tools_descp": tools_rendered,
-        # description of agents (if they don't have tools) in free format
-        "agents_descp": agent_rendered,
+        "tools_descp": tools_rendered + additional_agents_description,
         # set True if you want to use web search like black-box
         "web_search": True,
         # add a key with the agent node name if you need to pass something to it
@@ -112,8 +109,17 @@ conf = {
                 "ds_dir": "./data_dir_for_coder",
             },
         },
+        # These prompts will be added as hints in ProtoLLM
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent"
+            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent",
+            "chat": """You are a chemical agent system. You can do the following:
+                    - train generative models (generate SMILES molecules), train predictive models (predict properties)
+                    - prepare a dataset for training
+                    - download data from chemical databases: ChemBL, BindingDB
+                    - perform calculations with chemical python libraries
+                    - solve problems of nanomaterial synthesis
+                    - analyze chemical articles
+                    """
         },
     },
 }

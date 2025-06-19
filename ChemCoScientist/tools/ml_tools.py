@@ -450,12 +450,8 @@ def run_ml_dl_training_by_daemon(
     classification_props: list = [],
 ) -> Union[bool, str]:
     """
-    1) Trains a predictive machine learning model using user-provided or prepared by a special agent dataset.
-    This function reads a dataset from a specified file, processes it into a dictionary,
-    and sends it to a remote server for training.
-    2) Then start a generative deep learning model using user-provided or prepared by a special agent dataset.
-
-    The processes are running in the background (by daemon). This takes some time.
+    Simultaneously starts training the predictive and generative models (this is normal 
+    if the user asks for only one thing).
     The status can be checked with "get_state_case_from_server".
 
     Args:
@@ -550,12 +546,11 @@ agents_tools = [
 ]
 if __name__ == "__main__":
 
-    get_state_from_server("http://10.32.2.2:81")
-    train_gen_with_data(
+    # get_state_from_server("http://10.32.2.2:81")
+    just_ml_training(
         "data_cyk_short_v2",
         regression_props=["IC50"],
         feature_column=["canonical_smiles"],
         target_column=["IC50"],
-        data_path="./data_dir_for_coder/data_cyk_short.csv",
-        epoch=1,
+        path="./data_dir_for_coder/data_cyk_short.csv",
     )
