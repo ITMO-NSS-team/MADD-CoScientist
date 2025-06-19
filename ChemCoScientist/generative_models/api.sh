@@ -1,4 +1,4 @@
 #!/bin/bash
 cd /projects/generative_models
 source /root/miniconda3/bin/activate Mol_gen_env
-python main_api.py
+nohup python main_api.py > api.txt
