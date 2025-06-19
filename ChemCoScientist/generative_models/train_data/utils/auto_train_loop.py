@@ -188,6 +188,8 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
 
     beta = 0
     current_step = 0
+    avg_RCE_prop_loss, avg_KLD_loss =1000,1000
+    avg_loss,avg_RCE_mol_loss=10000,10000
     state.gen_model_upd_status(case=case,status=1)
     for epoch in range(opt.epochs):
         total_loss, RCE_mol_loss, RCE_prop_loss, KLD_loss= 0, 0, 0, 0

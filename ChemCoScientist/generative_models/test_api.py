@@ -152,9 +152,9 @@ if __name__=='__main__':
     #                     fine_tune=True,
     #                     data_path='/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv',
     #                     epochs=2)
-    # print(get_state_from_server(url = "http://10.32.2.2:81",case = "Ki"))
+    print(get_state_from_server(url = "http://10.64.4.247:81",case = "data_cyk_short"))
 
 
-    print(generate_mol_by_case(case = "QED_4version",
-                        url = "http://10.32.2.2:81/generate_gen_models_by_case",
-                        n_samples=5))
+    # print(generate_mol_by_case(case = "QED_4version",
+    #                     url = "http://10.32.2.2:81/generate_gen_models_by_case",
+    #                     n_samples=5))

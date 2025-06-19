@@ -79,49 +79,54 @@ def case_trainer(data:TrainData=Body()):
         _type_: _description_
     """
     state = TrainState(state_path='autotrain/utils/state.json')
-    if data.data is not None:
-                df = pd.DataFrame(data.data)
-                data.data_path = f"autotrain/data/{data.case}"
-                if not os.path.isdir(data.data_path):
-                    os.mkdir(data.data_path)
-                data.data_path = data.data_path + '/data.csv'
-                df.to_csv(data.data_path) 
-    #CASE = 'CYK'
-    # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
-    # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
-    test_mode = False
+    try:
+        if data.data is not None:
+                    df = pd.DataFrame(data.data)
+                    data.data_path = f"autotrain/data/{data.case}"
+                    if not os.path.isdir(data.data_path):
+                        os.mkdir(data.data_path)
+                    data.data_path = data.data_path + '/data.csv'
+                    df.to_csv(data.data_path) 
+        #CASE = 'CYK'
+        # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
+        # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
+        test_mode = False
+        
     
-   
-    if data.fine_tune==True:
-        load_weights = 'autotrain/Alzheimer/weights'
-        load_weights_fields = 'autotrain/Alzheimer/weights'
-        data.new_vocab = False
-    else:
-         load_weights=None
-         load_weights_fields = None
-         data.new_vocab = True
-    # if state(CASE) is None:#Check if case exist
-    #     state.add_new_case(CASE,rewrite=False)
-    
-    if state(data.case,'ml') is None:
-        print(f"{data.case} is not exist! Train ML model before")
-        return 0
+        if data.fine_tune==True:
+            load_weights = 'autotrain/Alzheimer/weights'
+            load_weights_fields = 'autotrain/Alzheimer/weights'
+            data.new_vocab = False
+        else:
+            load_weights=None
+            load_weights_fields = None
+            data.new_vocab = True
+        # if state(CASE) is None:#Check if case exist
+        #     state.add_new_case(CASE,rewrite=False)
+        
+        if state(data.case,'ml') is None:
+            print(f"{data.case} is not exist! Train ML model before")
+            state.gen_model_upd_status(case=data.case,status=3)
+            return 0
 
-    use_cond2dec = False
-    main(epochs=data.epochs,
-         conditions = state(data.case,'ml')['target_column'],
-         case=data.case, 
-         server_dir = f'autotrain/train_{data.case}',
-         data_path_with_conds = data.data_path,
-         test_mode=test_mode,
-         state=state,
-         url=data.url,
-         n_samples = data.n_samples,
-         load_weights=load_weights,
-         load_weights_fields = load_weights_fields,
-         use_cond2dec=use_cond2dec,
-        new_vocab= data.new_vocab,
-        ml_model_url=os.getenv('ML_MODEL_URL'))
+        use_cond2dec = False
+        main(epochs=data.epochs,
+            conditions = state(data.case,'ml')['target_column'],
+            case=data.case, 
+            server_dir = f'autotrain/train_{data.case}',
+            data_path_with_conds = data.data_path,
+            test_mode=test_mode,
+            state=state,
+            url=data.url,
+            n_samples = data.n_samples,
+            load_weights=load_weights,
+            load_weights_fields = load_weights_fields,
+            use_cond2dec=use_cond2dec,
+            new_vocab= data.new_vocab,
+            ml_model_url=os.getenv('ML_MODEL_URL'))
+    except Exception as e:
+        print(e)
+        state.gen_model_upd_status(case=data.case,error=str(e))
 
 
 def case_generator(data:GenData=Body()):

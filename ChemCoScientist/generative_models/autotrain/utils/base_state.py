@@ -181,7 +181,8 @@ class TrainState:
                              case:str,
                              model_weight_path:str = None,
                              metric = None,
-                             status:int = None):
+                             status:int = None,
+                             error = None):
         """Updates the training status of the generative model on each call.
           Additionally, you can specify the path to the folder where the model weights are saved after training.
         Also, you can specify the metric value after training.
@@ -192,9 +193,11 @@ class TrainState:
             metric (_type_, optional): Value of metric after model training. Defaults to None.
         """
 
-        valid_status = ['Not Trained','Training','Trained']
+        valid_status = ['Not Trained','Training','Trained','Error! Ml models have been not prepared!']
         if status is not None:
             self.current_state[case]["generative_models"]['status'] = valid_status[status]
+        if error is not None:
+            self.current_state[case]["generative_models"]['status'] = error
         if model_weight_path is not None:
             if not os.path.isdir(model_weight_path):
                 os.mkdir(model_weight_path)

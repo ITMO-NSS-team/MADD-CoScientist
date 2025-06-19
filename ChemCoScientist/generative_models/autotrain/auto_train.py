@@ -77,7 +77,10 @@ def main(server_dir = 'generative_models/train_dislip',
 
     opt.optimizer = torch.optim.AdamW(model.parameters(), lr=opt.lr, betas=(opt.lr_beta1, opt.lr_beta2), eps=opt.lr_eps)
     if opt.lr_scheduler == "SGDR":
-        opt.sched = CosineWithRestarts(opt.optimizer, T_max=opt.train_len)
+        if opt.train_len==0:
+            opt.sched = CosineWithRestarts(opt.optimizer, T_max=1)
+        else:
+            opt.sched = CosineWithRestarts(opt.optimizer, T_max=opt.train_len)
     opt.TRG = TRG
     opt.SRC = SRC
     opt.state = state
