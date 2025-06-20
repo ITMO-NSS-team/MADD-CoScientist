@@ -1,6 +1,8 @@
 import os
+from dotenv import load_dotenv
 
-os.environ["OPENAI_API_KEY"] = "KEY"
+load_dotenv('../config.env')
+
 # os.environ["OPENAI_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"

@@ -28,80 +28,30 @@ from protollm.connectors import create_llm_connector
 from pydantic import AnyUrl
 from typing_extensions import override
 
-from answer_question import prompt_func, convert_to_base64
+from definitions import CONFIG_PATH, ROOT_DIR
+from CoScientist.paper_parser.parser_prompts import cls_prompt, table_extraction_prompt
+from CoScientist.paper_parser.utils import prompt_func, convert_to_base64
 
 _log = logging.getLogger(__name__)
-load_dotenv("../config.env")
 
+load_dotenv(CONFIG_PATH)
+
+PARSE_RESULTS_PATH = os.path.join(ROOT_DIR, os.environ["PARSE_RESULTS_PATH"])
+PAPERS_PATH = os.path.join(ROOT_DIR, os.environ["PAPERS_STORAGE_PATH"])
+VISION_LLM_URL = os.environ["VISION_LLM_URL"]
+VISION_LLM_NAME = VISION_LLM_URL.split(';')[1]
+LLM_SERVICE_CC_URL = os.environ["LLM_SERVICE_CC_URL"]
+VSE_GPT_KEY = os.getenv("VSE_GPT_KEY")
+MARKER_LLM = os.getenv("MARKER_LLM")
+LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL")
 IMAGE_RESOLUTION_SCALE = 2.0
-
-cls_prompt = """
-Act as a scientific image classifier. Analyze the input image from an academic paper and determine if it contains meaningful scientific information relevant to the article's content.
-
-**Meaningful images (True):**
-- Research diagrams, charts, or graphs
-- Experimental photographs or microscopy images
-- Data tables with substantive content
-- Mathematical formulas/equations
-- Technical schematics or flowcharts
-- Biological/chemical structures
-- Statistical visualizations
-
-**Non-meaningful images (False):**
-- Journal/publisher logos
-- Decorative icons (social media, print, download etc.)
-- Banner advertisements
-- Author photos or institutional emblems
-- Pure decorative elements
-- Copyright watermarks
-- Navigation buttons
-
-**Output Rules:**
-1. Return only single-word verdict: 'True' for meaningful images, 'False' for non-meaningful
-2. Prioritize false negatives over false positives
-3. Assume small size (<150px) suggests non-meaningful content
-4. Ignore textual content within logos/icons
-
-**Classification standard:**
-An image is only 'True' if it conveys scientific data/results/methods essential for understanding the paper's research.
-
-Now classify this image:"""
-
-table_extraction_prompt = """
-You are a scientific document analysis expert. Strictly follow these steps when processing the chemistry paper image:
-
-1. Detect all table-like structures in the image:
-   - If exactly ONE complete table exists (fully visible borders, headers, and data cells with no cropping/obscuring)
-     → Extract tabular data and convert to HTML using <table>, <tr>, <th>, <td> tags
-     → Return ONLY the HTML code
-
-2. In ALL other cases return EXACTLY:
-   'No table'
-   This includes when:
-   - No table is detected
-   - Multiple tables exist
-   - Table is incomplete/cropped/obscured
-   - Table headers are missing
-   - Part of table extends beyond image boundaries
-
-3. Formatting rules:
-   - Never add explanations, comments or markdown
-   - Don't process non-tabular content
-   - Skip text recognition outside tables
-   - Omit confidence indicators
-   - Output either pure HTML or exact string 'No table'
-
-Critical: Your response must contain ONLY one of two options:
-Option A: <table>...</table> (for single valid table)
-Option B: No table (all other cases)
-"""
 
 
 def parse_and_clean(path, annotate_pic: bool = False):
     logging.basicConfig(level=logging.INFO)
     
     file_name = Path(path).stem
-    output_dir = Path("../PaperAnalysis/parse_results", file_name)
+    output_dir = Path(PARSE_RESULTS_PATH, file_name)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     pipeline_options = PdfPipelineOptions()
@@ -112,7 +62,7 @@ def parse_and_clean(path, annotate_pic: bool = False):
     if annotate_pic:  # Picture annotations
         pipeline_options.enable_remote_services = True
         pipeline_options.do_picture_description = True
-        pipeline_options.picture_description_options = vlm_options("vis-google/gemini-2.0-flash-001")
+        pipeline_options.picture_description_options = vlm_options(VISION_LLM_NAME)
     
     doc_converter = DocumentConverter(
         format_options={
@@ -156,7 +106,7 @@ def parse_and_clean(path, annotate_pic: bool = False):
 
 
 def loader(
-        dl_doc, annotate_pic = False
+        dl_doc, annotate_pic=False
 ) -> List[Document]:
     docs = []
     if annotate_pic:
@@ -246,7 +196,7 @@ def parsing_playground(path, annotate_pic = False):
     
     if annotate_pic:  # Picture annotations
         pipeline_options.do_picture_description = True
-        pipeline_options.picture_description_options = vlm_options("vis-google/gemini-2.0-flash-001")
+        pipeline_options.picture_description_options = vlm_options(VISION_LLM_NAME)
     
     doc_converter = DocumentConverter(
         format_options={
@@ -309,12 +259,12 @@ def parsing_playground(path, annotate_pic = False):
 
 def vlm_options(model: str):
     options = PictureDescriptionApiOptions(
-        url=AnyUrl("https://api.vsegpt.ru/v1/chat/completions"),
+        url=AnyUrl(LLM_SERVICE_CC_URL),
         params=dict(
             model=model,
         ),
         headers={
-            "Authorization": "Bearer " + os.getenv("VSE_GPT_KEY"),
+            "Authorization": "Bearer " + VSE_GPT_KEY,
         },
         prompt="Describe the image in three sentences. Be concise and accurate.",
         timeout=90,
@@ -401,9 +351,9 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     config = {
         "output_format": "html",
         "use_llm": use_llm,
-        "openai_api_key": os.getenv("VSE_GPT_KEY"),
-        "openai_model": "google/gemini-2.0-flash-lite-001",
-        "openai_base_url": "https://api.vsegpt.ru/v1"
+        "openai_api_key": VSE_GPT_KEY,
+        "openai_model": MARKER_LLM,
+        "openai_base_url": LLM_SERVICE_URL
     }
     config_parser = ConfigParser(config)
     
@@ -418,7 +368,7 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     rendered = converter(paper_name)
     text, _, images = text_from_rendered(rendered)
     
-    output_dir = Path("../PaperAnalysis/parse_results", str(file_name.stem) + "_marker")
+    output_dir = Path(PARSE_RESULTS_PATH, str(file_name.stem) + "_marker")
     output_dir.mkdir(parents=True, exist_ok=True)
     save_output(rendered, output_dir=str(output_dir), fname_base=f"{file_name.stem}")
     return file_name.stem, output_dir
@@ -455,7 +405,7 @@ def clean_up_html(paper_name: str, doc_dir: Path) -> str:
                 if isinstance(element, Tag):
                     element.decompose()
     
-    llm = create_llm_connector("https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001")
+    llm = create_llm_connector(VISION_LLM_URL)
     for img in soup.find_all('img'):
         img_path = str(doc_dir) + "/" + img.get("src")
         images = list(map(convert_to_base64, [img_path]))
@@ -514,7 +464,7 @@ def html_chunking(html_string: str, paper_name: str) -> list:
 def extract_img_url(doc_text: str, p_name: str):
     pattern = r'!\[image:([^\]]+\.jpeg)\]\(([^)]+\.jpeg)\)'
     matches = re.findall(pattern, doc_text)
-    return ["./parse_results/" + p_name + "_marker/" + entry[0] for entry in matches]
+    return [os.path.join(PARSE_RESULTS_PATH, p_name + "_marker", entry[0]) for entry in matches]
 
 
 if __name__ == "__main__":
@@ -523,7 +473,7 @@ if __name__ == "__main__":
     # for document in documents:
     #     print(document)
     
-    p_path = '../PaperAnalysis/papers'
+    p_path = PAPERS_PATH
     paper = "kowalska-et-al-2023-visible-light-promoted-3-2-cycloaddition-for-the-synthesis-of-cyclopenta-b-chromenocarbonitrile.pdf"
     paper_path = os.path.join(p_path, paper)
     f_name, dir_name = parse_with_marker(paper_name=paper_path)

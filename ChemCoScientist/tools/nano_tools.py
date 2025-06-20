@@ -60,24 +60,24 @@ def call_for_generation(
     return None
 
 
-@tool
-def synthesis_generation(description: str, config: RunnableConfig) -> str:
-    """Generates the text of the synthesis of nanoparticles. Use it ONLY when you are asked to generate synthesis next
-
-    Args:
-        description (int): Description of nanoparticles: any string description is suitable
-
-    Returns:
-        synthesis_text (str): Text of the synthesis of nanoparticles
-    """
-    try:
-        llm: BaseChatModel = config["configurable"]["model"]
-        predictor = synt_prompt | llm
-        resp = predictor.invoke(description).content
-        return resp
-    except Exception as e:
-        # logger.exception(f"'synthesis_generation' failed with error: {e}")
-        return f"I couldn't generate synthesis right now"
+# @tool
+# def synthesis_generation(description: str, config: RunnableConfig) -> str:
+#     """Generates the text of the synthesis of nanoparticles. Use it ONLY when you are asked to generate synthesis next
+#
+#     Args:
+#         description (int): Description of nanoparticles: any string description is suitable
+#
+#     Returns:
+#         synthesis_text (str): Text of the synthesis of nanoparticles
+#     """
+#     try:
+#         llm: BaseChatModel = config["configurable"]["model"]
+#         predictor = synt_prompt | llm
+#         resp = predictor.invoke(description).content
+#         return resp
+#     except Exception as e:
+#         # logger.exception(f"'synthesis_generation' failed with error: {e}")
+#         return f"I couldn't generate synthesis right now"
 
 
 @tool
@@ -184,7 +184,7 @@ def analyse_nanoparticle_images(config: RunnableConfig) -> str:
 
 
 nanoparticle_tools = [
-    synthesis_generation,
+    # synthesis_generation,
     predict_nanoparticle_shape,
     generate_nanoparticle_images,
     analyse_nanoparticle_images,

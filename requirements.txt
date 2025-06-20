@@ -6,6 +6,7 @@ gdown
 torch
 torchvision
 duckduckgo-search
+smolagents==1.18.0
 
 deepeval == 2.3.3
 docling == 2.28.4
