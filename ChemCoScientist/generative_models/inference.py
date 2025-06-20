@@ -129,6 +129,53 @@ def generate_alzh_for_agent(opt, model, SRC, TRG,n_samples=100,spec_conds=None,s
     return molecules
 
 
+def generate_auto(opt,
+                   model,
+                   SRC,
+                   TRG,
+                   state,
+                   n_samples=100,
+                   spec_conds=None,
+                   case='Alzhmr'
+                   ):
+    
+    warnings.filterwarnings('ignore')
+    molecules, toklen_gen = [], []
+
+
+    toklen_data = pd.read_csv(f"{opt.load_weights}/toklen_list.csv")
+    conds = spec_conds
+
+    toklen_data = tokenlen_gen_from_data_distribution(data=toklen_data, nBins=int(toklen_data.max()-toklen_data.min()), size=n_samples)
+
+
+    for idx in tqdm(range(n_samples)):
+        toklen = int(toklen_data[idx]) + 3  # +3 due to cond2enc
+        z = torch.Tensor(np.random.normal(size=(1, toklen, opt.latent_dim)))
+        molecule_tmp = gen_mol_val(conds[idx], model, opt, SRC, TRG, toklen, z)
+        toklen_gen.append(molecule_tmp.count(' ')+1)
+        molecule_tmp = ''.join(molecule_tmp).replace(" ", "")
+
+        molecules.append(molecule_tmp)
+    valid_mols = state()["Calculateble properties"]['Validity'](molecules) #with duplicates
+    
+    unique_mols = set(valid_mols)
+    DYPLICATES = 1-len(unique_mols)/len(valid_mols)
+    VALID = len(valid_mols)/len(molecules)
+    props_for_calc = [i for i in state.show_calculateble_propreties() if i !="Validity"]
+    print(props_for_calc)
+    props = {key:state()["Calculateble properties"][key](valid_mols) for key in props_for_calc}
+    props['Validity'] = VALID
+    props["Duplicates"] = DYPLICATES
+    print(props)
+    if state(case,'ml')['status'] == 'Trained':
+        ml_props = predict_smiles(valid_mols,case,url=opt.url_ml_model)
+        for key,value in ml_props.items():
+            props[key]=value 
+    df = pd.DataFrame(data = {'Smiles':valid_mols,**props})
+    return df
+
+
 def generate_for_agent(opt, model, SRC, TRG,n_samples=100,spec_conds=None,save=False,shift_path='',drug='CN1C2=C(C(=O)N(C1=O)C)NC=N2',mean_=0,std_=1):
     warnings.filterwarnings('ignore')
     molecules, val_check, conds_trg, conds_rdkit, toklen_check, toklen_gen = [], [], [], [], [], []
@@ -321,23 +368,39 @@ def generate_auto(opt,
     warnings.filterwarnings('ignore')
     molecules, toklen_gen = [], []
 
-
+    if spec_conds is None:
+        conds = np.array([[np.random.randint(2),np.random.randint(2),np.random.randint(2)] for i in range(n_samples)])# for physics performances
+    else:
+        conds = np.array([list(spec_conds) for _ in range(n_samples)])
     toklen_data = pd.read_csv(f"{opt.load_weights}/toklen_list.csv")
-    conds = spec_conds
 
     toklen_data = tokenlen_gen_from_data_distribution(data=toklen_data, nBins=int(toklen_data.max()-toklen_data.min()), size=n_samples)
 
 
     for idx in tqdm(range(n_samples)):
-        toklen = int(toklen_data[idx]) + 3  # +3 due to cond2enc
+        toklen = int(toklen_data[idx])  # +3 due to cond2enc
         z = torch.Tensor(np.random.normal(size=(1, toklen, opt.latent_dim)))
         molecule_tmp = gen_mol_val(conds[idx], model, opt, SRC, TRG, toklen, z)
         toklen_gen.append(molecule_tmp.count(' ')+1)
         molecule_tmp = ''.join(molecule_tmp).replace(" ", "")
 
         molecules.append(molecule_tmp)
-    valid_mols = state()["Calculateble properties"]['Validity'](molecules) #with duplicates
-    
+    valid_mols = state()["Calculateble properties"]['Validity'](molecules)
+    break_point =3 #with duplicates
+    while len(valid_mols)==0:
+        for idx in tqdm(range(n_samples)):
+            toklen = int(toklen_data[idx])  # +3 due to cond2enc
+            z = torch.Tensor(np.random.normal(size=(1, toklen, opt.latent_dim)))
+            molecule_tmp = gen_mol_val(conds[idx], model, opt, SRC, TRG, toklen, z)
+            toklen_gen.append(molecule_tmp.count(' ')+1)
+            molecule_tmp = ''.join(molecule_tmp).replace(" ", "")
+            molecules.append(molecule_tmp)
+        break_point-=1
+        valid_mols = state()["Calculateble properties"]['Validity'](molecules)
+        if break_point<1:
+            print('Model Cant generate valid molecules! Retrain it for this case!')
+            return {'Smiles':'NO VALID'}
+
     unique_mols = set(valid_mols)
     DYPLICATES = 1-len(unique_mols)/len(valid_mols)
     VALID = len(valid_mols)/len(molecules)
@@ -352,7 +415,7 @@ def generate_auto(opt,
         for key,value in ml_props.items():
             props[key]=value 
     df = pd.DataFrame(data = {'Smiles':valid_mols,**props})
-    return df
+    return df.to_dict()
 
 def validate_props(opt,
                    model,

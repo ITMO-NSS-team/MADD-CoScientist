@@ -87,7 +87,7 @@ def run_train_automl(case:str,
         state.ml_model_upd_status(case=case,model_weight_path=path_to_save+f'_{case}'+f'_{problem}',problem=problem)
         model = Fedot(
             problem=problem,
-            preset='fast',  # Options: 'fast', 'stable', 'best_quality', etc.
+            #preset='fast',  # Options: 'fast', 'stable', 'best_quality', etc.
             timeout=timeout,  # Minutes for optimization
             with_tuning=True,  # Allow tuning mode
             n_jobs=-1,  # CPU cores to use (-1 = all)

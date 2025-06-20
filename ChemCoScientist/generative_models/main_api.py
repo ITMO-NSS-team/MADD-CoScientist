@@ -191,6 +191,20 @@ if __name__=='__main__':
         case_trainer(data)
         #return json.dumps()
 
+    @app.post("/generate_gen_models_by_case")
+    def gen_mol_case(data:TrainData=Body()):
+        
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir='generative_models/transformer/autotrain/utils',
+                         force_download=True)
+        # smiles = get_random_values_from_csv_pandas(file_path='/projects/generative_models_data/generated_CYK_FT_2_epoch.csv',
+        #                                            n=data.n_samples,
+        #                                            column_name='Smiles')
+        # ret = json.dumps({'smiles':smiles})
+        ret = auto_generator(data)
+        return json.dumps(ret)
+    
     @app.get("/check_state")
     def check_state():
         state = TrainState(state_path='autotrain/utils/state.json')

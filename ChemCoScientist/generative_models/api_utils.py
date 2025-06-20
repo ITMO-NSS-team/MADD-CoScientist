@@ -22,7 +22,7 @@ from utils.ic_50_models.drug_resis_classif_inference.inference_drug_clf import p
 from utils.ic_50_models.tyrosine_classif_inference.inference_tyrosine_clf import predict as dyslip_predict_ic50
 from utils.ki_models.tyrosine_regression_inference.tyrosine_inference_regr import predict as dyslip_predict_ki
 from utils.inference_BB_clf.BB_inference import predict as eval_bbb
-from autotrain.auto_train import main
+from autotrain.auto_train import main, main_generate
 ###Docking
 from autodock_vina_python3.src.docking_score import docking_list
 from utils.check_novelty import check_novelty_chembl
@@ -82,13 +82,14 @@ def case_trainer(data:TrainData=Body()):
     try:
         if data.data is not None:
                     df = pd.DataFrame(data.data)
-                    data.data_path = f"autotrain/data/{data.case}"
+                    data.data_path = f"generative_models/transformer/autotrain/data/{data.case}"
                     if not os.path.isdir(data.data_path):
                         os.mkdir(data.data_path)
                     data.data_path = data.data_path + '/data.csv'
                     df = df.dropna()
                     df = df[df[data.feature_column[0]].str.len()<200]
-                    df.to_csv(data.data_path) 
+                    df.to_csv(data.data_path)
+                    state.ml_model_upd_data(case=data.case,data_path=data.data_path)
         #CASE = 'CYK'
         # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
         # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
@@ -130,6 +131,29 @@ def case_trainer(data:TrainData=Body()):
         print(e)
         state.gen_model_upd_status(case=data.case,error=str(e))
 
+
+def auto_generator(data:TrainData=Body()):
+     
+    state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+    if state(data.case,'gen')["status"] == "Trained":
+        use_cond2dec = False
+        gen_dict = main_generate(epochs=data.epochs,
+                conditions = state(data.case,'ml')['target_column'],
+                case=data.case, 
+                server_dir = f'autotrain/train_{data.case}',
+                test_mode=False,
+                state=state,
+                url=data.url,
+                n_samples = data.n_samples,
+                load_weights=state(data.case,'gen')['weights_path'],
+                load_weights_fields = state(data.case,'gen')['weights_path'],
+                use_cond2dec=use_cond2dec,
+                new_vocab= data.new_vocab,
+                batchsize=data.batchsize)
+        return gen_dict
+    else:
+        print('Case is not trained!')
+        return 0
 
 def case_generator(data:GenData=Body()):
     #####FOR TEST####
