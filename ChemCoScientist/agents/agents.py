@@ -21,6 +21,8 @@ from ChemCoScientist.tools import (
     train_ml_with_data,
 )
 
+from ChemCoScientist.paper_analysis.question_processing import process_question
+
 
 def dataset_builder_agent(state: dict, config: dict):
     config_cur_agent = config["configurable"]["additional_agents_info"][
@@ -205,5 +207,31 @@ def nanoparticle_node(state, config: dict):
         goto=END,
         update={
             "response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"
+        },
+    )
+
+
+def paper_analysis_node(state: dict) -> Command:
+    """
+    Answers the user's question using a DB with chemical scientific papers and a vision LLM.
+    Takes into account text, images and tables.
+
+    Args:
+        state: The current execution.
+        config: Configurable parameters.
+
+    Returns:
+        An object containing the next node to transition to ('replan' or `END`) and
+        an update to the execution state with recorded steps and responses.
+    """
+    task = state["input"]
+
+    response = process_question(task)
+
+    return Command(
+        goto="replan_node",
+        update={
+            "past_steps": [(task, response)],
+            "nodes_calls": [("paper_analysis_node", response)],
         },
     )

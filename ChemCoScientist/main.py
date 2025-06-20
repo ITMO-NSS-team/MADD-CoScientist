@@ -1,6 +1,8 @@
 import os
+from dotenv import load_dotenv
 
-os.environ["OPENAI_API_KEY"] = "KEY"
+load_dotenv('../config.env')
+
 # os.environ["OPENAI_API_KEY"] = "KEY"
 os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
 os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
@@ -15,15 +17,16 @@ from ChemCoScientist.agents.agents import (
     ml_dl_agent,
     nanoparticle_node,
     dataset_builder_agent,
+    paper_analysis_node,
 )
 
 from tools import (
     chem_tools_rendered,
-    ml_dl_tools_rendered,
     nano_tools_rendered,
     tools_rendered,
     dataset_handler_rendered,
 )
+from tools.ml_tools import ml_dl_tools_rendered
 from CoScientist.scientific_agents.agents import coder_agent
 
 
@@ -40,7 +43,9 @@ agent_rendered = "'dataset_builder_agent' - collects data from two databases - C
         It can collect data from one specific database or from both. All data is saved locally. \
             It can also write simple processing code if asked. \
                 'coder_agent' - can write any simple python scientific code. \
-                    Can use rdkit and other chemical libraries. Can perform calculations."
+                    Can use rdkit and other chemical libraries. Can perform calculations. \
+                'paper_analysis_node' - answers questions by retrieving and analyzing information from \
+                    a database of chemical scientific papers."
 
 conf = {
     # maximum number of recursions
@@ -53,28 +58,30 @@ conf = {
         "max_retries": 1,
         # list of scenario agents
         "scenario_agents": [
-            "chemist_node",
-            "nanoparticle_node",
-            "ml_dl_agent",
-            "dataset_builder_agent",
-            "coder_agent",
+            # "chemist_node",
+            # "nanoparticle_node",
+            # "ml_dl_agent",
+            # "dataset_builder_agent",
+            # "coder_agent",
+            "paper_analysis_node",
         ],
         # nodes for scenario agents
         "scenario_agent_funcs": {
-            "chemist_node": chemist_node,
-            "nanoparticle_node": nanoparticle_node,
-            "ml_dl_agent": ml_dl_agent,
-            "dataset_builder_agent": dataset_builder_agent,
-            "coder_agent": coder_agent,
+            # "chemist_node": chemist_node,
+            # "nanoparticle_node": nanoparticle_node,
+            # "ml_dl_agent": ml_dl_agent,
+            # "dataset_builder_agent": dataset_builder_agent,
+            # "coder_agent": coder_agent,
+            "paper_analysis_node": paper_analysis_node,
         },
         # descripton for agents tools (if exist!!!), optional
         "tools_for_agents": {
             # here can be description of langchain web tools (not TavilySearch)
             # "web_serach": [web_tools_rendered],
-            "chemist_node": [chem_tools_rendered],
-            "nanoparticle_node": [nano_tools_rendered],
-            "ml_dl_agent": [ml_dl_tools_rendered],
-            "dataset_builder_agent": [dataset_handler_rendered],
+            # "chemist_node": [chem_tools_rendered],
+            # "nanoparticle_node": [nano_tools_rendered],
+            # "ml_dl_agent": [ml_dl_tools_rendered],
+            # "dataset_builder_agent": [dataset_handler_rendered],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
@@ -117,10 +124,11 @@ conf = {
 # inputs = {"input": "Обучи модель на данных из ChemBl предсказывать значение IC50. Модель сохрани с названием 'chembl_ic50'."}
 # inputs = {"input": "Найди информацию о последних открытиях в области лечения Рака."}
 # inputs = {"input": "Получи данные Ki по Q9BPZ7 из BindingDB."}
-# inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
-inputs = {
-    "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
-}
+inputs = {"input": "Получи данные по KRAS G12C из доступных химических баз данных."}
+# inputs = {
+#     "input": "Посчитай sin(5) + 5837 / 544 + 55 * 453 + 77^4 с помощью агента-кодера"
+# }
+inputs = {"input": "How does the synthesis of Glionitrin A/B happen?"}
 
 
 if __name__ == "__main__":

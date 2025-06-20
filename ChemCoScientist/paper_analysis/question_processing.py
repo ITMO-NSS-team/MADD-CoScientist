@@ -1,0 +1,129 @@
+import base64
+import os
+from io import BytesIO
+
+from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage, SystemMessage
+from PIL import Image
+from protollm.connectors import create_llm_connector
+
+from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
+from definitions import CONFIG_PATH
+from prompts import sys_prompt
+
+load_dotenv(CONFIG_PATH)
+
+VISION_LLM_URL = os.environ["VISION_LLM_URL"]
+
+PAPER_STORE = ChromaDBPaperStore()
+
+
+def convert_to_base64(file_path):
+    """
+    Convert PIL images to Base64 encoded strings
+
+    :param file_path: path to image
+    :return: Re-sized Base64 string
+    """
+    pil_image = Image.open(file_path)
+    buffered = BytesIO()
+    pil_image.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return img_str
+
+
+def prompt_func(data):
+    text = data["text"]
+    imgs = data["image"]
+    content_parts = []
+    
+    for img in imgs:
+        image_part = {
+            "type": "image_url",
+            "image_url": f"data:image/jpeg;base64,{img}",
+        }
+        content_parts.append(image_part)
+    
+    text_part = {"type": "text", "text": text}
+    content_parts.append(text_part)
+    
+    return HumanMessage(content=content_parts)
+
+
+def query_llm(model_url: str, question: str, txt_context: str, img_paths: list[str]) -> tuple:
+    llm = create_llm_connector(model_url)
+
+    img_context = list(map(convert_to_base64, img_paths))
+
+    messages = [
+        SystemMessage(content=sys_prompt),
+        prompt_func({"text": f"USER QUESTION: {question}\n\nCONTEXT: {txt_context}", "image": img_context})
+    ]
+
+    res = llm.invoke(messages)
+    return res.content, res.response_metadata
+
+
+def process_question(question: str) -> dict:
+
+    txt_data, img_data = PAPER_STORE.retrieve_context("query: " + question)
+
+    txt_context = ''
+    img_paths = set()
+
+    for chunk in txt_data['documents'][0]:
+        txt_context += '\n\n' + chunk.replace("passage: ", "")
+    for chunk_meta in txt_data['metadatas'][0]:
+        img_paths.update(eval(chunk_meta["imgs_in_chunk"]))
+    for img in img_data['metadatas'][0]:
+        img_paths.add(img['image_path'])
+
+    ans, metadata = query_llm(VISION_LLM_URL, question, txt_context, list(img_paths))
+
+    return {'answer': ans,
+            'text_context': txt_context,
+            'image_context': img_paths,
+            'metadata': metadata}
+
+
+if __name__ == "__main__":
+    # file_paths = []  # Enter list of paths to images here
+    #
+    # images = list(map(convert_to_base64, file_paths))
+    #
+    # llm = create_llm_connector(VISION_LLM_URL)
+    #
+    # # question = ("Какая реакция идет протекает на 6 стадии Total Synthesis of (−)-Glionitrin A/B? Какие реагенты"
+    # #             " участвовали в реакции и какой продукт получили? Какой получился выход?")
+    # question = ("I need all the compounds that were used in the experiments. Obligatorily I need all results to be in"
+    #             " the form of a table of 2 columns where in the first column were the names by IUPAC numberclature and"
+    #             " in the second column in SMILES notation. Don't add it to this list of reaction products for me. Can"
+    #             " you do that?")
+    # context = ""
+    #
+    # messages = [
+    #     SystemMessage(content=sys_prompt),
+    #     prompt_func({"text": f"USER QUESTION: {question}\n\nCONTEXT: {context}", "image": images})
+    # ]
+    # # messages = [
+    # #     SystemMessage(content="You're a useful assistant. You only ever reply in the form of valid JSON."),
+    # #     prompt_func(
+    # #         {
+    # #             "text": "For the provided images, generate a detailed clear description. If there is a table in the"
+    # #                     " image, parse it and return it in HTML format. If you see chemical compounds in the figures,"
+    # #                     " output the names of the compounds according to IUPAC nomenclature.\n"
+    # #                     " As a response, return ONLY JSON of the following form: {‘figure_1’:"
+    # #                     " ‘figure_1_description’, ‘figure_2’: ‘figure_2_description’, ‘table_1’:"
+    # #                     " ‘table_1_description’...}",
+    # #             "image": images
+    # #         }
+    # #     )
+    # # ]
+    #
+    # res = llm.invoke(messages)
+    # print(res.content)
+    # print(res.response_metadata)
+
+    question = 'how does the synthesis of Glionitrin A/B happen?'
+    res = process_question(question)
+    print(res)

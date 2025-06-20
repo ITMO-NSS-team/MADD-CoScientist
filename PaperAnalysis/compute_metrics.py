@@ -11,7 +11,7 @@ from deepeval.test_case import LLMTestCase
 import pandas as pd
 from protollm.metrics import model_for_metrics, correctness_metric
 
-from ChemCoScientist.answer_question import query_llm
+from ChemCoScientist.paper_analysis.question_processing import query_llm
 from chromadb.chroma_db_operations import query_chromadb
 
 path_to_data = ""
