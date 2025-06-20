@@ -1,13 +1,6 @@
 import os
+from definitions import CONFIG_PATH
 from dotenv import load_dotenv
-
-load_dotenv('../config.env')
-
-# os.environ["OPENAI_API_KEY"] = "KEY"
-os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
-os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
-os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
-
 
 from protollm.agents.builder import GraphBuilder
 from protollm.connectors import create_llm_connector
@@ -16,9 +9,23 @@ from ChemCoScientist.agents.agents import (
     chemist_node,
     dataset_builder_agent,
     ml_dl_agent,
+    # nanoparticle_node,
+    dataset_builder_agent,
+    paper_analysis_node,
     nanoparticle_node,
 )
+
+from tools import (
+    chem_tools_rendered,
+    nano_tools_rendered,
+    tools_rendered,
+    # dataset_handler_rendered,
+)
+# from tools.ml_tools import ml_dl_tools_rendered
 from CoScientist.scientific_agents.agents import coder_agent
+
+load_dotenv(CONFIG_PATH)
+
 from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
 
 model = create_llm_connector(

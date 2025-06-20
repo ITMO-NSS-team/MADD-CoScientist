@@ -1,13 +1,12 @@
-pubchempy
-py3Dmol
-rdkit
-langchain_experimental
-gdown
-torch
-torchvision
-duckduckgo-search
+pubchempy==1.0.4
+py3Dmol==2.5.0
+rdkit==2025.3.2
+langchain_experimental==0.3.4
+gdown==5.2.0
+torch==2.7.1
+torchvision==0.22.1
+duckduckgo-search==8.0.3
 smolagents==1.18.0
-
 deepeval == 2.3.3
 docling == 2.28.4
 docling-core == 2.26.0

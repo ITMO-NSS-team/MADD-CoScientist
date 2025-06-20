@@ -1,4 +1,4 @@
-from ChemCoScientist.agents.agents import paper_analysis_node
+from ChemCoScientist.agents.agents import dataset_builder_agent
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     for q in querys:
         print("========")
         print("Query:", q)
-        res = paper_analysis_node({"pending_tasks": [q], "responses": []}, )
+        res = dataset_builder_agent({"pending_tasks": [q], "responses": []})
         res["responses"][0].to_csv('./ChemCoScientist/dataset_handler/chembl/test.csv')
         print(res["responses"][0])
         print(res["responses"][0].iloc[0])
