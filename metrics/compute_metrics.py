@@ -271,7 +271,7 @@ if __name__ == "__main__":
     sum_chunk_num = 1  # Под вопрос будет подбираться одна статья по ее суммаризации
     txt_chunk_num = 3  # Количество текстовых чанков
     img_chunk_num = 2  # Количество изображений
-    papers_path = './papers'  # Папка со статьями
+    papers_path = '../PaperAnalysis/papers'  # Папка со статьями
     path_to_data = "./questions/complex_questions_draft.csv"  # Здесь указать файл с вопросами
     all_questions = pd.read_csv(path_to_data)
 
