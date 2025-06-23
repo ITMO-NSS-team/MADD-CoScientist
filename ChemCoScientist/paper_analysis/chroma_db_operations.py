@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage
 from protollm.connectors import create_llm_connector
 
 from CoScientist.paper_parser.parse_and_split import html_chunking, clean_up_html, parse_with_marker, simple_conversion
-from prompts import summarisation_prompt
+from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
 from definitions import CONFIG_PATH, ROOT_DIR
 
 load_dotenv(CONFIG_PATH)

@@ -9,7 +9,7 @@ from protollm.connectors import create_llm_connector
 
 from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
 from definitions import CONFIG_PATH
-from prompts import sys_prompt
+from ChemCoScientist.paper_analysis.prompts import sys_prompt
 
 load_dotenv(CONFIG_PATH)
 
