@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from typing import List
 
 from annotated_types import T
@@ -23,7 +24,7 @@ def input_data_preparing(case:str,
                          problem:str = 'regression',
                          split:bool = True):
     state = TrainState()
-    df = pd.read_csv(state(case,'ml')['data_path']).iloc[:1000,:]
+    df = pd.read_csv(state(case,'ml')['data_path'])#.iloc[:1000,:]
     if type(state(case,'ml')['feature_column'])==str:
         df_x = df[state(case,'ml')['feature_column']].apply(lambda x: Chem.MolFromSmiles(x))
     elif type(state(case,'ml')['feature_column'])==list:
@@ -71,17 +72,20 @@ def input_data_preparing_from_list(case:str,
         return data
 
 def run_train_automl(case:str,
-                     timeout:int = 5,
-                     path_to_save = r'generative_models_data/generative_models/transformer_auto'):
+                     timeout:int = 60*20,
+                     path_to_save = r'generative_models_data/generative_models/transformer_auto',
+                     save_trained_data_to_sync_server:bool=False):
     state = TrainState()
     metrics = {'regression':None,'classification':None}
     state.ml_model_upd_status(case=case,status=1)
     for problem in state(case,'ml')["Predictable properties"]:
         train, test = input_data_preparing(case=case, problem = problem)
-        if problem == 'regression':
-            available_secondary_operations = ['catboostreg','rfr', 'xgboostreg']
-        elif problem == 'classification':
-            available_secondary_operations = ['catboost','rf', 'xgboost']
+
+        #Uncomment to set available_operations with few models
+        # if problem == 'regression':
+        #     available_secondary_operations = ['catboostreg','rfr', 'xgboostreg']
+        # elif problem == 'classification':
+        #     available_secondary_operations = ['catboost','rf', 'xgboost']
         if not os.path.isdir(path_to_save+f'_{case}'+f'_{problem}'):
             os.mkdir(path_to_save+f'_{case}'+f'_{problem}')
         state.ml_model_upd_status(case=case,model_weight_path=path_to_save+f'_{case}'+f'_{problem}',problem=problem)
@@ -92,7 +96,7 @@ def run_train_automl(case:str,
             with_tuning=True,  # Allow tuning mode
             n_jobs=-1,  # CPU cores to use (-1 = all)
             cv_folds=5,  # Cross-validation folds
-        available_operations = available_secondary_operations,
+        #available_operations = available_secondary_operations,
 
         )
         
@@ -102,6 +106,16 @@ def run_train_automl(case:str,
 
         model.predict(features=test.features)
         metrics[problem] = model.get_metrics(test.target)
+        if save_trained_data_to_sync_server:
+            time.sleep(2)
+            api = HfApi(token=os.getenv(""))
+            last_folder = path_to_save.split(sep='/')[-1]
+            api.upload_folder(repo_id='SoloWayG/Molecule_transformer',
+                              folder_path=path_to_save+f'_{case}'+f'_{problem}',
+                              path_in_repo=f'ML_models/{last_folder}_{case}_{problem}',
+                              commit_message=f'Add model for {case} case with {problem} problem.',
+                              #delete_patterns=True
+            )
     state.ml_model_upd_status(case=case,metric=metrics,status=2)
     
         

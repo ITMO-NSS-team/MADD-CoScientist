@@ -76,11 +76,19 @@ def predict_smiles(smiles_list : List[str],
 
 
 if __name__=='__main__':
-    print(get_state_from_server(case="egfiction",url='http://10.64.4.247:81'))
+    #print(get_state_from_server(case="egfiction",url='http://10.64.4.247:81'))
 ###############
 #Test train with default params
-    # train_ml_with_data(case="Test22",classification_props=[],target_column=["QED"])
-    # print('Process created')
+    train_ml_with_data(case="Alzheimer", feature_column=['canonical_smiles'],
+    target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50'], #All propreties from dataframe you want to calculate in the end
+    regression_props = ['docking_score'], #Column name with data for regression tasks (That not include in calculcateble propreties)
+    classification_props = ['IC50'],
+    data_path=r'D:\Projects\CoScientist\automl\data\base_cases\alz.csv',
+    save_trained_data_to_sync_server = True,
+    description = 'Case for Alzheimer with trained FEDOT pipelines for predict "docking_score", and "IC50"',
+    timeout=60*20
+    )
+    print('Process created')
 
 ################
 #Test predict
