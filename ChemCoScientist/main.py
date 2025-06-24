@@ -87,6 +87,7 @@ conf = {
             "dataset_builder_agent": [dataset_builder_agent_description],
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
+            "paper_analysis_node": [paper_analysis_node_description],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,

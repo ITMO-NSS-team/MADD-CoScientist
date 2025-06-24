@@ -219,14 +219,15 @@ def paper_analysis_node(state: dict) -> Command:
         An object containing the next node to transition to ('replan' or `END`) and
         an update to the execution state with recorded steps and responses.
     """
-    task = state["input"]
+    plan = state["plan"]
+    task = plan[0]
 
     response = process_question(task)
 
     return Command(
         goto="replan_node",
         update={
-            "past_steps": [(task, response)],
-            "nodes_calls": [("paper_analysis_node", response)],
+            "past_steps": [(task, response.get('answer'))],
+            "nodes_calls": [("paper_analysis_node", response.get('answer'))],
         },
     )
