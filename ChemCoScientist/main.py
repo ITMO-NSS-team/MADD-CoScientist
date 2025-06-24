@@ -41,7 +41,7 @@ coder_agent_description = "'coder_agent' - can write any simple python scientifi
                           "chemical libraries. Can perform calculations.\n "
 
 paper_analysis_node_description = "'paper_analysis_node' - answers questions by retrieving and analyzing information " \
-                                  "from a database of chemical scientific papers."
+                                  "from a database of chemical scientific papers. Using this agent takes precedence over web search."
 
 additional_agents_description = (
     automl_agent_description
@@ -121,7 +121,8 @@ conf = {
         },
         # These prompts will be added as hints in ProtoLLM
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent",
+            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
+                        To find an answer, use the paper search first! NOT the web search!",
             "chat": """You are a chemical agent system. You can do the following:
                     - train generative models (generate SMILES molecules), train predictive models (predict properties)
                     - prepare a dataset for training
