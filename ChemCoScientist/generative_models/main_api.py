@@ -198,12 +198,10 @@ if __name__=='__main__':
                          filename="state.json",
                          local_dir='generative_models/transformer/autotrain/utils',
                          force_download=True)
-        # smiles = get_random_values_from_csv_pandas(file_path='/projects/generative_models_data/generated_CYK_FT_2_epoch.csv',
-        #                                            n=data.n_samples,
-        #                                            column_name='Smiles')
-        # ret = json.dumps({'smiles':smiles})
         ret = auto_generator(data)
         return json.dumps(ret)
+    
+    
     
     @app.get("/check_state")
     def check_state():
