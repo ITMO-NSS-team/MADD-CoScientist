@@ -12,12 +12,12 @@ from smolagents import tool
 
 from ChemCoScientist.tools.utils import filter_valid_strings
 
-# TODO: make yaml conf
+# TODO: get from load_env
 conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:81"}
 
 
 @tool
-def get_state_from_server(url: str = conf["url_pred"]) -> Union[dict, str]:
+def get_state_from_server(url: str = "pred") -> Union[dict, str]:
     """Get information about all available models (cases),
     their status (training, trained), description, metrics.
 
@@ -25,8 +25,13 @@ def get_state_from_server(url: str = conf["url_pred"]) -> Union[dict, str]:
     Then an error occurred. And this is its description. Notify the user about it.
 
     Args:
-        url (str): Url for server, for predictive is 'http://10.64.4.247:81' , for generative is 'http://10.32.2.2:81'
+        url (str): Flag for server, for predictive is 'pred', for generative is 'gen'
     """
+    if url == 'pred':
+        url = conf['url_pred']
+    else:
+        url = conf['url_gen']
+        
     url_ = url.split("http://")[1]
     resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
     if resp.status_code == 500:
@@ -38,7 +43,7 @@ def get_state_from_server(url: str = conf["url_pred"]) -> Union[dict, str]:
 
 @tool
 def get_case_state_from_server(
-    case: str, url: str = conf["url_pred"]
+    case: str, url: str = 'pred'
 ) -> Union[dict, str]:
     """Get information about a specific case/model (if found),
     its status (in training, trained), metrics, etc.
@@ -48,9 +53,13 @@ def get_case_state_from_server(
 
     Args:
         case (str): Name of case
-        url (str): Url for server, for predictive is 'http://10.64.4.247:81' , for generative is 'http://10.32.2.2:81'
+        url (str): Flag for server, for predictive is 'pred', for generative is 'gen'
     """
-
+    if url == 'pred':
+        url = conf['url_pred']
+    else:
+        url = conf['url_gen']
+        
     url_ = url.split("http://")[1]
     resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
     if resp.status_code == 500:
@@ -109,7 +118,7 @@ def train_gen_with_data(
     classification_props=[],  # Column name with data for classification tasks (That not include in calculcateble propreties)
     description="Descrption not provided",
     timeout=5,  # min
-    url: str = "http://10.32.2.2:81/train_gen_models",
+    url: str = conf["url_gen"] + "/train_gen_models",
     fine_tune: bool = True,
     n_samples=10,
     **kwargs,
@@ -211,7 +220,7 @@ def train_ml_with_data(
 
     p = Process(
         target=requests.post,
-        args=["http://10.64.4.247:81/train_ml", json.dumps(params)],
+        args=[f"{conf['url_pred']}/train_ml", json.dumps(params)],
     )
     p.start()
 
@@ -243,7 +252,7 @@ def ml_dl_training(
     print("Start training ml model for case: ", case)
     while not ml_ready:
         print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, conf["url_pred"])
+        st = get_case_state_from_server(case, 'pred')
         if isinstance(st, dict):
             if st["ml_models"]["status"] == "Trained":
                 ml_ready = True
@@ -282,7 +291,7 @@ def ml_dl_training(
     print("Start training ml model for case: ", case)
     while not ml_ready:
         print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, conf["url_pred"])
+        st = get_case_state_from_server(case, 'pred')
         if isinstance(st, dict):
             if st["ml_models"]["status"] == "Trained":
                 ml_ready = True
@@ -321,7 +330,7 @@ def ml_dl_training(
     print("Start training ml model for case: ", case)
     while not ml_ready:
         print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, conf["url_pred"])
+        st = get_case_state_from_server(case, 'pred')
         if isinstance(st, dict):
             if st["ml_models"]["status"] == "Trained":
                 ml_ready = True
@@ -420,16 +429,16 @@ def just_ml_training(
 @tool
 def generate_mol_by_case(
     case: str = "Alzheimer",
-    url: str = "http://10.32.2.2:81/generate_gen_models_by_case",
     n_samples: int = 10,
 ) -> dict:
     """Runs molecules generation using inference-ready (previously trained) generative models.
 
     Args:
         case (str, optional): Name of model (model names can be obtained by calling 'get_state_from_server').
-        url (str): Adress for server. By default 'http://10.32.2.2:81/generate_gen_models_by_case'
         n_samples (int, optional): Number of molecules to generate. Default is 1
     """
+    url = conf['url_gen'] + "/generate_gen_models_by_case"
+    
     params = {
         "case": case,
         "n_samples": n_samples,
@@ -437,7 +446,10 @@ def generate_mol_by_case(
     start_time = time.time()
     resp = requests.post(url, data=json.dumps(params))
     print("--- %s seconds ---" % (time.time() - start_time))
-    return json.loads(resp.json())
+    try:
+        return json.loads(resp.json())
+    except:
+        resp.json()
 
 
 @tool
