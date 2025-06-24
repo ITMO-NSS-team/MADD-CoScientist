@@ -159,7 +159,7 @@ conf = {
 # inputs = {"input": "Запусти обучение генеративной модели на данных '/Users/alina/Desktop/ИТМО/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', назови кейс IC50_chembl."}
 # inputs = {"input": "Какой статус обучения у кейса Docking_hight?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
-inputs = {"input": "How does the synthesis of Glionitrin A/B happen?"}
+inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
 
 
 if __name__ == "__main__":
