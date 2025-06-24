@@ -18,6 +18,7 @@ class MLData(BaseModel):
         description:str = 'Unknown case.'
         regression_props:list= None
         classification_props:list = None
+        save_trained_data_to_sync_server:bool = False
 
 
 def train_ml_with_data(data:MLData=Body()):
@@ -32,7 +33,7 @@ def train_ml_with_data(data:MLData=Body()):
                     os.mkdir(data.data_path)
                 data.data_path = data.data_path + '/data.csv'
                 df = df.dropna()
-                df = df[df[data.feature_column].str.len()<200]
+                df = df[df[data.feature_column[0]].str.len()<200]
                 df.to_csv(data.data_path) 
                       
         state.ml_model_upd_data(case=data.case,
@@ -42,7 +43,8 @@ def train_ml_with_data(data:MLData=Body()):
                                  predictable_properties={"regression":data.regression_props, "classification":data.classification_props})
         run_train_automl(case=data.case,
                          path_to_save=data.path_to_save,
-                         timeout=data.timeout)
+                         timeout=data.timeout,
+                         save_trained_data_to_sync_server=data.save_trained_data_to_sync_server)
 
 def inference_ml(data:MLData=Body()):
         resutls = run_predict_automl_from_list(data.case,data=data.smiles_list)
