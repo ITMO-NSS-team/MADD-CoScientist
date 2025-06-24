@@ -92,8 +92,7 @@ conf = {
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
         # full descripton for agents tools
-        "tools_descp": tools_rendered,
-        "agents_descp": additional_agents_description,
+        "tools_descp": tools_rendered + additional_agents_description,
         # set True if you want to use web search like black-box
         "web_search": True,
         # add a key with the agent node name if you need to pass something to it

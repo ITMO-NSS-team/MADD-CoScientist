@@ -213,7 +213,6 @@ def paper_analysis_node(state: dict) -> Command:
 
     Args:
         state: The current execution.
-        config: Configurable parameters.
 
     Returns:
         An object containing the next node to transition to ('replan' or `END`) and
