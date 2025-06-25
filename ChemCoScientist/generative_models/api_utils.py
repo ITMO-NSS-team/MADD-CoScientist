@@ -50,6 +50,7 @@ class TrainData(BaseModel):
         fine_tune:bool = True
         new_vocab:bool = False
         epochs:int = 10
+        batchsize:int = 2048
         # regression_props:list= None
         # classification_props:list = None
 
@@ -134,7 +135,7 @@ def case_trainer(data:TrainData=Body()):
 
 def auto_generator(data:TrainData=Body()):
      
-    state = TrainState(state_path='generative_models/transformer/autotrain/utils/state.json')
+    state = TrainState(state_path='autotrain/utils/state.json')
     if state(data.case,'gen')["status"] == "Trained":
         use_cond2dec = False
         gen_dict = main_generate(epochs=data.epochs,

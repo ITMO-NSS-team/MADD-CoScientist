@@ -163,7 +163,7 @@ def main_generate(server_dir = 'generative_models/transformer/train_dislip',
             state=state)
     print(df)
     #df.to_csv('generated_alzheimer_2_2_second_epoch.csv')
-    return df.to_dict()
+    return df
 
 # def train_ml_with_data(data:MLData=Body()):
 #         state = TrainState()
