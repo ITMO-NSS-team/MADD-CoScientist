@@ -196,7 +196,7 @@ if __name__=='__main__':
         
         hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
                          filename="state.json",
-                         local_dir='generative_models/autotrain/utils',
+                         local_dir='autotrain/utils',
                          force_download=True)
         ret = auto_generator(data)
         return json.dumps(ret)
