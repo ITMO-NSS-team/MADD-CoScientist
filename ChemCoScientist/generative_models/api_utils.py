@@ -90,7 +90,7 @@ def case_trainer(data:TrainData=Body()):
                     df = df.dropna()
                     df = df[df[data.feature_column[0]].str.len()<200]
                     df.to_csv(data.data_path)
-                    state.ml_model_upd_data(case=data.case,data_path=data.data_path)
+                    state.gen_model_upd_data(case=data.case,data_path=data.data_path)
         #CASE = 'CYK'
         # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
         # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
