@@ -1,53 +1,19 @@
-import base64
 import os
-from io import BytesIO
 
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage, SystemMessage
-from PIL import Image
+from langchain_core.messages import SystemMessage
 from protollm.connectors import create_llm_connector
 
 from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
-from definitions import CONFIG_PATH
 from ChemCoScientist.paper_analysis.prompts import sys_prompt
+from CoScientist.paper_parser.utils import convert_to_base64, prompt_func
+from definitions import CONFIG_PATH
 
 load_dotenv(CONFIG_PATH)
 
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 
 PAPER_STORE = ChromaDBPaperStore()
-
-
-def convert_to_base64(file_path):
-    """
-    Convert PIL images to Base64 encoded strings
-
-    :param file_path: path to image
-    :return: Re-sized Base64 string
-    """
-    pil_image = Image.open(file_path)
-    buffered = BytesIO()
-    pil_image.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return img_str
-
-
-def prompt_func(data):
-    text = data["text"]
-    imgs = data["image"]
-    content_parts = []
-    
-    for img in imgs:
-        image_part = {
-            "type": "image_url",
-            "image_url": f"data:image/jpeg;base64,{img}",
-        }
-        content_parts.append(image_part)
-    
-    text_part = {"type": "text", "text": text}
-    content_parts.append(text_part)
-    
-    return HumanMessage(content=content_parts)
 
 
 def query_llm(model_url: str, question: str, txt_context: str, img_paths: list[str]) -> tuple:
@@ -81,9 +47,12 @@ def process_question(question: str) -> dict:
     ans, metadata = query_llm(VISION_LLM_URL, question, txt_context, list(img_paths))
 
     return {'answer': ans,
-            'text_context': txt_context,
-            'image_context': img_paths,
-            'metadata': metadata}
+            'metadata': {
+                'text_context': txt_context,
+                'image_context': img_paths,
+                'metadata': metadata
+             }
+            }
 
 
 if __name__ == "__main__":

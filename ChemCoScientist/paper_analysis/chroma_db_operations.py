@@ -23,21 +23,6 @@ CHROMA_DB_PATH = os.path.join(ROOT_DIR, os.environ["CHROMA_STORAGE_PATH"])
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 PAPERS_PATH = os.path.join(ROOT_DIR, os.environ["PAPERS_STORAGE_PATH"])
 
-# Deprecated
-# image_decs_prompt = """Describe an image from a chemistry research paper by following these guidelines:
-# 1. Image Type : Specify what is depicted (e.g., reaction scheme, data graphs, microscopy image, spectrum, 3D molecular model, etc.).
-# 2. Chemical Components : List ALL substances, compounds, catalysts, or solvents, including chemical formulas and
-# concentrations, shown in the image (if available).
-# 3. Experimental Conditions : Note temperature, pressure, pH, reaction time, or other relevant parameters (if available).
-# 4. Image Data :
-#     - For graphs: Axes labels, value ranges, trends (e.g., linear correlation, peaks).
-#     - For spectra: Spectrum type (IR, UV-Vis, mass spectrometry), key signals, and their interpretation.
-#     - For reaction schemes: Reaction steps, intermediates, yields, or side products.
-# 5. Key Terms : Extract 5–10 keywords/terminology for semantic search (e.g., oxidative fluorination , microporous materials , thermogravimetric analysis ) if possible.
-#
-# Use precise scientific language. Focus on objective details visible in the image to maximize searchability in a
-# vector database. Do not add Markdown elements to the result."""
-
 
 class ChromaClient:
     def __init__(self):
@@ -78,17 +63,22 @@ class ChromaDBPaperStore:
         self.txt_chunk_num = 4
         self.img_chunk_num = 4
 
-        self.reg_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="intfloat/multilingual-e5-small",
+        self.sum_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="BAAI/bge-m3",
+            normalize_embeddings=True
+        )
+
+        self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="intfloat/multilingual-e5-large",
             normalize_embeddings=True
         )
 
         self.sum_collection = self.client.get_or_create_chroma_collection(self.sum_collection_name,
-                                                                          self.reg_embedding_function)
+                                                                          self.sum_embedding_function)
         self.txt_collection = self.client.get_or_create_chroma_collection(self.txt_collection_name,
-                                                                          self.reg_embedding_function)
+                                                                          self.rag_embedding_function)
         self.img_collection = self.client.get_or_create_chroma_collection(self.img_collection_name,
-                                                                          self.reg_embedding_function)
+                                                                          self.rag_embedding_function)
 
     @staticmethod
     def _image_to_base64(image_path: str) -> str:
