@@ -83,7 +83,7 @@ def case_trainer(data:TrainData=Body()):
     try:
         if data.data is not None:
                     df = pd.DataFrame(data.data)
-                    data.data_path = f"generative_models/transformer/autotrain/data/{data.case}"
+                    data.data_path = f"autotrain/data/{data.case}"
                     if not os.path.isdir(data.data_path):
                         os.mkdir(data.data_path)
                     data.data_path = data.data_path + '/data.csv'
