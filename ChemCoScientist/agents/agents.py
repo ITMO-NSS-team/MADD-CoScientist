@@ -16,6 +16,8 @@ from ChemCoScientist.tools import chem_tools, nanoparticle_tools
 from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
 from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
 
+from ChemCoScientist.paper_analysis.question_processing import process_question
+
 
 def dataset_builder_agent(state: dict, config: dict):
     config_cur_agent = config["configurable"]["additional_agents_info"][
@@ -200,5 +202,39 @@ def nanoparticle_node(state, config: dict):
         goto=END,
         update={
             "response": "I can't answer to your question right now. Perhaps there is something else that I can help?"
+        },
+    )
+
+
+def paper_analysis_node(state: dict) -> Command:
+    """
+    Answers the user's question using a DB with chemical scientific papers and a vision LLM.
+    Takes into account text, images and tables.
+
+    Args:
+        state: The current execution.
+
+    Returns:
+        An object containing the next node to transition to ('replan' or `END`) and
+        an update to the execution state with recorded steps and responses.
+    """
+    plan = state["plan"]
+    task = plan[0]
+
+    # Process question
+    response = process_question(task)
+
+    # Add metadata from response to state
+    state_metadata = state.get("metadata", {})
+    pa_metadata = {"paper_analysis": response.get('metadata')}
+    updated_metadata = state_metadata.copy()
+    updated_metadata.update(pa_metadata)
+
+    return Command(
+        goto="replan_node",
+        update={
+            "past_steps": [(task, response.get('answer'))],
+            "nodes_calls": [("paper_analysis_node", response.get('answer'))],
+            "metadata": updated_metadata,
         },
     )

@@ -2,21 +2,22 @@ import datetime
 import logging
 from pathlib import Path
 
-from chromadb.utils import embedding_functions
 from deepeval.metrics import AnswerRelevancyMetric, GEval
 from deepeval.metrics import ContextualPrecisionMetric
 from deepeval.metrics import ContextualRecallMetric
 from deepeval.metrics import ContextualRelevancyMetric
 from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from definitions import CONFIG_PATH
 from dotenv import load_dotenv
 import pandas as pd
 
-from answer_question import query_llm
-from pipelines import retrieve_context
-
-load_dotenv('../config.env')
+from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
+from ChemCoScientist.paper_analysis.question_processing import query_llm
 from protollm.metrics import model_for_metrics
+
+load_dotenv(CONFIG_PATH)
+
 
 metrics_init_params = {
     "model": model_for_metrics,
@@ -93,13 +94,9 @@ def pipeline_test_with_save(
         metrics_to_calculate: list,
         m_name: str,
         m_url: str,
-        sum_collection: str,
-        txt_collection: str,
-        img_collection: str,
         version: float,
-        sum_num: int = 1,
-        txt_num: int = 3,
-        img_num: int = 2
+        out_dir: str,
+        paper_store: ChromaDBPaperStore
 ) -> pd.DataFrame:
     """Tests pipeline.
 
@@ -108,18 +105,13 @@ def pipeline_test_with_save(
         metrics_to_calculate: list of metrics to be calculated
         m_name: string with model name
         m_url: string with model URL and name
-        sum_collection: paper summary collection name
-        txt_collection: papers chunks summary collection name
-        img_collection: images from papers collection name
-        sum_num: number of papers for question
-        txt_num: number of text chunks for question
-        img_num: number of images for question
         version: test version
+        out_dir: path to directory with results
+        paper_store: connector to DB
 
     Returns: pandas DataFrame
     """
     print("Pipeline test is running...")
-    out_dir = Path("./test_results")
     out_dir.mkdir(parents=True, exist_ok=True)
     path_to_results = Path(out_dir, f"pipeline_test_{m_name}_v{version}.txt")
     path_to_df = Path(out_dir, f"pipeline_test_{m_name}_v{version}.csv")
@@ -174,10 +166,7 @@ def pipeline_test_with_save(
             
             with Timer() as t:
                 try:
-                    txt_data, img_data = retrieve_context(
-                        sum_collection, txt_collection, img_collection, sum_num, txt_num, img_num,
-                        "query: " + question
-                    )
+                    txt_data, img_data = paper_store.retrieve_context("query: " + question)
                     row_data["context_retrieve_time"] = t.seconds_from_start
                 except Exception as e:
                     print(f"Context retrieval failed: {str(e)}")
@@ -262,39 +251,19 @@ Short metrics results:
 
 
 if __name__ == "__main__":
-    from chroma_db_operations import store_images_in_chromadb_txt_format, get_or_create_chroma_collection
-    from pipelines import prepare_db
-    
-    sum_collection_name = 'paper_summaries'
-    txt_collection_name = 'text_context_img2txt'
-    img_collection_name = 'image_context'
-    sum_chunk_num = 1  # Под вопрос будет подбираться одна статья по ее суммаризации
-    txt_chunk_num = 3  # Количество текстовых чанков
-    img_chunk_num = 2  # Количество изображений
-    papers_path = './papers'  # Папка со статьями
-    path_to_data = "./questions/complex_questions_draft.csv"  # Здесь указать файл с вопросами
+    papers_path = '../PaperAnalysis/papers'  # Папка со статьями
+    path_to_data = "../PaperAnalysis/questions/complex_questions_draft.csv"  # Здесь указать файл с вопросами
+    out_dir = Path("../PaperAnalysis/test_results")
     all_questions = pd.read_csv(path_to_data)
-
-    rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="intfloat/multilingual-e5-large",
-        normalize_embeddings=True
-    )
 
     model_name = "gemini-2.0-flash-001"
     model_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
-    
+
+    paper_store = ChromaDBPaperStore()
     # При первом запуске нужно создать векторные коллекции с помощью следующего кода
-    sum_col, txt_col, img_col = prepare_db(sum_collection_name, txt_collection_name, img_collection_name,
-                                           rag_embedding_function, rag_embedding_function, rag_embedding_function,
-                                           store_images_in_chromadb_txt_format, papers_path, model_url)
-    
-    # При втором, если, например, просто промпты поменяли,
-    # можно просто использовать следующий код, а верхний закомментировать
-    # sum_col = get_or_create_chroma_collection(sum_collection_name, rag_embedding_function)
-    # txt_col = get_or_create_chroma_collection(txt_collection_name, rag_embedding_function)
-    # img_col = get_or_create_chroma_collection(img_collection_name, rag_embedding_function)
+    # paper_store.prepare_db(papers_path)
 
     v = 0.1
     pipeline_test_with_save(
-        all_questions, [correctness_metric], model_name, model_url, sum_col, txt_col, img_col, v
+        all_questions, [correctness_metric], model_name, model_url, v, out_dir, paper_store
     )

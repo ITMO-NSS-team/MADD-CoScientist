@@ -172,6 +172,6 @@ cython_debug/
 
 config.env
 
-PaperAnalysis/papers/
-PaperAnalysis/parse_results/
-PaperAnalysis/questions/
+PaperAnalysis/
+
+.DS_Store

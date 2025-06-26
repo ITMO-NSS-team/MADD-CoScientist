@@ -1,10 +1,8 @@
 import os
 
-os.environ["OPENAI_API_KEY"] = "KEY"
-os.environ["PATH_TO_DATA"] = "tools/models/datasets/image_dataset_multi_filtered"
-os.environ["PATH_TO_CVAE_CHECKPOINT"] = "tools/models/checkpoints/cvae/model.pt"
-os.environ["PATH_TO_RESULTS"] = "tools/generation_results"
-
+from definitions import CONFIG_PATH
+from dotenv import load_dotenv
+load_dotenv(CONFIG_PATH)
 
 from protollm.agents.builder import GraphBuilder
 from protollm.connectors import create_llm_connector
@@ -14,6 +12,7 @@ from ChemCoScientist.agents.agents import (
     dataset_builder_agent,
     ml_dl_agent,
     nanoparticle_node,
+    paper_analysis_node,
 )
 from CoScientist.scientific_agents.agents import coder_agent
 from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
@@ -28,7 +27,8 @@ visual_model = create_llm_connector(
 # description for agent WITHOUT langchain-tools
 automl_agent_description = """
 'ml_dl_agent' - an agent that can run training of a generative model to generate SMILES, training of predictive models 
-to predict properties. It also already stores ready-made models for inference. You can also ask him to prepare an existing dataset (you need to be specific in your request).
+to predict properties. It also already stores ready-made models for inference. You can also ask him to prepare an 
+existing dataset (you need to be specific in your request).
 It can generate medicinal molecules. You must use this agent for molecules generation!!!\n
 
 """
@@ -36,11 +36,18 @@ dataset_builder_agent_description = "'dataset_builder_agent' - collects data fro
     To collect data, it needs either the protein name or a specific id from a specific database. \
         It can collect data from one specific database or from both. All data is saved locally. \
         It also processes data: removes junk values, empty cells, and can filter if necessary.\n"
-coder_agent_description = "'coder_agent' - can write any simple python scientific code. Can use rdkit and other chemical libraries. Can perform calculations.\n "
+
+coder_agent_description = "'coder_agent' - can write any simple python scientific code. Can use rdkit and other " \
+                          "chemical libraries. Can perform calculations.\n "
+
+paper_analysis_node_description = "'paper_analysis_node' - answers questions by retrieving and analyzing information " \
+                                  "from a database of chemical scientific papers. Using this agent takes precedence over web search."
+
 additional_agents_description = (
     automl_agent_description
     + dataset_builder_agent_description
     + coder_agent_description
+    + paper_analysis_node_description
 )
 
 conf = {
@@ -59,6 +66,7 @@ conf = {
             "ml_dl_agent",
             "dataset_builder_agent",
             "coder_agent",
+            "paper_analysis_node",
         ],
         # nodes for scenario agents
         "scenario_agent_funcs": {
@@ -67,6 +75,7 @@ conf = {
             "ml_dl_agent": ml_dl_agent,
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
+            "paper_analysis_node": paper_analysis_node,
         },
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
@@ -78,6 +87,7 @@ conf = {
             "dataset_builder_agent": [dataset_builder_agent_description],
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
+            "paper_analysis_node": [paper_analysis_node_description],
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
@@ -111,7 +121,8 @@ conf = {
         },
         # These prompts will be added as hints in ProtoLLM
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent",
+            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
+                        To find an answer, use the paper search first! NOT the web search!",
             "chat": """You are a chemical agent system. You can do the following:
                     - train generative models (generate SMILES molecules), train predictive models (predict properties)
                     - prepare a dataset for training
@@ -149,10 +160,12 @@ conf = {
 # inputs = {"input": "Запусти обучение генеративной модели на данных '/Users/alina/Desktop/ИТМО/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', назови кейс IC50_chembl."}
 # inputs = {"input": "Какой статус обучения у кейса Docking_hight?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
+inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
 
 
 if __name__ == "__main__":
     graph = GraphBuilder(conf)
-    while True:
-        task = input()
-        res_1 = graph.run({"input": task}, debug=True, user_id="1")
+    # while True:
+    #     task = input()
+    #     res_1 = graph.run({"input": task}, debug=True, user_id="1")
+    res_1 = graph.run(inputs, debug=True, user_id="1")

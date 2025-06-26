@@ -1,8 +1,7 @@
-from typing import List 
 from fastapi import Body
 from pydantic import BaseModel
-from automl.utils.base_state import TrainState
-from automl.utils.automl_main import run_train_automl,run_predict_automl_from_list
+from infrastructure.automl.utils.base_state import TrainState
+from infrastructure.automl.utils.automl_main import run_train_automl,run_predict_automl_from_list
 import pandas as pd
 import os 
 
