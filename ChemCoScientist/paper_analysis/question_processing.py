@@ -31,15 +31,17 @@ def query_llm(model_url: str, question: str, txt_context: str, img_paths: list[s
 
 
 def process_question(question: str) -> dict:
-
-    txt_data, img_data = PAPER_STORE.retrieve_context("query: " + question)
-
+    
+    txt_data, img_data = PAPER_STORE.retrieve_context(question)
+    
     txt_context = ''
     img_paths = set()
-
-    for chunk in txt_data['documents'][0]:
-        txt_context += '\n\n' + chunk.replace("passage: ", "")
-    for chunk_meta in txt_data['metadatas'][0]:
+    
+    for idx, chunk in enumerate(txt_data, start=1):
+        txt_context += f"{idx}. Metadata: " \
+                       + str(chunk[2]) + "\nChunk: " \
+                       + chunk[1].replace("passage: ", "") + '\n\n'
+    for chunk_meta in [chunk[2] for chunk in txt_data]:
         img_paths.update(eval(chunk_meta["imgs_in_chunk"]))
     for img in img_data['metadatas'][0]:
         img_paths.add(img['image_path'])

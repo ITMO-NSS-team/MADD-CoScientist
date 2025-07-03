@@ -10,6 +10,7 @@ from chromadb.api.types import EmbeddingFunction, Documents
 from chromadb.utils.data_loaders import ImageLoader
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
+from sentence_transformers import CrossEncoder
 from protollm.connectors import create_llm_connector
 
 from CoScientist.paper_parser.parse_and_split import html_chunking, clean_up_html, parse_with_marker, simple_conversion
@@ -21,6 +22,7 @@ DATA_LOADER = ImageLoader()
 IMAGES_PATH = os.path.join(ROOT_DIR, os.environ["PARSE_RESULTS_PATH"])
 CHROMA_DB_PATH = os.path.join(ROOT_DIR, os.environ["CHROMA_STORAGE_PATH"])
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
+SUMMARY_LLM_URL = os.environ["SUMMARY_LLM_URL"]
 PAPERS_PATH = os.path.join(ROOT_DIR, os.environ["PAPERS_STORAGE_PATH"])
 
 
@@ -52,6 +54,7 @@ class ChromaClient:
 class ChromaDBPaperStore:
     def __init__(self):
         self.llm_url = VISION_LLM_URL
+        self.summary_llm = SUMMARY_LLM_URL
 
         self.client = ChromaClient()
 
@@ -59,9 +62,9 @@ class ChromaDBPaperStore:
         self.txt_collection_name = 'text_context_img2txt'
         self.img_collection_name = 'image_context'
 
-        self.sum_chunk_num = 5
-        self.txt_chunk_num = 4
-        self.img_chunk_num = 4
+        self.sum_chunk_num = 15
+        self.txt_chunk_num = 15
+        self.img_chunk_num = 2
 
         self.sum_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="BAAI/bge-m3",
@@ -69,7 +72,7 @@ class ChromaDBPaperStore:
         )
 
         self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="intfloat/multilingual-e5-large",
+            model_name="BAAI/bge-m3",
             normalize_embeddings=True
         )
 
@@ -79,6 +82,10 @@ class ChromaDBPaperStore:
                                                                           self.rag_embedding_function)
         self.img_collection = self.client.get_or_create_chroma_collection(self.img_collection_name,
                                                                           self.rag_embedding_function)
+        
+        self.reranker = CrossEncoder(
+            "Alibaba-NLP/gte-multilingual-reranker-base", max_length=2048, trust_remote_code=True
+        )
 
     @staticmethod
     def _image_to_base64(image_path: str) -> str:
@@ -125,21 +132,40 @@ class ChromaDBPaperStore:
                     documents=[self._image_to_text(img_path)],
                     metadatas=[{"type": "image", "source": paper_name, "image_path": img_path}]
                 )
-
-    def retrieve_context(self, query: str, relevant_papers: list = None) -> tuple[dict, dict]:
+    
+    def retrieve_context(self,
+                         query: str,
+                         relevant_papers: list = None) -> tuple[list, dict]:
         if not relevant_papers:
-            docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=self.sum_chunk_num)
-            relevant_papers = [doc['source'] for doc in docs['metadatas'][0]]
-
-        text_context = self.client.query_chromadb(self.txt_collection, query, {"source": {"$in": relevant_papers}},
-                                           self.txt_chunk_num)
-        image_context = self.client.query_chromadb(self.img_collection, query, {"source": {"$in": relevant_papers}},
-                                            self.img_chunk_num)
-
+            raw_docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=self.sum_chunk_num)
+            docs = self.search_with_reranker(query, raw_docs, top_k=3)
+            relevant_papers = [doc[2]["source"] for doc in docs]
+        
+        raw_text_context = self.client.query_chromadb(
+            self.txt_collection, query, {"source": {"$in": relevant_papers}}, self.txt_chunk_num
+        )
+        image_context = self.client.query_chromadb(
+            self.img_collection, query, {"source": {"$in": relevant_papers}}, self.img_chunk_num
+        )
+        text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
         return text_context, image_context
+    
+    def search_with_reranker(self, query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
+        metadatas = initial_results['metadatas'][0]
+        documents = initial_results["documents"][0]
+        ids = initial_results["ids"][0]
+        
+        pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
+        
+        rerank_scores = self.reranker.predict(pairs)
+        
+        scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
+        scored_docs.sort(key=lambda x: x[3], reverse=True)
+        
+        return scored_docs[:top_k]
 
     def _add_paper_summary_to_db(self, paper_path: str) -> None:
-        llm = create_llm_connector(self.llm_url)
+        llm = create_llm_connector(self.summary_llm)
         paper = os.path.basename(paper_path)
         conv_res = simple_conversion(paper_path)
         summary = llm.invoke([HumanMessage(content=summarisation_prompt + conv_res)]).content
