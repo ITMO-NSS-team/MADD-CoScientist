@@ -25,9 +25,8 @@
 
 ### Environment Setup for Development
 ```commandline
-pip install -r requirements.txt
-pip install git+https://github.com/aimclub/ProtoLLM.git@main
-pip install --force-reinstall chromadb==<version_from_requirements.txt>
+poetry install
+poetry run pip install --no-deps git+https://github.com/aimclub/ProtoLLM.git@main
 ```
 
 
