@@ -384,10 +384,11 @@ def clean_up_html(paper_name: str, doc_dir: Path) -> str:
     soup = BeautifulSoup(html, "lxml")
     
     blacklist = [
-        "author information", "associated content", "acknowledgments", "acknowledgements", "references",
-        "data availability", "declaration of competing interest", "credit authorship contribution statement", "funding",
-        "ethical statements", "supplementary materials", "conflict of interest", "conflicts of interest",
-        "author contributions", "data availability statement", "ethics approval", "supplementary information"
+        "author information", "associated content", "acknowledgment", "acknowledgement", "acknowledgments",
+        "acknowledgements", "references", "data availability", "declaration of competing interest",
+        "credit authorship contribution statement", "funding", "ethical statements", "supplementary materials",
+        "conflict of interest", "conflicts of interest", "author contributions", "data availability statement",
+        "ethics approval", "supplementary information"
     ]
     for header in soup.find_all(["h1", "h2", "h3"]):
         header_text = header.get_text(strip=True).lower()
@@ -454,7 +455,7 @@ def html_chunking(html_string: str, paper_name: str) -> list:
     
     documents = splitter.split_text(html_string)
     for doc in documents:
-        doc.page_content = "passage: " + doc.page_content
+        doc.page_content = "passage: " + doc.page_content  # Maybe delete "passage: " addition
         doc.metadata["imgs_in_chunk"] = str(extract_img_url(doc.page_content, paper_name))
         doc.metadata["source"] = paper_name + ".pdf"
         

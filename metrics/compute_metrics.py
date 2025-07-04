@@ -14,10 +14,9 @@ import pandas as pd
 
 from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
 from ChemCoScientist.paper_analysis.question_processing import query_llm
-from protollm.metrics import model_for_metrics
 
 load_dotenv(CONFIG_PATH)
-
+from protollm.metrics import model_for_metrics  # Иначе модель из конфига нормально не загружалась
 
 metrics_init_params = {
     "model": model_for_metrics,
@@ -27,29 +26,15 @@ metrics_init_params = {
 # Можно переписать критерий для оценки. Текущий достаточно жестко оценивает
 correctness_metric = GEval(
     name="Correctness",
-    criteria=(
-        "1. Correctness and Relevance:"
-        "- Compare the actual response against the expected response. Determine the"
-        " extent to which the actual response captures the key elements and concepts of"
-        " the expected response."
-        "- Assign higher scores to actual responses that accurately reflect the core"
-        " information of the expected response, even if only partial."
-        "2. Numerical Accuracy and Interpretation:"
-        "- Pay particular attention to any numerical values present in the expected"
-        " response. Verify that these values are correctly included in the actual"
-        " response and accurately interpreted within the context."
-        "- Ensure that units of measurement, scales, and numerical relationships are"
-        " preserved and correctly conveyed."
-        "3. Allowance for Partial Information:"
-        "- Do not heavily penalize the actual response for incompleteness if it covers"
-        " significant aspects of the expected response. Prioritize the correctness of"
-        " provided information over total completeness."
-        "4. Handling of Extraneous Information:"
-        "- While additional information not present in the expected response should not"
-        " necessarily reduce score, ensure that such additions do not introduce"
-        " inaccuracies or deviate from the context of the expected response."
-    ),
+    evaluation_steps=[
+        "If all essential information from the expected output is present in the actual output, regardless "
+        "of wording or structure, it is OK.",
+        "Actual output does not necessarily have to match word for word with the expected output.",
+        "If the numeric values don't match, it's not OK.",
+        "**It is STRICTLY FORBIDDEN to lower the score for expanding the answer** if the main meaning and data are correct.",
+    ],
     evaluation_params=[
+        LLMTestCaseParams.INPUT,
         LLMTestCaseParams.ACTUAL_OUTPUT,
         LLMTestCaseParams.EXPECTED_OUTPUT,
     ],
@@ -95,7 +80,7 @@ def pipeline_test_with_save(
         m_name: str,
         m_url: str,
         version: float,
-        out_dir: str,
+        out_dir: Path,
         paper_store: ChromaDBPaperStore
 ) -> pd.DataFrame:
     """Tests pipeline.
@@ -166,16 +151,18 @@ def pipeline_test_with_save(
             
             with Timer() as t:
                 try:
-                    txt_data, img_data = paper_store.retrieve_context("query: " + question)
+                    txt_data, img_data = paper_store.retrieve_context(question)
                     row_data["context_retrieve_time"] = t.seconds_from_start
                 except Exception as e:
                     print(f"Context retrieval failed: {str(e)}")
                     txt_context = ''
                 txt_context = ''
                 img_paths = set()
-                for chunk in txt_data['documents'][0]:
-                    txt_context += '\n\n' + chunk.replace("passage: ", "")
-                for chunk_meta in txt_data['metadatas'][0]:
+                for idx, chunk in enumerate(txt_data, start=1):
+                    txt_context += f"{idx}. Metadata: " \
+                                   + str(chunk[2]) + "\nChunk: " \
+                                   + chunk[1].replace("passage: ", "") + '\n\n'
+                for chunk_meta in [chunk[2] for chunk in txt_data]:
                     img_paths.update(eval(chunk_meta["imgs_in_chunk"]))
                 for img in img_data['metadatas'][0]:
                     img_paths.add(img['image_path'])
