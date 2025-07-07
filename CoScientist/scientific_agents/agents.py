@@ -1,5 +1,6 @@
 from smolagents import CodeAgent, OpenAIServerModel
 from smolagents import DuckDuckGoSearchTool
+from smolagents import LiteLLMModel
 
 from langgraph.types import Command
 
@@ -9,11 +10,18 @@ def coder_agent(state: dict, config: dict):
     plan = state["plan"]
     task = plan[0]
 
-    model = OpenAIServerModel(
-        api_base=config_cur_agent["url"],
-        model_id=config_cur_agent["model_name"],
-        api_key=config_cur_agent["api_key"],
-    )
+    if 'groq.com' in config_cur_agent["url"]:
+        model = LiteLLMModel(
+            config_cur_agent["model_name"],
+            api_base=config_cur_agent["url"],
+            api_key=config_cur_agent["api_key"]
+        )
+    else:
+        model = OpenAIServerModel(
+            api_base=config_cur_agent["url"],
+            model_id=config_cur_agent["model_name"],
+            api_key=config_cur_agent["api_key"],
+        )
     agent = CodeAgent(
         tools=[DuckDuckGoSearchTool()], model=model, additional_authorized_imports=["*"]
     )

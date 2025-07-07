@@ -13,7 +13,7 @@ from smolagents import tool
 from ChemCoScientist.tools.utils import filter_valid_strings
 
 # TODO: get from load_env
-conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:81"}
+conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:94"}
 
 
 @tool
@@ -266,7 +266,7 @@ def ml_dl_training(
         regression_props=regression_props,
         classification_props=classification_props,
         # TODO: rm after testing automl pipeline
-        epoch=1,
+        # epoch=1,
     )
     print("Start training gen model for case: ", case)
 
@@ -305,7 +305,7 @@ def ml_dl_training(
         regression_props=regression_props,
         classification_props=classification_props,
         # TODO: rm after testing automl pipeline
-        epoch=1,
+        # epoch=1,
     )
     print("Start training gen model for case: ", case)
 
@@ -344,7 +344,7 @@ def ml_dl_training(
         regression_props=regression_props,
         classification_props=classification_props,
         # TODO: rm after testing automl pipeline
-        epoch=1,
+        # epoch=1,
     )
     print("Start training gen model for case: ", case)
 

@@ -5,6 +5,7 @@ from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 from smolagents import CodeAgent, DuckDuckGoSearchTool, OpenAIServerModel
+from smolagents import LiteLLMModel
 
 from ChemCoScientist.agents.agents_prompts import (
     additional_ds_builder_prompt,
@@ -26,11 +27,19 @@ def dataset_builder_agent(state: dict, config: dict):
     plan = state["plan"]
     task = plan[0]
 
-    model = OpenAIServerModel(
-        api_base=config_cur_agent["url"],
-        model_id=config_cur_agent["model_name"],
-        api_key=config_cur_agent["api_key"],
-    )
+    if 'groq.com' in config_cur_agent["url"]:
+        model = LiteLLMModel(
+            config_cur_agent["model_name"],
+            api_base=config_cur_agent["url"],
+            api_key=config_cur_agent["api_key"]
+        )
+    else:
+        model = OpenAIServerModel(
+            api_base=config_cur_agent["url"],
+            model_id=config_cur_agent["model_name"],
+            api_key=config_cur_agent["api_key"],
+        )
+
     agent = CodeAgent(
         tools=[DuckDuckGoSearchTool(), fetch_BindingDB_data, fetch_chembl_data],
         model=model,
@@ -55,12 +64,20 @@ def ml_dl_agent(state: dict, config: dict):
     config_cur_agent = config["configurable"]["additional_agents_info"]["ml_dl_agent"]
     plan = state["plan"]
     task = plan[0]
-
-    model = OpenAIServerModel(
-        api_base=config_cur_agent["url"],
-        model_id=config_cur_agent["model_name"],
-        api_key=config_cur_agent["api_key"],
-    )
+    
+    if 'groq.com' in config_cur_agent["url"]:
+        model = LiteLLMModel(
+            config_cur_agent["model_name"],
+            api_base=config_cur_agent["url"],
+            api_key=config_cur_agent["api_key"]
+        )
+    else:
+        model = OpenAIServerModel(
+            api_base=config_cur_agent["url"],
+            model_id=config_cur_agent["model_name"],
+            api_key=config_cur_agent["api_key"],
+        )
+    
     agent = CodeAgent(
         tools=[DuckDuckGoSearchTool()] + automl_tools,
         model=model,

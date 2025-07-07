@@ -18,7 +18,7 @@ from CoScientist.scientific_agents.agents import coder_agent
 from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
 
 model = create_llm_connector(
-    "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
+    "https://api.groq.com/openai/v1;llama-3.3-70b-versatile"
 )
 
 visual_model = create_llm_connector(
@@ -88,6 +88,8 @@ conf = {
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
             "paper_analysis_node": [paper_analysis_node_description],
+            "web_search": [
+                "You can use web search to find information on the internet. "]
         },
         # here can be langchain web tools (not TavilySearch)
         # "web_tools": web_tools,
@@ -98,22 +100,22 @@ conf = {
         # add a key with the agent node name if you need to pass something to it
         "additional_agents_info": {
             "dataset_builder_agent": {
-                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
-                "url": "https://api.vsegpt.ru/v1",
+                "model_name": "groq/deepseek-r1-distill-llama-70b",
+                "url": "https://api.groq.com/openai/v1",
                 "api_key": os.environ["OPENAI_API_KEY"],
                 #  Change on your dir if another!
                 "ds_dir": "./data_dir_for_coder",
             },
             "coder_agent": {
-                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
-                "url": "https://api.vsegpt.ru/v1",
+                "model_name": "groq/deepseek-r1-distill-llama-70b",
+                "url": "https://api.groq.com/openai/v1",
                 "api_key": os.environ["OPENAI_API_KEY"],
                 #  Change on your dir if another!
                 "ds_dir": "./data_dir_for_coder",
             },
             "ml_dl_agent": {
-                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
-                "url": "https://api.vsegpt.ru/v1",
+                "model_name": "groq/deepseek-r1-distill-llama-70b",
+                "url": "https://api.groq.com/openai/v1",
                 "api_key": os.environ["OPENAI_API_KEY"],
                 #  Change on your dir if another!
                 "ds_dir": "./data_dir_for_coder",
@@ -130,6 +132,8 @@ conf = {
                     - perform calculations with chemical python libraries
                     - solve problems of nanomaterial synthesis
                     - analyze chemical articles
+                    
+                    If user ask something like "What can you do" - make answer yourself!!!
                     """
         },
     },
@@ -138,8 +142,8 @@ conf = {
 
 # UNCOMMENT the one you need
 
-# inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
-# inputs = {"input": "Поищи с помощью поиска свежие статьи на тему онлайн-синтеза наноматериалов"}
+inputs = {"input": "Посчитай qed, tpsa, logp, hbd, hba свойства ацетона"}
+# inputs = {"input": "Поищи с помощью веб-поиска свежие статьи на тему онлайн-синтеза наноматериалов"}
 # inputs = {"input": "Generate an image for nanoparticles most optimal for catalysis."}
 # inputs = {"input": "Что ты можешь?"}
 # inputs = {"input": "Узнай есть ли обученные модели, напиши какие именно доступны."}
@@ -158,14 +162,14 @@ conf = {
 # }
 
 # inputs = {"input": "Запусти обучение генеративной модели на данных '/Users/alina/Desktop/ИТМО/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', назови кейс IC50_chembl."}
-# inputs = {"input": "Какой статус обучения у кейса Docking_hight?"}
+# inputs = {"input": "What can you do?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
-inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
-
+# inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
+graph = GraphBuilder(conf)
 
 if __name__ == "__main__":
-    graph = GraphBuilder(conf)
     # while True:
     #     task = input()
     #     res_1 = graph.run({"input": task}, debug=True, user_id="1")
-    res_1 = graph.run(inputs, debug=True, user_id="1")
+    for step in graph.stream(inputs, user_id="1"):
+        print(step)
