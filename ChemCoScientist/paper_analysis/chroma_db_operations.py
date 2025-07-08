@@ -98,6 +98,7 @@ class ChromaDBPaperStore:
         self.img_collection_name = "image_context"
 
         self.sum_chunk_num = 15
+        self.final_sum_chunk_num = 3
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
 
@@ -179,31 +180,45 @@ class ChromaDBPaperStore:
             ]
         )
 
+
+    def search_for_papers(self,
+                          query: str,
+                          chunks_num: int = None,
+                          final_chunks_num: int = None) -> list[str]:
+        chunks_num = chunks_num if chunks_num else self.sum_chunk_num
+        final_chunks_num = final_chunks_num if final_chunks_num else self.final_sum_chunk_num
+
+        raw_docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=chunks_num)
+        docs = self.search_with_reranker(query, raw_docs, top_k=final_chunks_num)
+        res = [doc[2]["source"] for doc in docs]
+        return {'answer': res}
+
     def retrieve_context(
             self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
+        print('in retrieve_context')
         if not relevant_papers:
-            raw_docs = self.client.query_chromadb(
-                self.sum_collection, query, chunk_num=self.sum_chunk_num
-            )
-            docs = self.search_with_reranker(query, raw_docs, top_k=3)
-            relevant_papers = [doc[2]["source"] for doc in docs]
+            relevant_papers = self.search_for_papers(query)
+        print('found papers')
 
         raw_text_context = self.client.query_chromadb(
             self.txt_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.txt_chunk_num,
         )
+        print('found txt')
         image_context = self.client.query_chromadb(
             self.img_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.img_chunk_num,
         )
+        print('found images')
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
+        print('reranking done')
         return text_context, image_context
-    
+
     @staticmethod
     def search_with_reranker(query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
         metadatas = initial_results['metadatas'][0]
@@ -211,13 +226,13 @@ class ChromaDBPaperStore:
         ids = initial_results["ids"][0]
 
         pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
-        
+
         # TODO: move the reranker to a separate service
         reranker = CrossEncoder(
             "Alibaba-NLP/gte-multilingual-reranker-base", max_length=2048, trust_remote_code=True
         )
         rerank_scores = reranker.predict(pairs)
-        
+
         scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
         scored_docs.sort(key=lambda x: x[3], reverse=True)
 

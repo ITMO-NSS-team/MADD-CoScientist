@@ -1,3 +1,4 @@
+import ast
 import os
 import time
 from typing import Annotated
@@ -14,6 +15,7 @@ from ChemCoScientist.agents.agents_prompts import (
     ds_builder_prompt,
     worker_prompt,
 )
+from ChemCoScientist.tools import chem_tools, nanoparticle_tools, paper_analysis_tools
 from ChemCoScientist.paper_analysis.question_processing import process_question
 from ChemCoScientist.tools import chem_tools, nanoparticle_tools
 from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
@@ -183,41 +185,50 @@ def nanoparticle_node(state: dict, config: dict) -> Command:
     })
 
 
-def paper_analysis_node(state: dict, config: dict) -> Command:
+def paper_analysis_agent(state: dict, config: dict) -> Command:
+    """
+    Answers the user's question using a DB with chemical scientific papers and a vision LLM.
+    Takes into account text, images and tables.
+
+    Args:
+        state: The current execution.
+
+    Returns:
+        An object containing the next node to transition to ('replan' or `END`) and
+        an update to the execution state with recorded steps and responses.
+    """
     print("--------------------------------")
     print("Paper agent called")
     print("Current task:")
     print(state["task"])
     print("--------------------------------")
 
+    llm: BaseChatModel = config["configurable"]["llm"]
+
     task = state["task"]
-    response = process_question(task)
+
+    paper_analysis_agent = create_react_agent(
+        llm, paper_analysis_tools, state_modifier=worker_prompt
+    )
+    print('created paper analysis agent successfully')
+
+    response = paper_analysis_agent.invoke({"messages": [("user", task)]})
+
+    result = ast.literal_eval(response["messages"][2].content)
 
     updated_metadata = state.get("metadata", {}).copy()
-    updated_metadata["paper_analysis"] = response.get("metadata")
-    updated_metadata = {}
-    response = {'answer': 'Paper agent not supported now'}
-    
+    pa_metadata = {"paper_analysis": result.get("metadata")}
+    if pa_metadata["paper_analysis"]:
+        updated_metadata.update(pa_metadata)
+
+    print(f'updated_metadata: {updated_metadata}')
+
     return Command(update={
         "past_steps": Annotated[set, operator.or_](set([
-            (task, response.get("answer"))
+            (task, result["answer"])
         ])),
         "nodes_calls": Annotated[set, operator.or_](set([
-            ("paper_analysis_node", (("text", response.get("answer")),))
+            ("paper_analysis_agent", (("text", result["answer"]),))
         ])),
         "metadata": Annotated[dict, operator.or_](updated_metadata),
     })
-    # Add metadata from response to state
-    state_metadata = state.get("metadata", {})
-    pa_metadata = {"paper_analysis": response.get("metadata")}
-    updated_metadata = state_metadata.copy()
-    updated_metadata.update(pa_metadata)
-
-    return Command(
-        goto="replan_node",
-        update={
-            "past_steps": [(task, response.get("answer"))],
-            "nodes_calls": [("paper_analysis_node", response.get("answer"))],
-            "metadata": updated_metadata,
-        },
-    )

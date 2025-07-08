@@ -1,12 +1,12 @@
 import os
+import time
 
 import streamlit as st
 from protollm.agents.builder import GraphBuilder
 from streamlit_extras.grid import GridDeltaGenerator, grid
-from tools.utils import convert_to_base64
-from frontend.utils import clean_folder
-
-from .utils import file_uploader, papers_uploader
+from ChemCoScientist.tools.utils import convert_to_base64
+from ChemCoScientist.frontend.utils import file_uploader, clean_folder
+from ChemCoScientist.frontend.streamlit_endpoints import process_uploaded_paper
 
 
 def init_language():
@@ -300,6 +300,8 @@ def _render_paper_uploader():
                         accept_multiple_files=True,
                         key="papers_file_uploader",
                         label_visibility="collapsed",
+                        type=['pdf'],
+                        help="Supported formats: PDF",
                     )
                     st.form_submit_button(
                         "Submit", use_container_width=True, on_click=load_papers
@@ -313,6 +315,8 @@ def _render_paper_uploader():
                         accept_multiple_files=True,
                         key="papers_file_uploader",
                         label_visibility="collapsed",
+                        type=['pdf'],
+                        help="Поддерживаемые форматы: PDF",
                     )
                     st.form_submit_button(
                         "Submit", use_container_width=True, on_click=load_papers
@@ -324,7 +328,6 @@ def _render_file_uploader():
     Renders file uploader
     """
     match st.session_state.language:
-
         case "English":
             with st.expander("Choose dataset files"):
                 with st.form(key="dataset_files_form", border=False):
@@ -365,17 +368,52 @@ def load_dataset():
         st.toast(f"Successfully loaded datasets", icon="✅")
 
 
-def load_papers():
+def load_papers():  # !!!!!! translate to rus
     """
-    loads submited papers to the session state on button click
+    loads submitted papers to the session state on button click
     """
-    files = st.session_state.papers_file_uploader
-    print(files)
-    uploaded_files = papers_uploader(files)
-    if uploaded_files:
-        # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
-        # st.toast(f"Successfully loaded dataset:\n {st.session_state.dataset_name}", icon="✅")
-        st.toast(f"Successfully loaded papers", icon="✅")
+    uploaded_papers = st.session_state.papers_file_uploader
+    print(f'uploaded_papers: {uploaded_papers}')
+    if uploaded_papers is not None:
+        print('inside paper processing block')
+        # Process file here
+        st.write("File uploaded and processed")
+
+        if uploaded_papers:
+            new_files_processed = False
+
+            with st.spinner("Processing uploaded files..."):
+                for uploaded_file in uploaded_papers:
+                    if uploaded_file.name not in [f["name"] for f in st.session_state.uploaded_papers]:
+                        try:
+                            # Process the uploaded file
+                            result = process_uploaded_paper(uploaded_file)
+
+                            if result["success"]:
+                                st.session_state.uploaded_papers.append({
+                                    "name": uploaded_file.name,
+                                    "size": uploaded_file.size,
+                                    "type": uploaded_file.type
+                                })
+                                # st.success(f"✅ Successfully processed: {uploaded_file.name}")
+                                new_files_processed = True
+                            else:
+                                st.error(f"❌ Error processing file: {result['error']}")
+                        except Exception as e:
+                            st.error(f"❌ Unexpected error processing {uploaded_file.name}: {str(e)}")
+
+        uploaded_papers = None
+        # logger.info(f'uploaded files after delete: {uploaded_papers}')
+        # Rerun only if new files were processed
+        # if new_files_processed:
+        #     time.sleep(1)
+        #     st.rerun()
+    # print(files)
+    # uploaded_files = papers_uploader(files)
+    # if uploaded_files:
+    #     # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
+    #     # st.toast(f"Successfully loaded dataset:\n {st.session_state.dataset_name}", icon="✅")
+    #     st.toast(f"Successfully loaded papers", icon="✅")
 
 
 def init_images():
@@ -393,7 +431,7 @@ def init_images():
 
 def init_papers():
     """
-    initializes images
+    initializes papers
     """
     images_files_container = st.container(border=True)
     with images_files_container:
@@ -472,7 +510,7 @@ def side_bar():
     # st.session_state.language = 'Русский'
 
     # uncomment for start without pass model, key, etc (from gui)
-    # init_backend()
+    init_backend()
 
     with st.sidebar:
         init_language()

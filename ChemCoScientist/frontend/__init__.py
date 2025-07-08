@@ -1,3 +1,3 @@
-from frontend.chat import chat
-from frontend.init_session import init_page
-from frontend.side_bar import side_bar
+from ChemCoScientist.frontend.chat import chat
+from ChemCoScientist.frontend.init_session import init_page
+from ChemCoScientist.frontend.side_bar import side_bar

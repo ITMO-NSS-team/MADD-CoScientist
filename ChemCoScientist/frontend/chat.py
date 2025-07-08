@@ -1,11 +1,13 @@
 import glob
 import logging
 import os
+import time
 
 import streamlit as st
-from frontend.utils import get_user_data_dir, get_user_session_id, save_all_files
+from ChemCoScientist.frontend.utils import get_user_data_dir, get_user_session_id, save_all_files
 from langgraph.errors import GraphRecursionError
-from tools.utils import convert_to_base64, convert_to_html
+from ChemCoScientist.tools.utils import convert_to_base64, convert_to_html
+from ChemCoScientist.frontend.streamlit_endpoints import explore_my_papers
 
 # Create a separate logger for chat.py
 logger = logging.getLogger("chat_logger")
@@ -24,6 +26,12 @@ logger.addHandler(file_handler)
 
 
 def chat():
+    st.session_state.explore_mode = st.checkbox(
+        "🔍 Explore My Papers",
+        help="When checked, assistant will search through your uploaded papers instead of using the database",
+        key="explore_papers_mode"
+    )
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("steps"):
@@ -84,13 +92,13 @@ def message_handler():
     }
 
     if st.session_state.uploaded_files:
-        if st.session_state.get("user_session_id") is None:
-            st.session_state.user_session_id = get_user_session_id()
-
-        if st.session_state.get("user_data_dir") is None:
-            st.session_state.user_data_dir = get_user_data_dir(
-                st.session_state.user_session_id
-            )
+        # if st.session_state.get("user_session_id") is None:
+        #     st.session_state.user_session_id = get_user_session_id()
+        #
+        # if st.session_state.get("user_data_dir") is None:
+        #     st.session_state.user_data_dir = get_user_data_dir(
+        #         st.session_state.user_session_id
+        #     )
 
         save_all_files(st.session_state.user_data_dir)
         config["configurable"]["user_data_dir"] = st.session_state.user_data_dir
@@ -116,76 +124,86 @@ def message_handler():
             with expander:
                 steps_container = st.container()
 
-            try:
-                for result in st.session_state.backend.stream(inputs, "1"):
-                    print("=================new step=================")
-                    print(result)
+            if st.session_state.explore_mode:
+                # Use explore_my_papers function instead of general AI assistant
+                result = explore_my_papers(inputs)
 
-                    if result.get("plan"):
-                        plan = result["plan"]
+                st.markdown(result["answer"])
 
-                        if not isinstance(plan, list):
-                            plan = [plan]
+                st.session_state.messages[-1]["content"] = (result["answer"])
+            else:
+                # result = st.session_state.backend.invoke(input=inputs, config=config)
+                try:
+                    for result in st.session_state.backend.stream(inputs, "1"):
+                        print("=================new step=================")
+                        print(result)
 
-                        for step in plan:
-                            raw_text = ""
-                            for i, task in enumerate(step):
-                                raw_text += f"({i}) " + task + ' '
-                                
-                            if len(step) > 1:
-                                formatted_text = (
-                                    f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step with parallel launch:** {raw_text}"
-                                )
-                            else:
-                                formatted_text = (
-                                    f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
-                                )
+                        if result.get("plan"):
+                            plan = result["plan"]
 
-                            if formatted_text not in existing_steps:
-                                st.session_state.messages[-1]["steps"].append(formatted_text)
-                                existing_steps.add(formatted_text)
+                            if not isinstance(plan, list):
+                                plan = [plan]
 
-                                # Показываем только новые шаги
-                                steps_container.markdown(formatted_text)
+                            for step in plan:
+                                raw_text = ""
+                                for i, task in enumerate(step):
+                                    raw_text += f"({i}) " + task + ' '
 
-                    elif result.get("past_steps") and not result.get("automl_results"):
-                        text = f"**✅ Result of last step:** {result.get('past_steps')[0][1]}"
-                        st.session_state.messages[-1]["steps"].append(text)
+                                if len(step) > 1:
+                                    formatted_text = (
+                                        f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step with parallel launch:** {raw_text}"
+                                    )
+                                else:
+                                    formatted_text = (
+                                        f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
+                                    )
 
-                        with expander_placeholder.container():
-                            if st.session_state.messages[-1][
-                                "steps"
-                            ]:  # Only render if steps exist
-                                for step in st.session_state.messages[-1]["steps"]:
-                                    st.markdown(step)
-                            else:
-                                st.write(" ")  # Ensures blank space instead of None
+                                if formatted_text not in existing_steps:
+                                    st.session_state.messages[-1]["steps"].append(formatted_text)
+                                    existing_steps.add(formatted_text)
 
-                    elif result.get("automl_results"):
-                        text = f"**✅ Result of last step:** Automl is done"
-                        st.session_state.messages[-1]["steps"].append(text)
-                        with expander_placeholder.container():
-                            if st.session_state.messages[-1][
-                                "steps"
-                            ]:  # Only render if steps exist
-                                for step in st.session_state.messages[-1]["steps"]:
-                                    st.markdown(step)
-                            else:
-                                st.write(" ")  # Ensures blank space instead of None
+                                    # Показываем только новые шаги
+                                    steps_container.markdown(formatted_text)
 
-                        st.session_state.messages[-1]["automl_results"] = result.get(
-                            "automl_results"
-                        )
-            except GraphRecursionError:
-                result["response"] = (
-                    "Ooops.. It seems that I've caught a recursion limit. Could you simlify your question and try once more?"
-                )
+                        elif result.get("past_steps") and not result.get("automl_results"):
+                            text = f"**✅ Result of last step:** {result.get('past_steps')[0][1]}"
+                            st.session_state.messages[-1]["steps"].append(text)
 
-            except AttributeError:
-                result = dict()
-                result["response"] = (
-                    "Something went wrong. Please reload the page, initialize models and try again. If this happens again, check your base url and api key"
-                )
+                            with expander_placeholder.container():
+                                if st.session_state.messages[-1][
+                                    "steps"
+                                ]:  # Only render if steps exist
+                                    for step in st.session_state.messages[-1]["steps"]:
+                                        st.markdown(step)
+                                else:
+                                    st.write(" ")  # Ensures blank space instead of None
+
+                        elif result.get("automl_results"):
+                            text = f"**✅ Result of last step:** Automl is done"
+                            st.session_state.messages[-1]["steps"].append(text)
+                            with expander_placeholder.container():
+                                if st.session_state.messages[-1][
+                                    "steps"
+                                ]:  # Only render if steps exist
+                                    for step in st.session_state.messages[-1]["steps"]:
+                                        st.markdown(step)
+                                else:
+                                    st.write(" ")  # Ensures blank space instead of None
+
+                            st.session_state.messages[-1]["automl_results"] = result.get(
+                                "automl_results"
+                            )
+                except GraphRecursionError:
+                    result["response"] = (
+                        "Ooops.. It seems that I've caught a recursion limit. Could you simlify your question and try once more?"
+                    )
+
+                except AttributeError as e:
+                    print(f"ERROR: {e}")
+                    result = dict()
+                    result["response"] = (
+                        "Something went wrong. Please reload the page, initialize models and try again. If this happens again, check your base url and api key"
+                    )
 
             # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
             st.session_state.messages[-1]["content"] = result["response"]
@@ -274,6 +292,59 @@ def message_handler():
                                 )
 
                             os.remove(file)
+                    if "paper_analysis" in result["metadata"].keys():
+
+                        text_context = result["metadata"]["paper_analysis"].get("text_context")
+                        images_context = result["metadata"]["paper_analysis"].get("images_context")
+                        metadata = result["metadata"]["paper_analysis"].get("metadata")
+
+                        # Display the answer
+                        # st.markdown(answer)
+
+                        # Create toggles for context display
+                        col1, col2, col3 = st.columns(3)
+
+                        msg_idx = len(st.session_state.messages)
+
+                        with col1:
+                            show_text = st.checkbox("📄 Text Context", key=f"text_context_{msg_idx}")
+
+                        with col2:
+                            show_images = st.checkbox("🖼️ Image Context", key=f"image_context_{msg_idx}")
+
+                        with col3:
+                            show_meta = st.checkbox("ℹ️ Metadata", key=f"metadata_{msg_idx}")
+
+                        # Display text context if selected
+                        if show_text:
+                            with st.expander("📄 Text Context", expanded=True):
+                                st.text_area("Text Context:", value=text_context, height=200, disabled=True)
+
+                        # Display image context if selected
+                        if show_images:
+                            with st.expander("🖼️ Image Context", expanded=True):
+                                if images_context:
+                                    for i, image_item in enumerate(images_context):
+                                        show_img = st.checkbox(f"{i + 1}. {image_item}",
+                                                               key=f"img_checkbox_{msg_idx}_{i}")
+
+                                        # Display image if selected
+                                        if show_img:
+                                            try:
+                                                st.image(image_item, caption=image_item, use_container_width=True)
+                                            except Exception as e:
+                                                st.error(f"Could not display image: {image_item}. Error: {str(e)}")
+                                else:
+                                    st.write("No image context available")
+
+                        # Display metadata if selected
+                        if show_meta:
+                            with st.expander("ℹ️ Metadata", expanded=True):
+                                if metadata:
+                                    for key, value in metadata.items():
+                                        st.write(f"**{key}:** {value}")
+                                else:
+                                    st.write("No metadata available")
 
                 if mols := msg.get("molecules_vis"):
                     for mol in mols:
