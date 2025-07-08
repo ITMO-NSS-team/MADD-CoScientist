@@ -118,9 +118,9 @@ def on_provider_selected_eng(grid: GridDeltaGenerator):
             )
             grid.selectbox(
                 "Select visual model",
-                options=["google/gemini-2.5-pro"],
+                options=["llama-3.2-90b-vision-preview"],
                 key="visual_model_input",
-                placeholder="google/gemini-2.5-pro",
+                placeholder="llama-3.2-90b-vision-preview",
             )
 
             grid.selectbox(
@@ -468,6 +468,12 @@ def load_images():
 
 
 def side_bar():
+    # Display static examples at the top
+    # st.session_state.language = 'Русский'
+
+    # uncomment for start without pass model, key, etc (from gui)
+    # init_backend()
+
     with st.sidebar:
         init_language()
         init_models()

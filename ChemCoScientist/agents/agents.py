@@ -207,3 +207,17 @@ def paper_analysis_node(state: dict, config: dict) -> Command:
         ])),
         "metadata": Annotated[dict, operator.or_](updated_metadata),
     })
+    # Add metadata from response to state
+    state_metadata = state.get("metadata", {})
+    pa_metadata = {"paper_analysis": response.get("metadata")}
+    updated_metadata = state_metadata.copy()
+    updated_metadata.update(pa_metadata)
+
+    return Command(
+        goto="replan_node",
+        update={
+            "past_steps": [(task, response.get("answer"))],
+            "nodes_calls": [("paper_analysis_node", response.get("answer"))],
+            "metadata": updated_metadata,
+        },
+    )

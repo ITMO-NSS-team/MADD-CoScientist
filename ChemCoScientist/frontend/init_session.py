@@ -1,10 +1,15 @@
 import streamlit as st
+import time
+
+import pyperclip
 from dotenv import load_dotenv
+from frontend.utils import custom_pills
 
 load_dotenv()
 
 
 def init_page():
+
     st.set_page_config(
         page_title="🧪 Chemistry Chatbot", initial_sidebar_state="expanded"
     )

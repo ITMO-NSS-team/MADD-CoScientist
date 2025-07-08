@@ -11,6 +11,7 @@ from chromadb.utils import embedding_functions
 from chromadb.utils.data_loaders import ImageLoader
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
+from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
 from multiprocessing import Pool
@@ -18,8 +19,15 @@ from sentence_transformers import CrossEncoder
 from protollm.connectors import create_llm_connector
 from pydantic import BaseModel, Field
 from typing import Optional
+from sentence_transformers import CrossEncoder
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
+from CoScientist.paper_parser.parse_and_split import (
+    clean_up_html,
+    html_chunking,
+    parse_with_marker,
+    simple_conversion,
+)
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
@@ -92,7 +100,7 @@ class ChromaDBPaperStore:
         self.sum_chunk_num = 15
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
-        
+
         # TODO: move embedding model to a separate service
         self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="BAAI/bge-m3",
@@ -153,7 +161,7 @@ class ChromaDBPaperStore:
         image_descriptions = []
         image_paths = []
         image_counter = 0
-        
+
         for filename in os.listdir(image_dir):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(image_dir, filename)
@@ -170,7 +178,7 @@ class ChromaDBPaperStore:
                 {"type": "image", "source": paper_name, "image_path": img_path} for img_path in image_paths
             ]
         )
-    
+
     def retrieve_context(
             self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
@@ -300,7 +308,7 @@ if __name__ == "__main__":
     #
     # paper_store = ChromaDBPaperStore()
     # paper_store.prepare_db(papers_path)
-    
+
     p_path = PAPERS_PATH
     res_path = IMAGES_PATH
     p_store = ChromaDBPaperStore()

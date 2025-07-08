@@ -162,6 +162,8 @@ conf = {
                     Be more careful about which tasks can be performed in parallel and which ones can be performed sequentially.\
                         For example, you cannot fill a table and save it in parallel.",
             },
+                    """,
+            "summary": "Never write full paths! Only file names.",
         },
     },
 }
