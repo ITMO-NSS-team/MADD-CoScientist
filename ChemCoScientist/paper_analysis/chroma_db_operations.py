@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -8,17 +9,20 @@ from chromadb.api.models import Collection
 from chromadb.api.types import Documents, EmbeddingFunction
 from chromadb.utils import embedding_functions
 from chromadb.utils.data_loaders import ImageLoader
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
-from protollm.connectors import create_llm_connector
+from multiprocessing import Pool
 from sentence_transformers import CrossEncoder
+from protollm.connectors import create_llm_connector
+from pydantic import BaseModel, Field
+from typing import Optional
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
-    parse_with_marker,
     simple_conversion,
 )
 from definitions import CONFIG_PATH, ROOT_DIR
@@ -31,9 +35,22 @@ VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 SUMMARY_LLM_URL = os.environ["SUMMARY_LLM_URL"]
 PAPERS_PATH = os.path.join(ROOT_DIR, os.environ["PAPERS_STORAGE_PATH"])
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class ExpandedSummary(BaseModel):
+    """Expanded version of paper's summary."""
+    paper_summary: str = Field(description="Summary of the paper.")
+    paper_title: str = Field(description="Title of the paper.")
+    publication_year: Optional[int] = Field(
+        default=None, description="Year of publication of the paper."
+    )
+
 
 class ChromaClient:
     def __init__(self):
+        # TODO: run ChromaDB in server mode
         self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
     def get_or_create_chroma_collection(
@@ -65,7 +82,6 @@ class ChromaClient:
 class ChromaDBPaperStore:
     def __init__(self):
         self.llm_url = VISION_LLM_URL
-        self.summary_llm = SUMMARY_LLM_URL
 
         self.client = ChromaClient()
 
@@ -76,21 +92,15 @@ class ChromaDBPaperStore:
         self.sum_chunk_num = 15
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
-
-        self.sum_embedding_function = (
-            embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="BAAI/bge-m3", normalize_embeddings=True
-            )
-        )
-
-        self.rag_embedding_function = (
-            embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="BAAI/bge-m3", normalize_embeddings=True
-            )
+        
+        # TODO: move embedding model to a separate service
+        self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="BAAI/bge-m3",
+            normalize_embeddings=True
         )
 
         self.sum_collection = self.client.get_or_create_chroma_collection(
-            self.sum_collection_name, self.sum_embedding_function
+            self.sum_collection_name, self.rag_embedding_function
         )
         self.txt_collection = self.client.get_or_create_chroma_collection(
             self.txt_collection_name, self.rag_embedding_function
@@ -98,12 +108,7 @@ class ChromaDBPaperStore:
         self.img_collection = self.client.get_or_create_chroma_collection(
             self.img_collection_name, self.rag_embedding_function
         )
-
-        self.reranker = CrossEncoder(
-            "Alibaba-NLP/gte-multilingual-reranker-base",
-            max_length=2048,
-            trust_remote_code=True,
-        )
+        self.workers = 2
 
     @staticmethod
     def _image_to_base64(image_path: str) -> str:
@@ -135,34 +140,39 @@ class ChromaDBPaperStore:
         res = model.invoke(messages)
         return res.content
 
-    def _store_text_chunks_in_chromadb(self, content: list) -> None:
-        # Upload text
-        for text_chunk in content:
-            self.txt_collection.add(
-                ids=[str(uuid.uuid4())],
-                documents=[text_chunk.page_content],
-                metadatas=[{"type": "text", **text_chunk.metadata}],
-            )
+    def store_text_chunks_in_chromadb(self, content: list) -> None:
+        # TODO: add embeddings calculations from external service
+        self.txt_collection.add(
+            ids=[str(uuid.uuid4()) for _ in range(len(content))],
+            documents=[text_chunk.page_content for text_chunk in content],
+            # embeddings = ...
+            metadatas=[{"type": "text", **text_chunk.metadata} for text_chunk in content]
+        )
 
-    def _store_images_in_chromadb_txt_format(
-        self, image_dir: str, paper_name: str
-    ) -> None:
-
-        # Upload images
+    def store_images_in_chromadb_txt_format(self, image_dir: str, paper_name: str) -> None:
+        image_descriptions = []
+        image_paths = []
+        image_counter = 0
+        
         for filename in os.listdir(image_dir):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(image_dir, filename)
+                image_descriptions.append(self._image_to_text(img_path))
+                image_paths.append(img_path)
+                image_counter += 1
 
-                self.img_collection.add(
-                    ids=[str(uuid.uuid4())],
-                    documents=[self._image_to_text(img_path)],
-                    metadatas=[
-                        {"type": "image", "source": paper_name, "image_path": img_path}
-                    ],
-                )
-
+        # TODO: add embeddings calculations from external service
+        self.img_collection.add(
+            ids=[str(uuid.uuid4()) for _ in range(image_counter)],
+            documents=image_descriptions,
+            # embeddings = ...
+            metadatas=[
+                {"type": "image", "source": paper_name, "image_path": img_path} for img_path in image_paths
+            ]
+        )
+    
     def retrieve_context(
-        self, query: str, relevant_papers: list = None
+            self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
         if not relevant_papers:
             raw_docs = self.client.query_chromadb(
@@ -185,63 +195,116 @@ class ChromaDBPaperStore:
         )
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
         return text_context, image_context
-
-    def search_with_reranker(
-        self, query: str, initial_results, top_k: int = 1
-    ) -> list[tuple[str, str, dict, float]]:
-        metadatas = initial_results["metadatas"][0]
+    
+    @staticmethod
+    def search_with_reranker(query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
+        metadatas = initial_results['metadatas'][0]
         documents = initial_results["documents"][0]
         ids = initial_results["ids"][0]
 
         pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
-
-        rerank_scores = self.reranker.predict(pairs)
-
+        
+        # TODO: move the reranker to a separate service
+        reranker = CrossEncoder(
+            "Alibaba-NLP/gte-multilingual-reranker-base", max_length=2048, trust_remote_code=True
+        )
+        rerank_scores = reranker.predict(pairs)
+        
         scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
         scored_docs.sort(key=lambda x: x[3], reverse=True)
 
         return scored_docs[:top_k]
 
-    def _add_paper_summary_to_db(self, paper_path: str) -> None:
-        llm = create_llm_connector(self.summary_llm)
-        paper = os.path.basename(paper_path)
-        conv_res = simple_conversion(paper_path)
-        summary = llm.invoke(
-            [HumanMessage(content=summarisation_prompt + conv_res)]
-        ).content
-        doc = Document(page_content=summary, metadata={"source": paper})
+    def add_paper_summary_to_db(self, paper_name: str, parsed_paper: str, llm) -> None:
+        expanded_summary: ExpandedSummary = llm.invoke([HumanMessage(content=summarisation_prompt + parsed_paper)])
+        doc = Document(
+            page_content=expanded_summary.paper_summary,
+            metadata={
+                "source": paper_name,
+                "paper_title": expanded_summary.paper_title,
+                "publication_year": expanded_summary.publication_year
+            }
+        )
+        # TODO: add embeddings calculations from external service
         self.sum_collection.add(
             ids=[str(uuid.uuid4())],
             documents=[doc.page_content],
-            metadatas=[{"type": "text", "source": paper}],
+            metadatas=[{"type": "text", **doc.metadata}]
         )
+        print(f"Summary loaded for: {paper_name}")
 
-    def upload_paper(self, paper_path: str) -> None:
-        # Load summary for the paper
-        self._add_paper_summary_to_db(paper_path)
+    def run_marker_pdf(self, p_path, out_path) -> None:
+        try:
+            os.system(
+                " ".join(
+                    [
+                        "sh",
+                        os.path.join(ROOT_DIR, "ChemCoScientist/paper_analysis/marker_parsing.sh"),
+                        str(p_path),
+                        str(out_path),
+                        str(self.workers)
+                    ]
+                )
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            raise
 
-        # Load text chunks
-        f_name, dir_name = parse_with_marker(paper_name=paper_path)
-        parsed_paper = clean_up_html(paper_name=f_name, doc_dir=dir_name)
-        documents = html_chunking(html_string=parsed_paper, paper_name=f_name)
-        self._store_text_chunks_in_chromadb(documents)
 
-        # Load images
-        parsed_images_path = os.path.join(
-            IMAGES_PATH, Path(paper_path).stem + "_marker"
-        )
-        self._store_images_in_chromadb_txt_format(
-            parsed_images_path, os.path.basename(paper_path)
-        )
+process_local_store = None
 
-    def prepare_db(self, papers_path: str) -> None:
-        for paper in os.listdir(papers_path):
-            paper_path = os.path.join(papers_path, paper)
-            self.upload_paper(paper_path)
+
+def init_process():
+    global process_local_store
+    process_local_store = ChromaDBPaperStore()
+
+
+def process_single_summary(paper_path):
+    paper = os.path.basename(paper_path)
+    try:
+        llm = create_llm_connector(SUMMARY_LLM_URL)
+        struct_llm = llm.with_structured_output(schema=ExpandedSummary)
+        conv_res = simple_conversion(paper_path)
+        process_local_store.add_paper_summary_to_db(paper, conv_res, struct_llm)
+    except Exception as e:
+        print(f"Error in {paper}: {str(e)}")
+
+
+def load_summaries_to_db(papers_path: str) -> None:
+    paths = [os.path.join(papers_path, p) for p in os.listdir(papers_path)]
+    with Pool(processes=2, initializer=init_process()) as executor:
+        executor.map(process_single_summary, paths)
+
+
+def process_single_document(folder_path: Path):
+    paper_name = folder_path.name.replace("_marker", "")
+    try:
+        parsed_paper = clean_up_html(paper_name, folder_path)
+        documents = html_chunking(parsed_paper, paper_name)
+        print(f"Starting loading paper: {paper_name}")
+        process_local_store.store_text_chunks_in_chromadb(documents)
+        process_local_store.store_images_in_chromadb_txt_format(str(folder_path), paper_name)
+        print(f"Finished loading paper: {paper_name}")
+    except Exception as e:
+        print(f"Error in {paper_name}: {str(e)}")
+
+
+def process_all_documents(base_dir: Path):
+    folders = [d for d in base_dir.iterdir() if d.is_dir()]
+    with ThreadPoolExecutor(max_workers=2, initializer=init_process()) as pool:
+        pool.map(process_single_document, [folder for folder in folders])
 
 
 if __name__ == "__main__":
-    papers_path = PAPERS_PATH
-
-    paper_store = ChromaDBPaperStore()
-    paper_store.prepare_db(papers_path)
+    # papers_path = PAPERS_PATH
+    #
+    # paper_store = ChromaDBPaperStore()
+    # paper_store.prepare_db(papers_path)
+    
+    p_path = PAPERS_PATH
+    res_path = IMAGES_PATH
+    p_store = ChromaDBPaperStore()
+    p_store.run_marker_pdf(p_path, res_path)
+    del p_store
+    load_summaries_to_db(p_path)
+    process_all_documents(Path(res_path))
