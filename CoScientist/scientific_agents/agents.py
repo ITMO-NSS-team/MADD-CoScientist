@@ -3,6 +3,7 @@ from smolagents import DuckDuckGoSearchTool
 from smolagents import LiteLLMModel
 
 from langgraph.types import Command
+from typing import Annotated
 
 
 def coder_agent(state: dict, config: dict):
@@ -35,10 +36,7 @@ def coder_agent(state: dict, config: dict):
     )
     response = agent.run(main_prompt + "\n" + task)
 
-    return Command(
-        goto="replan_node",
-        update={
-            "past_steps": [(task, str(response))],
-            "nodes_calls": [("coder_agent", str(response))],
-        },
-    )
+    return Command(update={
+        "nodes_calls": Annotated[list, "accumulate"]([("coder_agent", str(response))]),
+        "past_steps": Annotated[list, "accumulate"]([(task, str(response))]),
+    })

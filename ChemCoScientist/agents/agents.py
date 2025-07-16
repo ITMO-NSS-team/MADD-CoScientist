@@ -144,8 +144,7 @@ def chemist_node(state, config: dict) -> Command:
                     "nodes_calls": Annotated[list, "accumulate"](
                         [("chemist_node", agent_response["messages"])]
                     ),
-                },
-                goto="replan_node"
+                }
             )
 
         except Exception as e:
@@ -190,9 +189,8 @@ def nanoparticle_node(state, config: dict) -> Command:
                     ),
                     "nodes_calls": Annotated[list, "accumulate"](
                         [("nanoparticle_node", agent_response["messages"])]
-                    ),
-                },
-                goto="replan_node"
+                    )
+                }
             )
 
         except Exception as e:
@@ -226,6 +224,5 @@ def paper_analysis_node(state: dict) -> Command:
             "past_steps": Annotated[list, "accumulate"]([(task, response.get("answer"))]),
             "nodes_calls": Annotated[list, "accumulate"]([("paper_analysis_node", response.get("answer"))]),
             "metadata": updated_metadata,
-        },
-        goto="replan_node"
+        }
     )
