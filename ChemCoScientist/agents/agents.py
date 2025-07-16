@@ -189,7 +189,7 @@ def nanoparticle_node(state, config: dict) -> Command:
                     ),
                     "nodes_calls": Annotated[list, "accumulate"](
                         [("nanoparticle_node", agent_response["messages"])]
-                    ),
+                    )
                 }
             )
 
