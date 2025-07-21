@@ -49,6 +49,7 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
             api_key=config_cur_agent["api_key"],
         )
     else:
+
         model = OpenAIServerModel(
             api_base=config_cur_agent["url"],
             model_id=config_cur_agent["model_name"],
@@ -64,6 +65,9 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
     response = agent.run(
         ds_builder_prompt + config_cur_agent["ds_dir"] + "\n"
         "So, user ask: \n" + task + additional_ds_builder_prompt
+    )
+    state["metadata"]["dataset_builder_agent"] = get_all_files(
+        os.environ["DS_STORAGE_PATH"]
     )
 
     return Command(update={
