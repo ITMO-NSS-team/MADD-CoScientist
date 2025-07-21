@@ -117,7 +117,8 @@ conf = {
         "prompts": {
             "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
                 If the user provides his dataset - immediately start training using ml_dl_agent (never call dataset_builder_agent)!\
-                        To find an answer, use the paper search first! NOT the web search!",
+                To find an answer, use the paper search first! NOT the web search!\
+                If you are asked to generate a molecule, just schedule the generation using bl_dl_agent.",
             "chat": """You are a chemical agent system. You can do the following:
                     - train generative models (generate SMILES molecules), train predictive models (predict properties)
                     - prepare a dataset for training

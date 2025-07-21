@@ -152,8 +152,10 @@ def on_provider_selected_eng(grid: GridDeltaGenerator):
             grid.selectbox(
                 "Select model for scenarion agent",
                 options=[
+                    "google/gemini-2.5-pro",
                     "deepseek/deepseek-r1-distill-llama-70b",
                     "meta-llama/llama-3.3-70b-instruct",
+                    "openai/o1"
                 ],
                 key="sc_model_input",
             )
@@ -225,8 +227,10 @@ def on_provider_selected_rus(grid: GridDeltaGenerator):
             grid.selectbox(
                 "Выберите модель для сценарных агентов",
                 options=[
+                    "google/gemini-2.5-pro",
                     "deepseek/deepseek-r1-distill-llama-70b",
                     "meta-llama/llama-3.3-70b-instruct",
+                    "openai/o1"
                 ],
                 key="sc_model_input",
             )
@@ -485,13 +489,13 @@ def side_bar():
             with st.expander("Query examples:", expanded=True):
                 examples = [
                     "What can you do?",
-                    "Create a dataset for NRAS from BindingDB with IC50.",
+                    "Create a dataset for id P49841 from BindingDB with Ki.",
                     "Run the ML model training on the attached data to predict Ki. Name the case 'MEK4_Ki'.",
                     "Generate an image of spherical nanoparticles.",
                     "What trained generative models do you have available?",
-                    "Obtain Ki data for HRAS and NRAS proteins from all available databases.",
+                    "Obtain Ki data for Glycogen synthase kinase-3 beta and MEK1 proteins from all available databases.",
                     "What is the IUPAC name of hexanal? Visualize it.",
-                    "Generate a drug molecule for the Alzheimer case.",
+                    "Generate a drug molecule for the Alzheimer case by generatime model.",
                     "Find the most interesting articles on leukemia treatment on the Internet and provide links.",
                 ]
                 for example in examples:
@@ -509,14 +513,14 @@ def side_bar():
             with st.expander("Примеры запросов:", expanded=True):
                 examples = [
                     "Что ты умеешь?",
-                    "Создай датасет для NRAS из BindingDB с IC50.",
+                    "Создай датасет для белка с ID P49841 из BindingDB с Ki.",
                     "Запусти обучение ML-модели на прикрепленных мною данных для предсказания Ki. Назови кейс 'MEK4_Ki'.",
                     "Предскажи форму наноматериала, получаемого с помощью данного синтеза.",
                     "Сгенерируй изображение сферических наночастиц.",
                     "Какие обученные генеративные модели у тебя есть в наличии?",
-                    "Получи данные по Ki для белков HRAS и NRAS из всех доступных баз данных.",
+                    "Получи данные по Ki для белков Glycogen synthase kinase-3 beta и MAP2K1 из всех доступных баз данных.",
                     "Какой IUPAC у гексеналя? Визуализируй его.",
-                    "Сгенерируй лекарственную молекулу по кейсу Альцгеймер.",
+                    "Сгенерируй лекарственную молекулу c помощью генеративной модели по кейсу Альцгеймер.",
                     "Найди в интернете самые интересные статьи по лечению лейкемии и предоставь ссылки."
                 ]
                 for example in examples:

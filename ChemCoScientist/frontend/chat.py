@@ -106,32 +106,38 @@ def message_handler():
             expander = st.expander(
                 "🔍 Intermediate Thoughts (click to expand)", expanded=False
             )
-            expander_placeholder = expander.empty()  # Container for intermediate output
 
-            # result = st.session_state.backend.invoke(input=inputs, config=config)
+            expander_placeholder = expander.empty()
+            if "steps" not in st.session_state.messages[-1]:
+                st.session_state.messages[-1]["steps"] = []
+
+            existing_steps = set(st.session_state.messages[-1]["steps"])
+
+            with expander:
+                steps_container = st.container()
+
             try:
-                # test = [{'plan':['use automl']}, {'past_steps': [['', 'automl here']]}, {'automl_results': '🚀 **ML Model Report** 🚀\n\n**Task:** Regression on `train.csv` with feature `x` and label `y`.\n\n### Model Characteristics:\n- **Metrics:** RMSE (Root Mean Square Error)\n- **Pipeline Structure:**\n  - Depth: 2\n  - Length: 2\n  - Nodes:\n    - **Random Forest Regressor (RFR):** \n      - `n_jobs`: 1\n    - **Scaling:** \n      - No parameters\n\n### Performance Metrics:\n| Metric        | Value       |\n|---------------|-------------|\n| RMSE          | [Insert Value] |\n\n### Code Overview:\n- **Data Loading:** Utilizes `pandas` to read `train.csv` and `val.csv`.\n- **Model Training:** \n  - AutoML framework (`Fedot`) for regression.\n  - 5-fold cross-validation with a timeout of 1.0 seconds.\n- **Evaluation:** \n  - Metrics obtained from validation set.\n\n### Output:\n- Predictions saved to `submission.csv`.\n\n📊 **Model Performance on Test Set:** [Insert Performance Metrics] \n\n#ML #MachineLearning #Regression #DataScience'}, {'response': 'done'}]
                 for result in st.session_state.backend.stream(inputs, "1"):
                     print("=================new step=================")
                     print(result)
-                    # for result in test:
+
                     if result.get("plan"):
-                        text = result.get("plan")[0]
-                        if "Step" not in text:
-                            text = f"**📝 Step:** {text}"
-                        else:
-                            text = f"📝 {text}"
+                        plan = result["plan"]
 
-                        st.session_state.messages[-1]["steps"].append((text))
+                        if not isinstance(plan, list):
+                            plan = [plan]
 
-                        with expander_placeholder.container():
-                            if st.session_state.messages[-1][
-                                "steps"
-                            ]:  # Only render if steps exist
-                                for step in st.session_state.messages[-1]["steps"]:
-                                    st.markdown(step)
-                            else:
-                                st.write(" ")  # Ensures blank space instead of None
+                        for raw_text in plan:
+                            formatted_text = (
+                                f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
+                            )
+
+                            if formatted_text not in existing_steps:
+                                st.session_state.messages[-1]["steps"].append(formatted_text)
+                                existing_steps.add(formatted_text)
+
+                                # Показываем только новые шаги
+                                steps_container.markdown(formatted_text)
 
                     elif result.get("past_steps") and not result.get("automl_results"):
                         text = f"**✅ Result of last step:** {result.get('past_steps')[0][1]}"
