@@ -127,10 +127,19 @@ def message_handler():
                         if not isinstance(plan, list):
                             plan = [plan]
 
-                        for raw_text in plan:
-                            formatted_text = (
-                                f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
-                            )
+                        for step in plan:
+                            raw_text = ""
+                            for i, task in enumerate(step):
+                                raw_text += f"({i}) " + task + ' '
+                                
+                            if len(step) > 1:
+                                formatted_text = (
+                                    f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step with parallel launch:** {raw_text}"
+                                )
+                            else:
+                                formatted_text = (
+                                    f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
+                                )
 
                             if formatted_text not in existing_steps:
                                 st.session_state.messages[-1]["steps"].append(formatted_text)

@@ -183,7 +183,7 @@ def nanoparticle_node(state: dict, config: dict) -> Command:
     })
 
 
-def paper_analysis_node(state: dict) -> Command:
+def paper_analysis_node(state: dict, config: dict) -> Command:
     print("--------------------------------")
     print("Paper agent called")
     print("Current task:")
