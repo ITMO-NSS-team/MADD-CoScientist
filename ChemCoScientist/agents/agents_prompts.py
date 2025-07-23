@@ -10,6 +10,8 @@ Rules: \n\
 2) In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\n\
 3) Check if there are files in the directory ({os.environ['DS_STORAGE_PATH']}) that contain 'users_dataset' in the name. If they are there, then the user has uploaded their dataset. Don't call downloading\n\
 4) Never invent IDs from the database yourself. Specify them only if the user names them himself.\n\
+5) Don't change the protein name from the user's request. If they ask for SARS-CoV-2, then pass the protein_name unchanged.\n\
+\n\
 Attention! Directory for saving files: "
 additional_ds_builder_prompt = (
     "\n Is there enough data to train the model? Write the path where you saved it."

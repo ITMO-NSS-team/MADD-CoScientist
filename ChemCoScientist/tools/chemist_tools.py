@@ -67,10 +67,13 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
         # Step 1: Get UniProt ID
         uniprot_id = params.get("id", False)
         if not uniprot_id:
+            print('Starting search for ID of protein...')
             uniprot_id = fetch_uniprot_id(protein_name)
             if not uniprot_id:
                 print(f"No UniProt ID found for {protein_name}")
                 return False
+            else:
+                print('ID is: ', uniprot_id)
 
         # Step 2: Retrieve affinity data from BindingDB
         affinity_entries = fetch_affinity_bindingdb(uniprot_id, affinity_type, cutoff)
@@ -84,11 +87,11 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
 
 def fetch_uniprot_id(protein_name: str) -> Optional[str]:
     """
-    Получает UniProt ID по названию белка через UniProt REST API.
+    Get UniProt ID by UniProt REST API.
     """
     url = "https://rest.uniprot.org/uniprotkb/search"
     params = {
-        "query": f"{protein_name} AND organism_id:9606",  # человек
+        "query": f"{protein_name} AND organism_id:9606",  # people
         "format": "json",
         "size": 1,
         "fields": "accession",
@@ -124,7 +127,7 @@ def fetch_affinity_bindingdb(
     url = f"http://bindingdb.org/rest/getLigandsByUniprots?uniprot={uniprot_id}&cutoff={cutoff}&response=application/json"
 
     try:
-        response = requests.get(url, timeout=120)
+        response = requests.get(url, timeout=1200)
         response.raise_for_status()
         data = response.json()
         result = [
@@ -137,7 +140,11 @@ def fetch_affinity_bindingdb(
         )
         return result
 
-    except (requests.exceptions.RequestException, json.JSONDecodeError):
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 502:
+            print("BindingDB server is temporarily unavailable (502 Bad Gateway)")
+        else:
+            print(f"HTTP error occurred: {e}")
         return []
 
 
@@ -364,16 +371,36 @@ chem_tools = [
 chem_tools_rendered = render_text_description(chem_tools)
 
 if __name__ =="__main__":
-  import os                                                                           
+    import os                                                                           
                                                                                       
-  directory = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"     
+#   directory = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"     
                                                                                       
-  existing_datasets = [f for f in os.listdir(directory) if                            
-  f.startswith('users_dataset_')]                                                     
-  print("Existing datasets:", existing_datasets)                                      
+#   existing_datasets = [f for f in os.listdir(directory) if                            
+#   f.startswith('users_dataset_')]                                                     
+#   print("Existing datasets:", existing_datasets)                                      
                                                                                                                                          
-  data = fetch_chembl_data(                                                           
-      target_name="GSK",                                                       
-      affinity_type="Ki"                                                            
-  )                                                                                   
-  print("Data fetched from ChemBL:", data)                                                 
+#   data = fetch_chembl_data(                                                           
+#       target_name="GSK",                                                       
+#       affinity_type="Ki"                                                            
+#   )                                                                                   
+#   print("Data fetched from ChemBL:", data)     
+    DATASET_DIR = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"                  
+    PROTEIN_NAME = "MEK1"                                                                                    
+    AFFINITY_TYPE = "IC50"       
+    params = {                                                                                                 
+          "protein_name": PROTEIN_NAME,                                                                          
+          "affinity_type": AFFINITY_TYPE,                                                                        
+          "cutoff": 10000                                                                                       
+      }                                                                                                          
+                                                                                                                 
+    binding_data = fetch_BindingDB_data(params)                                                                
+    print(f"Data fetched: {len(binding_data)} entries")                                                        
+                                                                                                                
+    # Save data to Excel                                                                                       
+    df = pd.DataFrame([                                                                                        
+        {"Ligand": entry['ligand'], "Affinity": entry['affinity_value']}                                       
+        for entry in binding_data                                                                              
+    ])                                                                                                         
+    file_path = os.path.join(DATASET_DIR, f"sars_cov_2_ic50_data.xlsx")                                        
+    df.to_excel(file_path, index=False)                                                                        
+    print(f"Data saved to: {file_path}")                                           

@@ -129,6 +129,7 @@ conf = {
                     
                     If user ask something like "What can you do" - make answer yourself!
                     """,
+            "replanner": "When planning or correct plan to process any data always indicate the path to file, look for the path in the 'past_steps'.",
             "summary": "Never write full paths! Only file names."
         },
     },
