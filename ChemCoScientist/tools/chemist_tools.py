@@ -11,15 +11,12 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_experimental.utilities import PythonREPL
 from rdkit.Chem import AllChem
 from rdkit.Chem.Descriptors import CalcMolDescriptors
+from typing import Dict, List, Optional
+import requests
+from smolagents import tool
 
 repl = PythonREPL()
 VALID_AFFINITY_TYPES = ["Ki", "Kd", "IC50"]
-
-import json
-from typing import Dict, List, Optional
-
-import requests
-from smolagents import tool
 
 
 @tool
@@ -67,17 +64,17 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
         # Step 1: Get UniProt ID
         uniprot_id = params.get("id", False)
         if not uniprot_id:
-            print('Starting search for ID of protein...')
+            print("Starting search for ID of protein...")
             uniprot_id = fetch_uniprot_id(protein_name)
             if not uniprot_id:
                 print(f"No UniProt ID found for {protein_name}")
                 return False
             else:
-                print('ID is: ', uniprot_id)
+                print("ID is: ", uniprot_id)
 
         # Step 2: Retrieve affinity data from BindingDB
         affinity_entries = fetch_affinity_bindingdb(uniprot_id, affinity_type, cutoff)
-        print(f'Found {len(affinity_entries)} entrys for {protein_name}')
+        print(f"Found {len(affinity_entries)} entrys for {protein_name}")
         return affinity_entries
 
     except Exception as e:
@@ -370,37 +367,41 @@ chem_tools = [
 ]
 chem_tools_rendered = render_text_description(chem_tools)
 
-if __name__ =="__main__":
-    import os                                                                           
-                                                                                      
-#   directory = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"     
-                                                                                      
-#   existing_datasets = [f for f in os.listdir(directory) if                            
-#   f.startswith('users_dataset_')]                                                     
-#   print("Existing datasets:", existing_datasets)                                      
-                                                                                                                                         
-#   data = fetch_chembl_data(                                                           
-#       target_name="GSK",                                                       
-#       affinity_type="Ki"                                                            
-#   )                                                                                   
-#   print("Data fetched from ChemBL:", data)     
-    DATASET_DIR = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"                  
-    PROTEIN_NAME = "MEK1"                                                                                    
-    AFFINITY_TYPE = "IC50"       
-    params = {                                                                                                 
-          "protein_name": PROTEIN_NAME,                                                                          
-          "affinity_type": AFFINITY_TYPE,                                                                        
-          "cutoff": 10000                                                                                       
-      }                                                                                                          
-                                                                                                                 
-    binding_data = fetch_BindingDB_data(params)                                                                
-    print(f"Data fetched: {len(binding_data)} entries")                                                        
-                                                                                                                
-    # Save data to Excel                                                                                       
-    df = pd.DataFrame([                                                                                        
-        {"Ligand": entry['ligand'], "Affinity": entry['affinity_value']}                                       
-        for entry in binding_data                                                                              
-    ])                                                                                                         
-    file_path = os.path.join(DATASET_DIR, f"sars_cov_2_ic50_data.xlsx")                                        
-    df.to_excel(file_path, index=False)                                                                        
-    print(f"Data saved to: {file_path}")                                           
+if __name__ == "__main__":
+    import os
+
+    #   directory = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"
+
+    #   existing_datasets = [f for f in os.listdir(directory) if
+    #   f.startswith('users_dataset_')]
+    #   print("Existing datasets:", existing_datasets)
+
+    #   data = fetch_chembl_data(
+    #       target_name="GSK",
+    #       affinity_type="Ki"
+    #   )
+    #   print("Data fetched from ChemBL:", data)
+    DATASET_DIR = (
+        "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"
+    )
+    PROTEIN_NAME = "MEK1"
+    AFFINITY_TYPE = "IC50"
+    params = {
+        "protein_name": PROTEIN_NAME,
+        "affinity_type": AFFINITY_TYPE,
+        "cutoff": 10000,
+    }
+
+    binding_data = fetch_BindingDB_data(params)
+    print(f"Data fetched: {len(binding_data)} entries")
+
+    # Save data to Excel
+    df = pd.DataFrame(
+        [
+            {"Ligand": entry["ligand"], "Affinity": entry["affinity_value"]}
+            for entry in binding_data
+        ]
+    )
+    file_path = os.path.join(DATASET_DIR, f"sars_cov_2_ic50_data.xlsx")
+    df.to_excel(file_path, index=False)
+    print(f"Data saved to: {file_path}")
