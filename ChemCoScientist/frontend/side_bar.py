@@ -489,12 +489,13 @@ def side_bar():
             with st.expander("Query examples:", expanded=True):
                 examples = [
                     "What can you do?",
-                    "Create a dataset for id P49841 from BindingDB with Ki.",
+                    "Download data for SARS-CoV-2 from BindingDb with IC50 values.",
+                    "Download data for GSK from ChemBL with IC50 values.",
                     "Run the ML model training on the attached data to predict Ki. Name the case 'MEK4_Ki'.",
                     "Generate an image of spherical nanoparticles.",
                     "What trained generative models do you have available?",
                     "Obtain Ki data for Glycogen synthase kinase-3 beta and MEK1 proteins from all available databases.",
-                    "What is the IUPAC name of hexanal? Visualize it.",
+                    "What is the IUPAC name of hexanal?",
                     "Generate a drug molecule for the Alzheimer case by generatime model.",
                     "Find the most interesting articles on leukemia treatment on the Internet and provide links.",
                 ]
@@ -513,13 +514,14 @@ def side_bar():
             with st.expander("Примеры запросов:", expanded=True):
                 examples = [
                     "Что ты умеешь?",
-                    "Создай датасет для белка с ID P49841 из BindingDB с Ki.",
+                    "Скачай данные для белка SARS-CoV-2 из BindingDb с рассчитанным IC50.",
+                    "Скачай данные для белка GSK из ChemBL с рассчитанным IC50.",
                     "Запусти обучение ML-модели на прикрепленных мною данных для предсказания Ki. Назови кейс 'MEK4_Ki'.",
                     "Предскажи форму наноматериала, получаемого с помощью данного синтеза.",
                     "Сгенерируй изображение сферических наночастиц.",
                     "Какие обученные генеративные модели у тебя есть в наличии?",
                     "Получи данные по Ki для белков Glycogen synthase kinase-3 beta и MAP2K1 из всех доступных баз данных.",
-                    "Какой IUPAC у гексеналя? Визуализируй его.",
+                    "Какой IUPAC у гексеналя?",
                     "Сгенерируй лекарственную молекулу c помощью генеративной модели по кейсу Альцгеймер.",
                     "Найди в интернете самые интересные статьи по лечению лейкемии и предоставь ссылки."
                 ]

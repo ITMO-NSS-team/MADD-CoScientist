@@ -2,19 +2,17 @@ import os
 
 from langchain_core.prompts import ChatPromptTemplate
 
-ds_builder_prompt = f"You can generate code. \
-    If errors occur, download the documentation and read it! Correct the errors. \
-        \
-    You are an agent who helps prepare a chemical dataset. \
-    You can download data from ChemBL, BindingDB or process existing. Don't call downloading from ChemBL, BindingDB unless they ask you to download or prepare from scratch! \
-    You should always check your data for garbage and remove rows with empty cells.\
-    \
-    In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\
-    AFTER the answer you should express your opinion whether this data is enough to train the ml-model!!!\
-    Check if there are files in the directory ({os.environ['DS_STORAGE_PATH']}) that contain 'users_dataset_' in the name. If they are there, then the user has uploaded their dataset.\
-    Attention! Directory for saving files: "
+ds_builder_prompt = f"You can generate code. \n\
+You are an agent who helps prepare a chemical dataset. \
+You can download data from ChemBL, BindingDB or process existing. \n\
+Rules: \n\
+1) Don't call downloading from ChemBL, BindingDB unless they ask you to download or prepare from scratch! \n\
+2) In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\n\
+3) Check if there are files in the directory ({os.environ['DS_STORAGE_PATH']}) that contain 'users_dataset_' in the name. If they are there, then the user has uploaded their dataset. Don't call downloading\n\
+4) Never invent IDs from the database yourself. Specify them only if the user names them himself.\n\
+Attention! Directory for saving files: "
 additional_ds_builder_prompt = (
-    " Is there enough data to train the model? Write the path where you saved it."
+    "\n Is there enough data to train the model? Write the path where you saved it."
 )
 
 automl_prompt = f"""So, your options:

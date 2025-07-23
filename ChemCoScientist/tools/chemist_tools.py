@@ -74,7 +74,7 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
 
         # Step 2: Retrieve affinity data from BindingDB
         affinity_entries = fetch_affinity_bindingdb(uniprot_id, affinity_type, cutoff)
-
+        print(f'Found {len(affinity_entries)} entrys for {protein_name}')
         return affinity_entries
 
     except Exception as e:
@@ -362,3 +362,18 @@ chem_tools = [
     visualize_molecule,
 ]
 chem_tools_rendered = render_text_description(chem_tools)
+
+if __name__ =="__main__":
+  import os                                                                           
+                                                                                      
+  directory = "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets"     
+                                                                                      
+  existing_datasets = [f for f in os.listdir(directory) if                            
+  f.startswith('users_dataset_')]                                                     
+  print("Existing datasets:", existing_datasets)                                      
+                                                                                                                                         
+  data = fetch_chembl_data(                                                           
+      target_name="GSK",                                                       
+      affinity_type="Ki"                                                            
+  )                                                                                   
+  print("Data fetched from ChemBL:", data)                                                 
