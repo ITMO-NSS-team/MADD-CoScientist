@@ -476,6 +476,8 @@ def run_ml_dl_training_by_daemon(
     """
     if isinstance(feature_column, str):
         feature_column = [feature_column]
+    if isinstance(target_column, str):
+        target_column = [target_column]
 
     if regression_props == [] and classification_props == []:
         regression_props = target_column
@@ -536,11 +538,13 @@ def run_ml_dl_training_by_daemon(
     ]
 
     try:
+        cwd_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # get root dir
+        
         subprocess.Popen(
             cmd,
             stdout=open("/tmp/ml_training.log", "a"),
             stderr=open("/tmp/ml_training.err", "a"),
-            cwd="/Users/alina/Desktop/ИТМО/ChemCoScientist",
+            cwd=cwd_path,
         )
         time.sleep(5)
         return True
@@ -557,12 +561,4 @@ agents_tools = [
     predict_prop_by_smiles,
 ]
 if __name__ == "__main__":
-
-    # get_state_from_server("http://10.32.2.2:81")
-    just_ml_training(
-        "data_cyk_short_v2",
-        regression_props=["IC50"],
-        feature_column=["canonical_smiles"],
-        target_column=["IC50"],
-        path="./data_dir_for_coder/data_cyk_short.csv",
-    )
+    run_ml_dl_training_by_daemon('sars_cov', '/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets/users_dataset.csv', 'smiles', 'IC50', ['IC50'])

@@ -123,18 +123,20 @@ def file_uploader(uploaded_files):
         print(file)
         suffix = file.name.lower().split(".")[-1]
         df = None
-
+        clean_folder(os.environ['DS_STORAGE_PATH'])
         if suffix == "csv":
             df = pd.read_csv(file)
+            
             df.to_csv(
-                os.environ["DS_STORAGE_PATH"] + "/" + "users_dataset_" + file.name,
+                os.environ["DS_STORAGE_PATH"] + "/" + "users_dataset.csv",
                 index=False,
             )
 
         elif suffix in ["xls", "xlsx"]:
             df = pd.read_excel(file)
-            df.to_excel(
-                os.environ["DS_STORAGE_PATH"] + "/" + "users_dataset_" + file.name,
+            print(df)
+            df.to_csv(
+                os.environ["DS_STORAGE_PATH"] + "/" + "users_dataset.csv",
                 index=False,
             )
 
