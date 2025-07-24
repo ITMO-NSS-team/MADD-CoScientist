@@ -27,7 +27,7 @@ PAPERS_PATH = os.path.join(ROOT_DIR, os.environ["PAPERS_STORAGE_PATH"])
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 VISION_LLM_NAME = VISION_LLM_URL.split(';')[1]
 LLM_SERVICE_CC_URL = os.environ["LLM_SERVICE_CC_URL"]
-VSE_GPT_KEY = os.getenv("VSE_GPT_KEY")
+LLM_SERVICE_KEY = os.getenv("LLM_SERVICE_KEY")
 MARKER_LLM = os.getenv("MARKER_LLM")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL")
 IMAGE_RESOLUTION_SCALE = 2.0
@@ -37,13 +37,13 @@ def simple_conversion(path: str|Path):
     converter = DocumentConverter()
     result = converter.convert(path)
     return result.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
-    
+
 
 def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     config = {
         "output_format": "html",
         "use_llm": use_llm,
-        "openai_api_key": VSE_GPT_KEY,
+        "openai_api_key": LLM_SERVICE_KEY,
         "openai_model": MARKER_LLM,
         "openai_base_url": LLM_SERVICE_URL
     }
