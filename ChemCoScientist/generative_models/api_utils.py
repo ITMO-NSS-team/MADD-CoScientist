@@ -3,7 +3,7 @@ from fastapi import Body
 import os
 import sys
 from pydantic import BaseModel
-
+from inference import predict_smiles
 from autotrain.utils.base_state import TrainState
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
@@ -26,6 +26,8 @@ from autotrain.auto_train import main, main_generate
 ###Docking
 from autodock_vina_python3.src.docking_score import docking_list
 from utils.check_novelty import check_novelty_chembl
+import pickle
+from GAN.gan_lstm_refactoring.train_gan import auto_train
 
 class GenData(BaseModel):
         numb_mol: int =1
@@ -34,6 +36,7 @@ class GenData(BaseModel):
         mean_:float=0
         std_:float=1
         case_ : str = 'RNMD'
+        url:str = "http://10.64.4.247:81"
 
 class TrainData(BaseModel):
         data:dict = None
@@ -60,6 +63,9 @@ class Molecules(BaseModel):
 class Docking_config(BaseModel):
     mol_list:List[str]
     receptor_case : str = 'Alzhmr'
+
+def condition_enchance():
+     pass
 
 def case_trainer(data:TrainData=Body()):
     # #####FOR TEST####
@@ -98,8 +104,8 @@ def case_trainer(data:TrainData=Body()):
         
     
         if data.fine_tune==True:
-            load_weights = 'autotrain/Alzheimer/weights'
-            load_weights_fields = 'autotrain/Alzheimer/weights'
+            load_weights = 'autotrain/train_Alzheimer_1_prop/Alzheimer_1_prop'
+            load_weights_fields = 'autotrain/train_Alzheimer_1_prop/Alzheimer_1_prop'
             data.new_vocab = False
         else:
             load_weights=None
@@ -131,6 +137,74 @@ def case_trainer(data:TrainData=Body()):
     except Exception as e:
         print(e)
         state.gen_model_upd_status(case=data.case,error=str(e))
+
+def gan_case_trainer(data:TrainData=Body()):
+    # #####FOR TEST####
+    # if data.numb_mol>100:
+    #     data.numb_mol=100
+    # ##################
+    #Docking score
+    is_evalute_docking = False
+    """Main API func for train generative models.
+
+    Args:
+        numb_mol (int): Number of molecules to generating.
+        model (str, optional): What model need to use.Choose from [lstm,CVAE,TVAE]. Defaults to 'lstm'.
+        cuda (bool, optional): Choose cuda usage option. Defaults to False.
+        case_ (str): Choose what disease u want to generate molecules for. 
+
+    Returns:
+        _type_: _description_
+    """
+    state = TrainState(state_path='autotrain/utils/state.json')
+    try:
+        if data.data is not None:
+                    df = pd.DataFrame(data.data)
+                    data.data_path = f"autotrain/data/{data.case}"
+                    if not os.path.isdir(data.data_path):
+                        os.mkdir(data.data_path)
+                    data.data_path = data.data_path + '/data.csv'
+                    df = df.dropna()
+                    #df = df[df[data.feature_column[0]].str.len()<200]
+                    df.to_csv(data.data_path)
+                    state.gen_model_upd_data(case=data.case,data_path=data.data_path,feature_column=data.feature_column)
+        #CASE = 'CYK'
+        # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
+        # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
+        test_mode = False
+        
+    
+        if data.fine_tune==True:
+            load_weights = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
+            load_weights_fields = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
+            data.new_vocab = False
+        else:
+            load_weights=None
+            load_weights_fields = None
+            data.new_vocab = True
+        # if state(CASE) is None:#Check if case exist
+        #     state.add_new_case(CASE,rewrite=False)
+        
+        if state(data.case,'ml') is None:
+            print(f"{data.case} is not exist! Train ML model before")
+            state.gen_model_upd_status(case=data.case,status=3)
+            return 0
+
+        auto_train(data.case,path_ds=data.data_path,fine_tune=data.fine_tune,state=state,feature_column=data.feature_column)
+
+    except Exception as e:
+        print(e)
+        state.gen_model_upd_status(case=data.case,error=str(e))
+
+def gan_auto_generator(data:GenData=Body()):
+    state = TrainState(state_path='autotrain/utils/state.json')
+    
+    with open(state(data.case_,'gen')['weights_path']+'/gan_weights.pkl', "rb") as f:
+        gan_mol = pickle.load(f)
+
+    gan_mol.eval()
+    samples = gan_mol.generate_n(data.numb_mol)
+    return samples
 
 
 def auto_generator(data:TrainData=Body()):
@@ -230,6 +304,7 @@ def case_generator(data:GenData=Body()):
     df = df.round(2)
     return {i:df[i].to_list() for i in df.columns}
     
+
 def _gen_n(data):
         """Function for generating molecules for choosen case
         """

@@ -184,12 +184,22 @@ if __name__=='__main__':
     def case_run(data:GenData=Body()):
         return json.dumps(case_generator(data))
     
+
+    @app.post("/gan_case_generator")
+    def case_run(data:GenData=Body()):
+        return json.dumps(gan_auto_generator(data))
+    
     @app.post("/train_gen_models")
     def case_run(data:TrainData=Body()):
         
         hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='autotrain/utils')
         case_trainer(data)
         #return json.dumps()
+
+    @app.post("/train_gan")
+    def case_gan_run(data:TrainData=Body()):
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='autotrain/utils')
+        gan_case_trainer(data)
 
     @app.post("/generate_gen_models_by_case")
     def gen_mol_case(data:TrainData=Body()):

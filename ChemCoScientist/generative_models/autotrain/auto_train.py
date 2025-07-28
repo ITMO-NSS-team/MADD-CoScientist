@@ -87,6 +87,8 @@ def main(server_dir = 'generative_models/train_dislip',
     opt.state = state
     train_model_auto(model,opt,case=case,state=state)
 
+
+
 def main_generate(server_dir = 'generative_models/transformer/train_dislip',
          conditions : List[str] = ['ic50'],
          case:str = 'Alzhmr',
@@ -188,21 +190,27 @@ def main_generate(server_dir = 'generative_models/transformer/train_dislip',
 #                          timeout=data.timeout)
         
 if __name__ == "__main__":
+    from huggingface_hub import hf_hub_download
+    hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir='autotrain/utils',
+                         force_download=True)
     state = TrainState(state_path='autotrain/utils/state.json')
-    CASE = 'CYK'
-    train_data = '/projects/generative_models_data/generative_models/docked_data_for_train/data_cyk_short.csv'
-    conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
+    CASE = 'MEK1'
+    train_data = '/projects/CoScientist/ChemCoScientist/generative_models/autotrain/data/data_mek.csv'
+    conditions = ['IC50']
     test_mode = False
     url = "http://10.64.4.247:81"
     n_samples = 10
-    load_weights = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
-    load_weights_fields = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+    load_weights = '/projects/CoScientist/ChemCoScientist/generative_models/autotrain/train_Alzheimer_1_prop/Alzheimer_1_prop/weights/epo6'#'/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+    load_weights_fields = '/projects/CoScientist/ChemCoScientist/generative_models/autotrain/train_Alzheimer_1_prop/Alzheimer_1_prop/weights/epo6'#'/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
     # if state(CASE) is None:#Check if case exist
     #     state.add_new_case(CASE,rewrite=False)
     use_cond2dec = False
+    new_vocab= False
     main(conditions = state(CASE,'ml')['target_column'],
          case=CASE, 
-         server_dir = f'generative_models/autotrain/train_model_data/train_{CASE}',
+         server_dir = f'/projects/CoScientist/ChemCoScientist/generative_models/autotrain/train_{CASE}',
          data_path_with_conds = train_data,
          test_mode=test_mode,
          state=state,
@@ -211,5 +219,5 @@ if __name__ == "__main__":
          load_weights=load_weights,
          load_weights_fields = load_weights_fields,
          use_cond2dec=use_cond2dec,
-        new_vocab= False)
+        new_vocab= new_vocab)
 
