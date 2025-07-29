@@ -276,6 +276,7 @@ def train_model_auto(model : nn.Module,opt,state,case='Alzmhr'):
             state=state)
         if len(props)==2:
             mean_prop_error = [i+100 for i in spec_conds]
+            mean_prop_error = sum(mean_prop_error)/len(spec_conds)
         else:
             mean_spec_conds = [sum(i)/len(i) for k,i in props.items()  if (k not in ["Validity",'Duplicates'] and k in state(case,'ml')['target_column'])]
             mean_prop_error = [abs(i-n) for i,n in zip(spec_conds,mean_spec_conds)]
