@@ -4,11 +4,9 @@ import time
 from typing import List
 
 from annotated_types import T
-from sklearn import metrics
 sys.path.append(os.getcwd())
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 from fedot.core.pipelines.pipeline_builder import PipelineBuilder
@@ -19,6 +17,13 @@ from fedot.core.data.data import InputData
 from fedot.core.data.data_split import train_test_data_setup
 import itertools
 from huggingface_hub import HfApi
+from sklearn.metrics import (
+    f1_score as f1,
+    accuracy_score as accuracy,
+    mean_absolute_error as mae,
+    mean_squared_error as mse,
+    r2_score as r2
+)
 
 def input_data_preparing(case:str,
                          problem:str = 'regression',
@@ -104,11 +109,25 @@ def run_train_automl(case:str,
         model.current_pipeline.save(path=path_to_save+f'_{case}'+f'_{problem}', create_subdir=False, is_datetime_in_path=False)
         
 
-        model.predict(features=test.features)
-        metrics[problem] = model.get_metrics(test.target)
+        predict = model.predict(features=test.features)
+        #metrics[problem] = model.get_metrics(test.target)
+        metrics_dict = {}
+        if problem == 'classification':
+           
+            metrics_dict[f"Accuracy score"]=accuracy(test.target, predict)
+            metrics_dict[f"F1 score"]=f1(test.target, predict)
+        elif problem == 'regression':
+            metrics_dict[f"MAE score"]=mae(test.target, predict)
+            metrics_dict[f"MSE score"]=mse(test.target, predict)
+            metrics_dict[f"R2 score"]=r2(test.target, predict)
+        else:
+            ...
+
+        metrics[problem] = metrics_dict
+
         if save_trained_data_to_sync_server:
             time.sleep(2)
-            api = HfApi(token=os.getenv(""))
+            api = HfApi(token="")
             last_folder = path_to_save.split(sep='/')[-1]
             api.upload_folder(repo_id='SoloWayG/Molecule_transformer',
                               folder_path=path_to_save+f'_{case}'+f'_{problem}',
@@ -163,29 +182,48 @@ if __name__=='__main__':
 
 #####
 #Example for train
-    # state = TrainState()
+    state = TrainState()
 
-    # data_path = "automl\data\data_4j1r.csv"
-    # task = 'Brain_cancer_test'
-    # feature_column=['canonical_smiles']
-    # target_column=['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
-    # regression_props = ['LogP','docking_score',"Synthetic Accessibility",'QED']
-    # classification_props = ['IC50']
+    # data_path = r"automl\data\base_cases\tau_kinase_inhib_reg.csv"
+    # task = 'Alzheimer_regression'
+    # feature_column = ['Smiles']
+    # target_column = ['IC50']
+    # regression_props = ['IC50']
+    # #classification_props = ['IC50']
 
     # state.add_new_case(task,rewrite=True)
     # state.ml_model_upd_data(case=task,
     #                         data_path = data_path,
     #                         feature_column=feature_column,
     #                         target_column=target_column,
-    #                         predictable_properties={"regression":regression_props, "classification":classification_props})
+    #                         predictable_properties={ "regression":regression_props})
     
-    # run_train_automl(case=task,path_to_save='automl/trained_data')
+    # run_train_automl(case=task,path_to_save='automl/trained_data',timeout=5)
+
+
+    data_path = r"D:\Projects\CoScientist\automl\data\base_cases\docked_all_kinase_inhib.csv"
+    task = 'Alzheimer_regression_log'
+    feature_column = ['Smiles']
+    target_column = ['Log Standard Value']
+    regression_props = ['Log Standard Value']
+    #classification_props = ['IC50']
+
+    state.add_new_case(task,rewrite=True)
+    state.ml_model_upd_data(case=task,
+                            data_path = data_path,
+                            feature_column=feature_column,
+                            target_column=target_column,
+                            predictable_properties={ "regression":regression_props})
+    
+    run_train_automl(case=task,path_to_save='automl/trained_data',timeout=15)
+
+    #Log Standard Value
 #######
 
 
 ######
 #Example for inference
-    task = "Brain_cancer_test"
-    state = TrainState()
-    smiles_list = pd.read_csv(state(task,'ml')['data_path']).iloc[:10,:]['canonical_smiles'].to_list()
-    print(run_predict_automl_from_list(case=task,data=smiles_list))
+    # task = "Brain_cancer_test"
+    # state = TrainState()
+    # smiles_list = pd.read_csv(state(task,'ml')['data_path']).iloc[:10,:]['canonical_smiles'].to_list()
+    # print(run_predict_automl_from_list(case=task,data=smiles_list))
