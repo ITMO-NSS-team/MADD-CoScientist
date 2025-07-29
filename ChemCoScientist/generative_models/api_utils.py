@@ -204,7 +204,23 @@ def gan_auto_generator(data:GenData=Body()):
 
     gan_mol.eval()
     samples = gan_mol.generate_n(data.numb_mol)
-    return samples
+    valid_mols = state()["Calculateble properties"]['Validity'](samples)
+    unique_mols = set(valid_mols)
+    DYPLICATES = 1-len(unique_mols)/len(valid_mols)
+    VALID = len(valid_mols)/len(samples)
+    props_for_calc = [i for i in state.show_calculateble_propreties() if i !="Validity"]
+    print(props_for_calc)
+    props = {key:state()["Calculateble properties"][key](valid_mols) for key in props_for_calc}
+    props['Validity'] = VALID
+    props["Duplicates"] = DYPLICATES
+    print(props)
+    if state(data.case_,'ml')['status'] == 'Trained':
+        ml_props = predict_smiles(valid_mols,data.case_,url=data.url)
+        for key,value in ml_props.items():
+            props[key]=value 
+    df = pd.DataFrame(data = {'Smiles':valid_mols,**props})
+    return df.to_dict()
+    #return samples
 
 
 def auto_generator(data:TrainData=Body()):

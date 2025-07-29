@@ -240,6 +240,7 @@ def call_for_gan_generation(
     }
     resp = requests.post(url, data=json.dumps(params))
     print("--- %s seconds ---" % (time.time() - start_time))
+    print(json.loads(resp.json()))
     return resp, json.loads(resp.json())
 #ret = call_for_generation()
 
