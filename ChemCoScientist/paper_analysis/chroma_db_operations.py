@@ -5,21 +5,22 @@ import uuid
 from pathlib import Path
 
 import chromadb
+import numpy as np
+from chromadb import Documents, EmbeddingFunction, Embeddings
 from chromadb.api.models import Collection
-from chromadb.api.types import Documents, EmbeddingFunction
-from chromadb.utils import embedding_functions
 from chromadb.utils.data_loaders import ImageLoader
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
 from multiprocessing import Pool
-from sentence_transformers import CrossEncoder
 from protollm.connectors import create_llm_connector
 from pydantic import BaseModel, Field
+import requests
 from typing import Optional
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
+from ChemCoScientist.paper_analysis.settings import settings as default_settings
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
@@ -48,10 +49,20 @@ class ExpandedSummary(BaseModel):
     )
 
 
+class CustomEmbeddingFunction(EmbeddingFunction):
+    def __call__(self, texts: Documents) -> Embeddings:
+        embeddings = ChromaDBPaperStore.get_embeddings(texts)
+        return embeddings
+
+
 class ChromaClient:
     def __init__(self):
-        # TODO: run ChromaDB in server mode
-        self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        # self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        self.client = chromadb.HttpClient(
+            host=default_settings.chroma_host,
+            port=default_settings.chroma_port,
+            settings=chromadb.Settings(allow_reset=default_settings.allow_reset),
+        )
 
     def get_or_create_chroma_collection(
         self,
@@ -77,6 +88,12 @@ class ChromaClient:
             where=metadata_filter,
             include=["documents", "metadatas", "distances"],
         )
+    
+    def delete_collection(self, name: str):
+        self.client.delete_collection(name)
+        
+    def show_collections(self):
+        return self.client.list_collections()
 
 
 class ChromaDBPaperStore:
@@ -92,21 +109,15 @@ class ChromaDBPaperStore:
         self.sum_chunk_num = 15
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
-        
-        # TODO: move embedding model to a separate service
-        self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="BAAI/bge-m3",
-            normalize_embeddings=True
-        )
 
         self.sum_collection = self.client.get_or_create_chroma_collection(
-            self.sum_collection_name, self.rag_embedding_function
+            self.sum_collection_name, CustomEmbeddingFunction()
         )
         self.txt_collection = self.client.get_or_create_chroma_collection(
-            self.txt_collection_name, self.rag_embedding_function
+            self.txt_collection_name, CustomEmbeddingFunction()
         )
         self.img_collection = self.client.get_or_create_chroma_collection(
-            self.img_collection_name, self.rag_embedding_function
+            self.img_collection_name, CustomEmbeddingFunction()
         )
         self.workers = 2
 
@@ -141,11 +152,11 @@ class ChromaDBPaperStore:
         return res.content
 
     def store_text_chunks_in_chromadb(self, content: list) -> None:
-        # TODO: add embeddings calculations from external service
+        embeddings = self.get_embeddings([text_chunk.page_content for text_chunk in content])
         self.txt_collection.add(
             ids=[str(uuid.uuid4()) for _ in range(len(content))],
             documents=[text_chunk.page_content for text_chunk in content],
-            # embeddings = ...
+            embeddings=embeddings,
             metadatas=[{"type": "text", **text_chunk.metadata} for text_chunk in content]
         )
 
@@ -161,11 +172,11 @@ class ChromaDBPaperStore:
                 image_paths.append(img_path)
                 image_counter += 1
 
-        # TODO: add embeddings calculations from external service
+        embeddings = self.get_embeddings(image_descriptions)
         self.img_collection.add(
             ids=[str(uuid.uuid4()) for _ in range(image_counter)],
             documents=image_descriptions,
-            # embeddings = ...
+            embeddings=embeddings,
             metadatas=[
                 {"type": "image", "source": paper_name, "image_path": img_path} for img_path in image_paths
             ]
@@ -196,19 +207,14 @@ class ChromaDBPaperStore:
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
         return text_context, image_context
     
-    @staticmethod
-    def search_with_reranker(query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
+    def search_with_reranker(self, query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
         metadatas = initial_results['metadatas'][0]
         documents = initial_results["documents"][0]
         ids = initial_results["ids"][0]
 
         pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
         
-        # TODO: move the reranker to a separate service
-        reranker = CrossEncoder(
-            "Alibaba-NLP/gte-multilingual-reranker-base", max_length=2048, trust_remote_code=True
-        )
-        rerank_scores = reranker.predict(pairs)
+        rerank_scores = self.rerank(pairs)
         
         scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
         scored_docs.sort(key=lambda x: x[3], reverse=True)
@@ -225,10 +231,11 @@ class ChromaDBPaperStore:
                 "publication_year": expanded_summary.publication_year
             }
         )
-        # TODO: add embeddings calculations from external service
+        embedding = self.get_embeddings([doc.page_content])
         self.sum_collection.add(
             ids=[str(uuid.uuid4())],
             documents=[doc.page_content],
+            embeddings=embedding,
             metadatas=[{"type": "text", **doc.metadata}]
         )
         print(f"Summary loaded for: {paper_name}")
@@ -248,6 +255,40 @@ class ChromaDBPaperStore:
             )
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
+            raise
+    
+    @staticmethod
+    def get_embeddings(texts: list[str]) -> list[np.ndarray]:
+        embedding_service_url = "http://" + default_settings.embedding_host + ":"\
+                                + str(default_settings.embedding_port)\
+                                + default_settings.embedding_endpoint
+        try:
+            response = requests.post(
+                embedding_service_url,
+                json=texts,
+                timeout=300
+            )
+            response.raise_for_status()
+            return response.json()["embeddings"]
+        except Exception as e:
+            logger.error(f"Embedding service error: {str(e)}")
+            raise
+    
+    @staticmethod
+    def rerank(pairs: list[list[str]]) -> list[float]:
+        reranker_service_url = "http://" + default_settings.reranker_host + ":" \
+                                + str(default_settings.reranker_port) \
+                                + default_settings.reranker_endpoint
+        try:
+            response = requests.post(
+                reranker_service_url,
+                json=pairs,
+                timeout=300
+            )
+            response.raise_for_status()
+            return response.json()["scores"]
+        except Exception as e:
+            logger.error(f"Reranker service error: {str(e)}")
             raise
 
 
@@ -296,15 +337,21 @@ def process_all_documents(base_dir: Path):
 
 
 if __name__ == "__main__":
-    # papers_path = PAPERS_PATH
-    #
-    # paper_store = ChromaDBPaperStore()
-    # paper_store.prepare_db(papers_path)
     
     p_path = PAPERS_PATH
     res_path = IMAGES_PATH
+    
     p_store = ChromaDBPaperStore()
     p_store.run_marker_pdf(p_path, res_path)
     del p_store
     load_summaries_to_db(p_path)
     process_all_documents(Path(res_path))
+     
+    # print(p_store.client.show_collections())
+    # p_store.client.delete_collection(name="test_paper_summaries_img2txt")
+    # p_store.client.delete_collection(name="test_text_context_img2txt")
+    # p_store.client.delete_collection(name="test_image_context")
+    # print(p_store.client.show_collections())
+    
+    # print(ChromaDBPaperStore.get_embeddings(["hello", "world"]))
+    # print(ChromaDBPaperStore.rerank([["hello", "world"], ["hello", "there"]]))
