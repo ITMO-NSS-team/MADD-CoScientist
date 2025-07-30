@@ -81,8 +81,6 @@ conf = {
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
         "tools_for_agents": {
-            # here can be description of langchain web tools (not TavilySearch)
-            # "web_serach": [web_tools_rendered],
             "chemist_node": [chem_tools_rendered],
             "nanoparticle_node": [nano_tools_rendered],
             "dataset_builder_agent": [dataset_builder_agent_description],
@@ -93,8 +91,6 @@ conf = {
                 "You can use web search to find information on the internet. "
             ],
         },
-        # here can be langchain web tools (not TavilySearch)
-        # "web_tools": web_tools,
         # full descripton for agents tools
         "tools_descp": tools_rendered + additional_agents_description,
         # set True if you want to use web search like black-box
@@ -120,12 +116,28 @@ conf = {
                 "ds_dir": os.environ["DS_STORAGE_PATH"],
             },
         },
-        # These prompts will be added as hints in ProtoLLM
+        # These prompts will be added in ProtoLLM
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
+            "supervisor": {
+                "problem_statement": None,
+                "problem_statement_continue": None,
+                "rules": None,
+                "additional_rules": None,
+                "examples": None,
+                "enhancemen_significance": None,
+            },
+            "planner": {
+                "problem_statement": None,
+                "rules": None,
+                "desc_restrictions": None,
+                "examples": None,
+                "additional_hints": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
                 If the user provides his dataset - immediately start training using ml_dl_agent (never call dataset_builder_agent)!\
                         To find an answer, use the paper search first! NOT the web search!",
-            "chat": """You are a chemical agent system. You can do the following:
+            },
+            "chat": {
+                "problem_statement": None,
+                "additional_hints": """You are a chemical agent system. You can do the following:
                     - train generative models (generate SMILES molecules), train predictive models (predict properties)
                     - prepare a dataset for training
                     - download data from chemical databases: ChemBL, BindingDB
@@ -135,10 +147,25 @@ conf = {
                     
                     If user ask something like "What can you do" - make answer yourself!
                     """,
-            "summary": "Never write full paths! Only file names."
+            },
+            "summary": {
+                "problem_statement": None,
+                "rules": None,
+                "additional_hints": "Never write full paths! Only file names.",
+            },
+            "replanner": {
+                "problem_statement": None,
+                "rules": None,
+                "examples": None,
+                "additional_hints": "Optimize the plan, transfer already existing answers from previous executions! For example, weather values.\
+                Don't forget tasks! Plan the Coder Agent to save files.\
+                    Be more careful about which tasks can be performed in parallel and which ones can be performed sequentially.\
+                        For example, you cannot fill a table and save it in parallel.",
+            },
         },
     },
 }
+
 
 
 # UNCOMMENT the one you need
@@ -168,14 +195,10 @@ conf = {
 
 # parallel examples
 # inputs = {"input": "Получи данные по KRAS G12C из ChemBL для Ki. Получи данные по MEK1 из ChemBL по Ki"}
-inputs = {"input": "Получи данные по KRAS G12C из ChemBL для IC50. Получи данные по MEK1 из ChemBL по IC50. Поставь обучение на том датасете, где данных больше, назови кейс в зависимости от белка."}
+inputs = {"input": "Получи данные по MEK1 из BindigDB для IC50. Получи данные по KRAS из BindigDB по Ki."}
 
 graph = GraphBuilder(conf)
 
 if __name__ == "__main__":
-    # inputs = {"input": input()}
-    # while True:
-    #     task = input()
-    #     res_1 = graph.run({"input": task}, debug=True, user_id="1")
     for step in graph.stream(inputs, user_id="1"):
         print(step)

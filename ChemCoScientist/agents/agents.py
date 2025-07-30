@@ -6,7 +6,7 @@ import operator
 from langgraph.types import Command
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
-from smolagents import CodeAgent, DuckDuckGoSearchTool, LiteLLMModel, OpenAIServerModel
+from smolagents import CodeAgent, LiteLLMModel, OpenAIServerModel
 
 from ChemCoScientist.agents.agents_prompts import (
     additional_ds_builder_prompt,
@@ -195,7 +195,9 @@ def paper_analysis_node(state: dict, config: dict) -> Command:
 
     updated_metadata = state.get("metadata", {}).copy()
     updated_metadata["paper_analysis"] = response.get("metadata")
-
+    updated_metadata = {}
+    response = {'answer': 'Paper agent not supported now'}
+    
     return Command(update={
         "past_steps": Annotated[set, operator.or_](set([
             (task, response.get("answer"))
