@@ -176,7 +176,7 @@ class ChromaDBPaperStore:
     def search_for_papers(self,
                           query: str,
                           chunks_num: int = None,
-                          final_chunks_num: int = None) -> list[str]:
+                          final_chunks_num: int = None) -> dict:
         chunks_num = chunks_num if chunks_num else self.sum_chunk_num
         final_chunks_num = final_chunks_num if final_chunks_num else self.final_sum_chunk_num
 

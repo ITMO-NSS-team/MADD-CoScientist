@@ -40,7 +40,7 @@ def query_llm(
     return res.content, res.response_metadata
 
 
-def simple_query_llm(model_url: str, question: str, pdfs: list,) -> tuple:
+def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
     if pdfs:
         update_activity(os.path.dirname(pdfs[0]))
 

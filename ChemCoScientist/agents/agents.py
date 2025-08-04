@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 import time
 from typing import Annotated
@@ -21,6 +22,10 @@ from ChemCoScientist.paper_analysis.question_processing import process_question
 from ChemCoScientist.tools import chem_tools, nanoparticle_tools
 from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
 from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_all_files(directory):
@@ -221,24 +226,34 @@ def paper_analysis_agent(state: dict, config: dict) -> Command:
         llm, paper_analysis_tools, state_modifier=current_prompt
     )
 
-    response = paper_analysis_agent.invoke({"messages": [("user", task)]})
+    for attempt in range(3):
+        try:
+            response = paper_analysis_agent.invoke({"messages": [("user", task)]})
 
-    result = ast.literal_eval(response["messages"][2].content)
+            result = ast.literal_eval(response["messages"][2].content)
 
-    updated_metadata = state.get("metadata", {}).copy()
-    pa_metadata = {"paper_analysis": result.get("metadata")}
-    if pa_metadata["paper_analysis"]:
-        updated_metadata.update(pa_metadata)
+            updated_metadata = state.get("metadata", {}).copy()
+            pa_metadata = {"paper_analysis": result.get("metadata")}
+            if pa_metadata["paper_analysis"]:
+                updated_metadata.update(pa_metadata)
 
-    if type(result["answer"]) is list:
-        result["answer"] = ', '.join(result["answer"])
+            if type(result["answer"]) is list:
+                result["answer"] = ', '.join(result["answer"])
 
-    return Command(update={
-        "past_steps": Annotated[set, operator.or_](set([
-            (task, result["answer"])
-        ])),
-        "nodes_calls": Annotated[set, operator.or_](set([
-            ("paper_analysis_agent", (("text", result["answer"]),))
-        ])),
-        "metadata": Annotated[dict, operator.or_](updated_metadata),
+            return Command(update={
+                "past_steps": Annotated[set, operator.or_](set([
+                    (task, result["answer"])
+                ])),
+                "nodes_calls": Annotated[set, operator.or_](set([
+                    ("paper_analysis_agent", (("text", result["answer"]),))
+                ])),
+                "metadata": Annotated[dict, operator.or_](updated_metadata),
+            })
+        except Exception as e:
+            print(f"Paper analysis agent error: {str(e)}. Retrying ({attempt + 1}/3)")
+            time.sleep(1.2 ** attempt)
+
+    return Command(goto=END, update={
+        "response": "I cannot answer your question right now using the DB or uploaded papers."
+                    "Can I help with something else?"
     })

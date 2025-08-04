@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -16,6 +17,8 @@ from definitions import CONFIG_PATH
 load_dotenv(CONFIG_PATH)
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @tool
 def explore_chemistry_database(task: str) -> dict:
@@ -33,7 +36,13 @@ def explore_chemistry_database(task: str) -> dict:
         the text, images and tables that were used as context for the request,
         metadata of the request (model, number of used tokens, etc)
     """
-    return process_question(task)
+    try:
+        print('Running explore_chemistry_database tool...')
+        print(f'task: {task}')
+        return process_question(task)
+    except Exception as e:
+        logger.error(f'explore_chemistry_database ERROR: {e}')
+        return {'answer': 'Could not extract any data from DB.'}
 
 
 @tool
@@ -52,20 +61,28 @@ def explore_my_papers(task: str, session_id: str = None) -> dict:
         A dictionary with the final response from the LLM and metadata
         of the request (model, number of used tokens, etc)
     """
-    # TODO: remove when proper frontend is added
-    if not SELECTED_PAPERS:
-        directory = Path(os.environ.get('MY_PAPERS_PATH'))
-        papers = [str(f.resolve()) for f in directory.iterdir() if f.is_file()]
-        if not papers:
-            return {'answer': 'No papers provided for search.'}
-    else:
-        if not SELECTED_PAPERS.get(session_id, []):
-            return {'answer': 'No papers provided for search.'}
-        papers = SELECTED_PAPERS[session_id]
-    return simple_query_llm(VISION_LLM_URL, task, papers)
+    print('Running explore_my_papers tool...')
+    print(f'task: {task}')
+    try:
+        # TODO: remove when proper frontend is added
+        if not SELECTED_PAPERS:
+            directory = Path(os.environ.get('MY_PAPERS_PATH'))
+            papers = [str(f.resolve()) for f in directory.iterdir() if f.is_file() and f.suffix.lower() == '.pdf']
+
+            if not papers:
+                return {'answer': 'No papers provided for search.'}
+        else:
+            if not SELECTED_PAPERS.get(session_id, []):
+                return {'answer': 'No papers provided for search.'}
+            papers = SELECTED_PAPERS[session_id]
+
+        return simple_query_llm(VISION_LLM_URL, task, papers)
+    except Exception as e:
+        logger.error(f'explore_my_papers ERROR: {e}')
+        return {'answer': 'Could not extract any data from uploaded papers.'}
 
 
-def paraphrase_query(query: str) -> str:
+def paraphrase_query(query: str) -> dict:
     """
     Converts the user's initial question about chemistry into a more suitable
     query for semantic search.
@@ -90,7 +107,7 @@ def paraphrase_query(query: str) -> str:
 
 
 @tool
-def select_papers(query: str, papers_num: int = 15, final_papers_num: int = 3) -> list:
+def select_papers(query: str, papers_num: int = 15, final_papers_num: int = 3) -> dict:
     """
     Finds the specified number of papers for the user's request based on a database with
     chemical scientific papers. Using this tool takes precedence over web search.
@@ -105,8 +122,14 @@ def select_papers(query: str, papers_num: int = 15, final_papers_num: int = 3) -
     Returns:
         A list of papers suitable for the user's request
     """
-    paper_store = ChromaDBPaperStore()
-    return paper_store.search_for_papers(query, papers_num, final_papers_num)
+    try:
+        print('Running select_papers tool...')
+        print(f'query: {query}')
+        paper_store = ChromaDBPaperStore()
+        return paper_store.search_for_papers(query, papers_num, final_papers_num)
+    except Exception as e:
+        logger.error(f'select_papers ERROR: {e}')
+        return {'answer': 'Could not find any papers in DB.'}
 
 
 paper_analysis_tools = [
