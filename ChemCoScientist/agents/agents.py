@@ -188,8 +188,11 @@ def nanoparticle_node(state: dict, config: dict) -> Command:
 
 def paper_analysis_agent(state: dict, config: dict) -> Command:
     """
-    Answers the user's question using a DB with chemical scientific papers and a vision LLM.
-    Takes into account text, images and tables.
+    The agent assists users by analyzing information from scientific papers.
+    It can do several things:
+    - answers the user's question using a DB with chemical scientific papers
+    - answers the user's question using papers that were uploaded by the user
+    - selects papers relevant to the user's question
 
     Args:
         state: The current execution.
