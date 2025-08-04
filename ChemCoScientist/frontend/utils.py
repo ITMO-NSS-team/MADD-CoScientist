@@ -126,10 +126,8 @@ def file_uploader(uploaded_files):
         uploaded_files: List of uploaded file objects from Streamlit's file_uploader widget
     """
     st.session_state.uploaded_files = {}
-    print(uploaded_files)
 
     for file in uploaded_files:
-        print(file)
         suffix = file.name.lower().split(".")[-1]
         df = None
         clean_folder(os.environ['DS_STORAGE_PATH'])

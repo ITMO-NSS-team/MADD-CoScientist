@@ -268,7 +268,6 @@ def init_backend():
     # it must be here !!!
     from ChemCoScientist.conf.create_conf import conf
 
-    print(conf)
     st.session_state.backend = GraphBuilder(conf)
     # clean folder for new job here
     clean_folder(os.environ['DS_STORAGE_PATH'])
@@ -360,7 +359,6 @@ def load_dataset():
     loads submited datasets to the session state on button click
     """
     files = st.session_state.file_uploader
-    print(files)
     uploaded_files = file_uploader(files)
     if uploaded_files:
         # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
@@ -373,9 +371,7 @@ def load_papers():  # TODO: add russian version
     loads submitted papers to the session state on button click
     """
     uploaded_papers = st.session_state.papers_file_uploader
-    print(f'uploaded_papers: {uploaded_papers}')
     if uploaded_papers is not None:
-        print('inside paper processing block')
         # Process file here
         st.write("File uploaded and processed")
 

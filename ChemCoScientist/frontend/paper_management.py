@@ -133,8 +133,6 @@ def paper_management():
                             if key in st.session_state:
                                 del st.session_state[key]
 
-                        print(f'KEYS AFTER DELETION 1: {[k for k in st.session_state.keys()]}')
-
                         # Remove from session state
                         for paper in papers_to_delete:
                             temp_list = [
