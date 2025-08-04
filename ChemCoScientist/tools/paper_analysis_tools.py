@@ -40,7 +40,7 @@ def explore_chemistry_database(task: str) -> dict:
 
 
 @tool
-def explore_my_papers(task: str) -> dict:
+def explore_my_papers(task: str, session_id: str = None) -> dict:
     """Answers questions on chemistry using specific scientific papers that were uploaded
     by the user. Using this tool takes precedence over web search.
     This tool is ONLY for questions about specific papers (e.g. 'what is on Figure 1?',
@@ -49,14 +49,15 @@ def explore_my_papers(task: str) -> dict:
 
     Args:
         task (str): user query for the user's papers
+        session_id (str): current session ID, required only for frontend
 
     Returns:
         A dictionary with the final response from the LLM and metadata
         of the request (model, number of used tokens, etc)
     """
     print('in explore_my_papers')
-    print(f'session: {st.session_state}')
-    print(f'session id: {st.session_state.session_id}')
+    print(f'session: {session_id}')
+
     # TODO: remove when proper frontend is added
     if not SELECTED_PAPERS:
         directory = Path(os.environ.get('MY_PAPERS_PATH'))
@@ -64,9 +65,9 @@ def explore_my_papers(task: str) -> dict:
         if not papers:
             return {'answer': 'No papers provided for search.'}
     else:
-        if not SELECTED_PAPERS.get(st.session_state.session_id, []):
+        if not SELECTED_PAPERS.get(session_id, []):
             return {'answer': 'No papers provided for search.'}
-        papers = SELECTED_PAPERS[st.session_state.session_id]
+        papers = SELECTED_PAPERS[session_id]
     return simple_query_llm(VISION_LLM_URL, task, papers)
 
 

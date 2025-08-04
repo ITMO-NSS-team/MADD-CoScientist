@@ -208,11 +208,19 @@ def paper_analysis_agent(state: dict, config: dict) -> Command:
 
     task = state["task"]
 
+    # TODO: update this when proper frontend is added
+    try:
+        current_prompt = f'{worker_prompt}/n session_id = {st.session_state.session_id}'
+        print('ADDED ID TO PROMPT')
+    except:
+        current_prompt = f'{worker_prompt}/n session_id is not needed in this case, pass None'
+        print('DID NOT ADD ID TO PROMPT')
+
     paper_analysis_agent = create_react_agent(
-        llm, paper_analysis_tools, state_modifier=worker_prompt
+        llm, paper_analysis_tools, state_modifier=current_prompt
     )
+
     print('created paper analysis agent successfully')
-    print(f'PA session id: {st.session_state.session_id}')
 
     response = paper_analysis_agent.invoke({"messages": [("user", task)]})
 
