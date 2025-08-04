@@ -1,7 +1,5 @@
 import os
-import io
 import uuid
-import shutil
 import threading
 import time
 
@@ -11,7 +9,6 @@ from typing import Callable, Iterable, Union
 
 import pandas as pd
 import streamlit as st
-from PIL import Image
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from streamlit_pills import pills
 
@@ -19,10 +16,9 @@ from definitions import ROOT_DIR, CONFIG_PATH
 
 load_dotenv(CONFIG_PATH)
 
-# BASE_DATA_DIR = Path("./user_data")
 BASE_DATA_DIR = "datasets"
 PATH_TO_TEMP_FILES = os.environ["PATH_TO_TEMP_FILES"]
-INACTIVITY_WINDOW_SECONDS = 6 * 60 * 60  # 6 hours
+INACTIVITY_WINDOW_SECONDS = 24 * 60 * 60  # 24 hours
 
 import os
 import shutil
@@ -159,28 +155,6 @@ def file_uploader(uploaded_files):
 
         st.session_state.uploaded_files[file.name] = {"file": file, "df": df}
     return st.session_state.uploaded_files
-
-
-# def papers_uploader(uploaded_files):
-#     """
-#     Process uploaded papers and save them.
-#     """
-#     st.session_state.uploaded_files = {}
-#     print(uploaded_files)
-#
-#     for file in uploaded_files:
-#         print(file)
-#         suffix = file.name.lower().split(".")[-1]
-#
-#         if suffix == "pdf":
-#             with open(os.environ["PAPERS_STORAGE_PATH"] + "/" + file.name, "wb") as f:
-#                 f.write(file.getbuffer())
-#         else:
-#             st.warning(f"Unsupported papers type: {suffix}")
-#             continue
-#
-#         st.session_state.uploaded_files[file.name] = {"file": file}
-#     return st.session_state.uploaded_files
 
 
 def custom_pills(

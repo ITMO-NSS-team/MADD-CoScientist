@@ -56,7 +56,7 @@ conf = {
         "visual_model": create_llm_connector(os.environ["VISION_LLM_URL"]),
         "img_path": "image.png",
         "llm": create_llm_connector(
-            os.environ['MAIN_LLM_URL']+';'+os.environ['MAIN_LLM_MODEL']
+            f"{os.environ['MAIN_LLM_URL']};{os.environ['MAIN_LLM_MODEL']}"
         ),
         "max_retries": 3,
         # list of scenario agents
@@ -204,16 +204,5 @@ inputs = {"input": "what is the name of figure 1?"}
 graph = GraphBuilder(conf)
 
 if __name__ == "__main__":
-    # inputs = {"input": input()}
-    # while True:
-    #     task = input()
-    #     res_1 = graph.run({"input": task}, debug=True, user_id="1")
-    # for step in graph.stream(inputs, user_id="1"):
-    #     print(step)
-
-    from ChemCoScientist.conf.create_conf import conf
-
-    print(conf)
-    graph = GraphBuilder(conf)
     for step in graph.stream(inputs, user_id="1"):
         print(step)

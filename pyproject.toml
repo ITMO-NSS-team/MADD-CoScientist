@@ -34,10 +34,6 @@ dependencies = [
     "langchain-ollama (==0.3.0)",
     "langchain-openai (==0.3.3)",
     "marker-pdf (==1.6.2)",
-    "beautifulsoup4 (==4.13.3)",
-    "streamlit-pills (==0.3.0)",
-    "streamlit_extras (==0.7.5)",
-    "pyperclip (==1.9.0)",
 ]
 
 

@@ -368,7 +368,7 @@ def load_dataset():
         st.toast(f"Successfully loaded datasets", icon="✅")
 
 
-def load_papers():  # !!!!!! translate to rus
+def load_papers():  # TODO: add russian version
     """
     loads submitted papers to the session state on button click
     """
@@ -401,19 +401,6 @@ def load_papers():  # !!!!!! translate to rus
                                 st.error(f"❌ Error processing file: {result['error']}")
                         except Exception as e:
                             st.error(f"❌ Unexpected error processing {uploaded_file.name}: {str(e)}")
-
-        uploaded_papers = None
-        # logger.info(f'uploaded files after delete: {uploaded_papers}')
-        # Rerun only if new files were processed
-        # if new_files_processed:
-        #     time.sleep(1)
-        #     st.rerun()
-    # print(files)
-    # uploaded_files = papers_uploader(files)
-    # if uploaded_files:
-    #     # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
-    #     # st.toast(f"Successfully loaded dataset:\n {st.session_state.dataset_name}", icon="✅")
-    #     st.toast(f"Successfully loaded papers", icon="✅")
 
 
 def init_images():

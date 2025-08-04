@@ -1,9 +1,6 @@
 import streamlit as st
-import time
 
-import pyperclip
 from dotenv import load_dotenv
-# from ChemCoScientist.frontend.utils import custom_pills
 from ChemCoScientist.frontend.streamlit_endpoints import SELECTED_PAPERS
 from ChemCoScientist.frontend.utils import get_user_data_dir, get_user_session_id
 
@@ -11,7 +8,6 @@ load_dotenv()
 
 
 def init_page():
-
     st.set_page_config(
         page_title="🧪 Chemistry Chatbot", initial_sidebar_state="expanded"
     )
@@ -96,8 +92,6 @@ def init_session_state():
         st.session_state.selected_option = None
     if "reset_key" not in st.session_state:
         st.session_state.reset_key = 0
-    # if "user_session_id" not in st.session_state:
-    #     st.session_state.user_session = None
     if "uploaded_files" not in st.session_state:
         st.session_state.uploaded_files = {}
     if "uploaded_papers" not in st.session_state:

@@ -4,9 +4,7 @@ import streamlit as st
 
 from dotenv import load_dotenv
 from pathlib import Path
-from protollm.agents.builder import GraphBuilder
 
-# from ChemCoScientist.main import conf
 from ChemCoScientist.paper_analysis.question_processing import simple_query_llm
 from ChemCoScientist.frontend.memory import SELECTED_PAPERS
 from ChemCoScientist.streamlit_app_old.utils import update_activity
@@ -21,15 +19,6 @@ logger.info(str(Path(__file__).resolve().parent.parent))
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
-# SELECTED_PAPERS = ContextVar("SELECTED_PAPERS", default={})
-
-# def get_answer_from_assistant(question: str) -> tuple[str, list, str, dict]:
-#     logger.info('Retrieving answer from assistant...')
-#
-#     graph = GraphBuilder(conf)
-#     inputs = {"input": question}
-#
-#     return graph.run(inputs, debug=True, user_id="1")
 
 
 def process_uploaded_paper(uploaded_file) -> dict:
@@ -105,9 +94,3 @@ def explore_my_papers(task: str) -> dict:
     logger.info(f'using papers: {papers}')
     logger.info(f'using model: {VISION_LLM_URL}')
     return simple_query_llm(VISION_LLM_URL, task, papers)
-
-
-if __name__ == "__main__":
-    # question = 'how does the synthesis of Glionitrin A/B happen?'
-    # print(get_answer_from_assistant(question))
-    print()

@@ -69,11 +69,6 @@ def paper_management():
 
                 # Update individual checkboxes based on master checkbox
                 if master_analysis != st.session_state.get("prev_master_analysis", False):
-                    # # Clear old delete/process checkbox keys to prevent stale states
-                    # for key in list(st.session_state.keys()):
-                    #     if key.startswith("delete_paper_") or key.startswith("process_paper_") or key.startswith(
-                    #             "prev_process_paper_"):
-                    #         del st.session_state[key]
 
                     for i, paper in enumerate(scientific_papers):
                         st.session_state[f"process_paper_{i}"] = master_analysis
@@ -176,10 +171,6 @@ def paper_management():
                     st.write(f"**{paper['name']}**")
 
                 with col3:
-                    # # Check current state and handle changes
-                    # current_state = st.session_state.get(f"process_paper_{i}", False)
-                    # logger.info(f'current state for file {i}: {current_state}')
-
                     # Store previous state in a separate key to track changes
                     prev_state_key = f"prev_process_paper_{i}"
                     previous_state = st.session_state.get(prev_state_key, False)

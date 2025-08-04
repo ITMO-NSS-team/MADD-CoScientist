@@ -36,7 +36,7 @@ def chat():
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("steps"):
                 with st.expander(
-                        f"🔍 Intermediate Thoughts (click to expand)", expanded=False
+                    f"🔍 Intermediate Thoughts (click to expand)", expanded=False
                 ):
                     for step in message["steps"]:
                         st.markdown(step)
@@ -55,13 +55,13 @@ def chat():
                     st.components.v1.html(convert_to_html(img), height=400)
 
             if mols := message.get(
-                    "molecules_vis"
+                "molecules_vis"
             ):  # render previously visualized molecules
                 for mol in mols:
                     st.components.v1.html(mol, height=400)
 
             if gen_imgs := message.get(
-                    "images_generated"
+                "images_generated"
             ):  # render previously generated images
                 for img in gen_imgs:
                     st.components.v1.html(convert_to_html(img), height=200)
@@ -97,14 +97,6 @@ def message_handler():
     }
 
     if st.session_state.uploaded_files:
-        # if st.session_state.get("user_session_id") is None:
-        #     st.session_state.user_session_id = get_user_session_id()
-        #
-        # if st.session_state.get("user_data_dir") is None:
-        #     st.session_state.user_data_dir = get_user_data_dir(
-        #         st.session_state.user_session_id
-        #     )
-
         save_all_files(st.session_state.user_data_dir)
         config["configurable"]["user_data_dir"] = st.session_state.user_data_dir
 
@@ -226,7 +218,7 @@ def message_handler():
                 os.makedirs(path_to_molecules, exist_ok=True)
 
             if molecules := os.listdir(
-                    os.path.join(os.getenv("PATH_TO_RESULTS"), "vis_mols")
+                os.path.join(os.getenv("PATH_TO_RESULTS"), "vis_mols")
             ):  # get generated molecules
                 mols = []
                 for file in molecules:
@@ -244,7 +236,7 @@ def message_handler():
                 os.makedirs(path_to_results, exist_ok=True)
 
             if files := os.listdir(
-                    os.path.join(os.getenv("PATH_TO_RESULTS"), "cvae")
+                os.path.join(os.getenv("PATH_TO_RESULTS"), "cvae")
             ):  # get generated images
                 imgs = []
                 # Cleaning here

@@ -11,23 +11,15 @@ from chromadb.utils import embedding_functions
 from chromadb.utils.data_loaders import ImageLoader
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
-from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
 from multiprocessing import Pool
-from sentence_transformers import CrossEncoder
 from protollm.connectors import create_llm_connector
 from pydantic import BaseModel, Field
 from typing import Optional
 from sentence_transformers import CrossEncoder
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
-from CoScientist.paper_parser.parse_and_split import (
-    clean_up_html,
-    html_chunking,
-    parse_with_marker,
-    simple_conversion,
-)
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
@@ -196,10 +188,8 @@ class ChromaDBPaperStore:
     def retrieve_context(
             self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
-        print('in retrieve_context')
         if not relevant_papers:
             relevant_papers = self.search_for_papers(query)
-        print('found papers')
 
         raw_text_context = self.client.query_chromadb(
             self.txt_collection,
@@ -207,16 +197,13 @@ class ChromaDBPaperStore:
             {"source": {"$in": relevant_papers['answer']}},
             self.txt_chunk_num,
         )
-        print('found txt')
         image_context = self.client.query_chromadb(
             self.img_collection,
             query,
             {"source": {"$in": relevant_papers['answer']}},
             self.img_chunk_num,
         )
-        print('found images')
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
-        print('reranking done')
         return text_context, image_context
 
     @staticmethod

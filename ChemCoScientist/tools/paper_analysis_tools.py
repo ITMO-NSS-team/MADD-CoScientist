@@ -33,8 +33,6 @@ def explore_chemistry_database(task: str) -> dict:
         the text, images and tables that were used as context for the request,
         metadata of the request (model, number of used tokens, etc)
     """
-    print('in explore_chemistry_database')
-    print(f'input: {task}')
     return process_question(task)
 
 
@@ -54,9 +52,6 @@ def explore_my_papers(task: str, session_id: str = None) -> dict:
         A dictionary with the final response from the LLM and metadata
         of the request (model, number of used tokens, etc)
     """
-    print('in explore_my_papers')
-    print(f'session: {session_id}')
-
     # TODO: remove when proper frontend is added
     if not SELECTED_PAPERS:
         directory = Path(os.environ.get('MY_PAPERS_PATH'))

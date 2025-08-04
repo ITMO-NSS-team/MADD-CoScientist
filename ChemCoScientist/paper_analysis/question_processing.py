@@ -22,12 +22,9 @@ PAPER_STORE = ChromaDBPaperStore()
 def query_llm(
     model_url: str, question: str, txt_context: str, img_paths: list[str]
 ) -> tuple:
-    print('in query_llm')
     llm = create_llm_connector(model_url)
 
     img_context = list(map(convert_to_base64, img_paths))
-
-    print('preped img_context')
 
     messages = [
         SystemMessage(content=sys_prompt),
@@ -39,10 +36,7 @@ def query_llm(
         ),
     ]
 
-    print('preped messages')
-
     res = llm.invoke(messages)
-    print(f'res in query_llm: {res}')
     return res.content, res.response_metadata
 
 
@@ -66,7 +60,6 @@ def simple_query_llm(model_url: str, question: str, pdfs: list,) -> tuple:
         }
         content.append(paper_part)
 
-    # img_context = list(map(convert_to_base64, img_paths))
     text_part = {"type": "text", "text": f"USER QUESTION: {question}"}
     content.append(text_part)
     from langchain_core.messages import HumanMessage
@@ -77,15 +70,11 @@ def simple_query_llm(model_url: str, question: str, pdfs: list,) -> tuple:
     ]
 
     res = llm.invoke(messages)
-    # return {'answer': res.content, 'metadata': res.response_metadata}
     return {'answer': res.content}
 
 
 def process_question(question: str) -> dict:
-    print('in process question')
-    print(f'question: {question}')
     txt_data, img_data = PAPER_STORE.retrieve_context(question)
-    print('got context from db')
     txt_context = ""
     img_paths = set()
 
@@ -97,16 +86,12 @@ def process_question(question: str) -> dict:
             + chunk[1].replace("passage: ", "")
             + "\n\n"
         )
-    print('got txt context')
     for chunk_meta in [chunk[2] for chunk in txt_data]:
         img_paths.update(eval(chunk_meta["imgs_in_chunk"]))
     for img in img_data["metadatas"][0]:
         img_paths.add(img["image_path"])
-    print('got img context')
 
     ans, metadata = query_llm(VISION_LLM_URL, question, txt_context, list(img_paths))
-
-    print(f'answer: {ans}')
 
     return {
         "answer": ans,
