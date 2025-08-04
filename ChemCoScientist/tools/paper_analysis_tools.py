@@ -22,6 +22,9 @@ VISION_LLM_URL = os.environ["VISION_LLM_URL"]
 def explore_chemistry_database(task: str) -> dict:
     """Answers questions by retrieving and analyzing information from a database
     of chemical scientific papers. Using this tool takes precedence over web search.
+    This tool is ONLY for answering general questions, it cannot be used for questions about
+    specific papers (e.g. 'what is on Figure 1?', 'what experiments are described?',
+    'what are the conclusions?', etc). It cannot be used to find a list of relevant papers.
 
     Args:
         task (str): user query for the DB with chemical papers
@@ -40,6 +43,9 @@ def explore_chemistry_database(task: str) -> dict:
 def explore_my_papers(task: str) -> dict:
     """Answers questions on chemistry using specific scientific papers that were uploaded
     by the user. Using this tool takes precedence over web search.
+    This tool is ONLY for questions about specific papers (e.g. 'what is on Figure 1?',
+    'what experiments are described?', 'what are the conclusions?', etc).
+    The tool cannot be used for general questions or to find relevant papers.
 
     Args:
         task (str): user query for the user's papers
@@ -48,11 +54,18 @@ def explore_my_papers(task: str) -> dict:
         A dictionary with the final response from the LLM and metadata
         of the request (model, number of used tokens, etc)
     """
+    print('in explore_my_papers')
+    print(f'session: {st.session_state}')
+    print(f'session id: {st.session_state.session_id}')
     # TODO: remove when proper frontend is added
     if not SELECTED_PAPERS:
         directory = Path(os.environ.get('MY_PAPERS_PATH'))
         papers = [str(f.resolve()) for f in directory.iterdir() if f.is_file()]
+        if not papers:
+            return {'answer': 'No papers provided for search.'}
     else:
+        if not SELECTED_PAPERS.get(st.session_state.session_id, []):
+            return {'answer': 'No papers provided for search.'}
         papers = SELECTED_PAPERS[st.session_state.session_id]
     return simple_query_llm(VISION_LLM_URL, task, papers)
 
@@ -84,8 +97,9 @@ def paraphrase_query(query: str) -> str:
 @tool
 def select_papers(query: str, papers_num: int = 15, final_papers_num: int = 3) -> list:
     """
-    Finds the specified number of papers for the user's request based on a databese with
+    Finds the specified number of papers for the user's request based on a database with
     chemical scientific papers. Using this tool takes precedence over web search.
+    Must be used ONLY when user requests to list papers and must NOT be used to answer questions.
 
 
     Args:

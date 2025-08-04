@@ -3,6 +3,7 @@ import os
 import time
 from typing import Annotated
 import operator
+import streamlit as st
 
 from langgraph.types import Command
 from langgraph.graph import END
@@ -211,6 +212,7 @@ def paper_analysis_agent(state: dict, config: dict) -> Command:
         llm, paper_analysis_tools, state_modifier=worker_prompt
     )
     print('created paper analysis agent successfully')
+    print(f'PA session id: {st.session_state.session_id}')
 
     response = paper_analysis_agent.invoke({"messages": [("user", task)]})
 
@@ -222,6 +224,9 @@ def paper_analysis_agent(state: dict, config: dict) -> Command:
         updated_metadata.update(pa_metadata)
 
     print(f'updated_metadata: {updated_metadata}')
+
+    if type(result["answer"]) is list:
+        result["answer"] = ', '.join(result["answer"])
 
     return Command(update={
         "past_steps": Annotated[set, operator.or_](set([

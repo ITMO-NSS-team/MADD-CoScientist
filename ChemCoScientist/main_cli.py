@@ -192,6 +192,8 @@ conf = {
 # inputs = {"input": "What can you do?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
 inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
+inputs = {"input": "what papers have info on the Synthesis of Glionitrin A/B?"}
+inputs = {"input": "what is the name of figure 1?"}
 # inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
 
 # parallel examples
