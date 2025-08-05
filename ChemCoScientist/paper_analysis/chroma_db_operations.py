@@ -13,18 +13,16 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
-from multiprocessing import Pool
 from protollm.connectors import create_llm_connector
 from pydantic import BaseModel, Field
 import requests
-from typing import Optional
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
+from ChemCoScientist.paper_analysis.settings import allowed_providers
 from ChemCoScientist.paper_analysis.settings import settings as default_settings
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
-    simple_conversion,
 )
 from definitions import CONFIG_PATH, ROOT_DIR
 
@@ -43,9 +41,14 @@ logger = logging.getLogger(__name__)
 class ExpandedSummary(BaseModel):
     """Expanded version of paper's summary."""
     paper_summary: str = Field(description="Summary of the paper.")
-    paper_title: str = Field(description="Title of the paper.")
-    publication_year: Optional[int] = Field(
-        default=None, description="Year of publication of the paper."
+    paper_title: str = Field(
+        description="Title of the paper. If the title is not explicitly specified, use the default value - 'NO TITLE'"
+    )
+    publication_year: int = Field(
+        description=(
+            "Year of publication of the paper. If the publication year is not explicitly specified, use the default"
+            " value - 9999."
+        )
     )
 
 
@@ -134,7 +137,9 @@ class ChromaDBPaperStore:
             "Be as concise as possible. "
             "Only use data from image, do NOT make anything up."
         )
-        model = create_llm_connector(self.llm_url, temperature=0.015, top_p=0.95)
+        model = create_llm_connector(
+            self.llm_url, temperature=0.015, top_p=0.95, extra_body={"provider": {"only": allowed_providers}}
+        )
         messages = [
             HumanMessage(
                 content=[
@@ -292,7 +297,7 @@ class ChromaDBPaperStore:
             raise
 
 
-process_local_store = None
+process_local_store: ChromaDBPaperStore = None
 
 
 def init_process():
@@ -300,31 +305,24 @@ def init_process():
     process_local_store = ChromaDBPaperStore()
 
 
-def process_single_summary(paper_path):
-    paper = os.path.basename(paper_path)
-    try:
-        llm = create_llm_connector(SUMMARY_LLM_URL)
-        struct_llm = llm.with_structured_output(schema=ExpandedSummary)
-        conv_res = simple_conversion(paper_path)
-        process_local_store.add_paper_summary_to_db(paper, conv_res, struct_llm)
-    except Exception as e:
-        print(f"Error in {paper}: {str(e)}")
-
-
-def load_summaries_to_db(papers_path: str) -> None:
-    paths = [os.path.join(papers_path, p) for p in os.listdir(papers_path)]
-    with Pool(processes=2, initializer=init_process()) as executor:
-        executor.map(process_single_summary, paths)
-
-
 def process_single_document(folder_path: Path):
     paper_name = folder_path.name.replace("_marker", "")
+    file_name = Path(paper_name + ".html")
+    paper_name_to_load = Path(paper_name + ".pdf")
+    parsed_file_path = Path(folder_path, file_name)
+    with open(parsed_file_path, 'r', encoding='utf-8') as f:
+        text = f.read()
     try:
-        parsed_paper = clean_up_html(paper_name, folder_path)
+        llm = create_llm_connector(SUMMARY_LLM_URL, extra_body={"provider": {"only": allowed_providers}})
+        struct_llm = llm.with_structured_output(schema=ExpandedSummary)
+        process_local_store.add_paper_summary_to_db(str(paper_name_to_load), text, struct_llm)
+        
+        parsed_paper = clean_up_html(folder_path, folder_path, text)
         documents = html_chunking(parsed_paper, paper_name)
+        
         print(f"Starting loading paper: {paper_name}")
         process_local_store.store_text_chunks_in_chromadb(documents)
-        process_local_store.store_images_in_chromadb_txt_format(str(folder_path), paper_name)
+        process_local_store.store_images_in_chromadb_txt_format(str(folder_path), str(paper_name_to_load))
         print(f"Finished loading paper: {paper_name}")
     except Exception as e:
         print(f"Error in {paper_name}: {str(e)}")
@@ -344,10 +342,8 @@ if __name__ == "__main__":
     p_store = ChromaDBPaperStore()
     p_store.run_marker_pdf(p_path, res_path)
     del p_store
-    load_summaries_to_db(p_path)
     process_all_documents(Path(res_path))
-     
-    # print(p_store.client.show_collections())
+    
     # p_store.client.delete_collection(name="test_paper_summaries_img2txt")
     # p_store.client.delete_collection(name="test_text_context_img2txt")
     # p_store.client.delete_collection(name="test_image_context")
