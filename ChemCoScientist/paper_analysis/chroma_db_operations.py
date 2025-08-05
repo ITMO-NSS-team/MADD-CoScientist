@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 from langchain_core.documents.base import Document
 from langchain_core.messages import HumanMessage
 from multiprocessing import Pool
-from sentence_transformers import CrossEncoder
 from protollm.connectors import create_llm_connector
 from pydantic import BaseModel, Field
 from typing import Optional
+from sentence_transformers import CrossEncoder
 
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
 from CoScientist.paper_parser.parse_and_split import (
@@ -90,9 +90,10 @@ class ChromaDBPaperStore:
         self.img_collection_name = "image_context"
 
         self.sum_chunk_num = 15
+        self.final_sum_chunk_num = 3
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
-        
+
         # TODO: move embedding model to a separate service
         self.rag_embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="BAAI/bge-m3",
@@ -153,7 +154,7 @@ class ChromaDBPaperStore:
         image_descriptions = []
         image_paths = []
         image_counter = 0
-        
+
         for filename in os.listdir(image_dir):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(image_dir, filename)
@@ -170,32 +171,41 @@ class ChromaDBPaperStore:
                 {"type": "image", "source": paper_name, "image_path": img_path} for img_path in image_paths
             ]
         )
-    
+
+
+    def search_for_papers(self,
+                          query: str,
+                          chunks_num: int = None,
+                          final_chunks_num: int = None) -> dict:
+        chunks_num = chunks_num if chunks_num else self.sum_chunk_num
+        final_chunks_num = final_chunks_num if final_chunks_num else self.final_sum_chunk_num
+
+        raw_docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=chunks_num)
+        docs = self.search_with_reranker(query, raw_docs, top_k=final_chunks_num)
+        res = [doc[2]["source"] for doc in docs]
+        return {'answer': res}
+
     def retrieve_context(
             self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
         if not relevant_papers:
-            raw_docs = self.client.query_chromadb(
-                self.sum_collection, query, chunk_num=self.sum_chunk_num
-            )
-            docs = self.search_with_reranker(query, raw_docs, top_k=3)
-            relevant_papers = [doc[2]["source"] for doc in docs]
+            relevant_papers = self.search_for_papers(query)
 
         raw_text_context = self.client.query_chromadb(
             self.txt_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.txt_chunk_num,
         )
         image_context = self.client.query_chromadb(
             self.img_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.img_chunk_num,
         )
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
         return text_context, image_context
-    
+
     @staticmethod
     def search_with_reranker(query: str, initial_results, top_k: int = 1) -> list[tuple[str, str, dict, float]]:
         metadatas = initial_results['metadatas'][0]
@@ -203,13 +213,13 @@ class ChromaDBPaperStore:
         ids = initial_results["ids"][0]
 
         pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
-        
+
         # TODO: move the reranker to a separate service
         reranker = CrossEncoder(
             "Alibaba-NLP/gte-multilingual-reranker-base", max_length=2048, trust_remote_code=True
         )
         rerank_scores = reranker.predict(pairs)
-        
+
         scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
         scored_docs.sort(key=lambda x: x[3], reverse=True)
 
@@ -300,7 +310,7 @@ if __name__ == "__main__":
     #
     # paper_store = ChromaDBPaperStore()
     # paper_store.prepare_db(papers_path)
-    
+
     p_path = PAPERS_PATH
     res_path = IMAGES_PATH
     p_store = ChromaDBPaperStore()

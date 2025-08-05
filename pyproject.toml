@@ -34,7 +34,6 @@ dependencies = [
     "langchain-ollama (==0.3.0)",
     "langchain-openai (==0.3.3)",
     "marker-pdf (==1.6.2)",
-    "beautifulsoup4 (==4.13.3)"
 ]
 
 

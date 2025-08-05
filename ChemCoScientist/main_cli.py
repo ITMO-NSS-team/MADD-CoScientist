@@ -1,8 +1,7 @@
 import os
 
-from dotenv import load_dotenv
-
 from definitions import CONFIG_PATH
+from dotenv import load_dotenv
 
 load_dotenv(CONFIG_PATH)
 
@@ -14,10 +13,10 @@ from ChemCoScientist.agents.agents import (
     dataset_builder_agent,
     ml_dl_agent,
     nanoparticle_node,
-    paper_analysis_node,
+    paper_analysis_agent,
 )
 from CoScientist.scientific_agents.agents import coder_agent
-from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
+from ChemCoScientist.tools import chem_tools_rendered, nano_tools_rendered, tools_rendered, paper_analysis_tools_rendered
 
 # description for agent WITHOUT langchain-tools
 automl_agent_description = """
@@ -76,7 +75,7 @@ conf = {
             "ml_dl_agent": ml_dl_agent,
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
-            "paper_analysis_node": paper_analysis_node,
+            "paper_analysis_node": paper_analysis_agent,
         },
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
@@ -86,7 +85,7 @@ conf = {
             "dataset_builder_agent": [dataset_builder_agent_description],
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
-            "paper_analysis_node": [paper_analysis_node_description],
+            "paper_analysis_node": [paper_analysis_tools_rendered],
             "web_search": [
                 "You can use web search to find information on the internet. "
             ],
@@ -191,11 +190,15 @@ conf = {
 # inputs = {"input": "Запусти обучение генеративной модели на данных '/Users/alina/Desktop/ИТМО/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', назови кейс IC50_chembl."}
 # inputs = {"input": "What can you do?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
+inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
+# inputs = {"input": "what papers have info on the Synthesis of Glionitrin A/B?"}
+# inputs = {"input": "what is the name of figure 1?"}
 # inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
 
 # parallel examples
 # inputs = {"input": "Получи данные по KRAS G12C из ChemBL для Ki. Получи данные по MEK1 из ChemBL по Ki"}
-inputs = {"input": "Получи данные по MEK1 из BindigDB для IC50. Получи данные по KRAS из BindigDB по Ki."}
+# inputs = {"input": "Получи данные по KRAS G12C из ChemBL для IC50. Получи данные по MEK1 из ChemBL по IC50. Поставь обучение на том датасете, где данных больше, назови кейс в зависимости от белка."}
+# inputs = {"input": "Получи данные по MEK1 из BindigDB для IC50. Получи данные по KRAS из BindigDB по Ki."}
 
 graph = GraphBuilder(conf)
 

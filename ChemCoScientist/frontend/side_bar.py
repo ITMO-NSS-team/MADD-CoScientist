@@ -1,12 +1,12 @@
 import os
+import time
 
 import streamlit as st
 from protollm.agents.builder import GraphBuilder
 from streamlit_extras.grid import GridDeltaGenerator, grid
-from tools.utils import convert_to_base64
-from frontend.utils import clean_folder
-
-from .utils import file_uploader, papers_uploader
+from ChemCoScientist.tools.utils import convert_to_base64
+from ChemCoScientist.frontend.utils import file_uploader, clean_folder
+from ChemCoScientist.frontend.streamlit_endpoints import process_uploaded_paper
 
 
 def init_language():
@@ -118,9 +118,9 @@ def on_provider_selected_eng(grid: GridDeltaGenerator):
             )
             grid.selectbox(
                 "Select visual model",
-                options=["google/gemini-2.5-pro"],
+                options=["llama-3.2-90b-vision-preview"],
                 key="visual_model_input",
-                placeholder="google/gemini-2.5-pro",
+                placeholder="llama-3.2-90b-vision-preview",
             )
 
             grid.selectbox(
@@ -268,7 +268,6 @@ def init_backend():
     # it must be here !!!
     from ChemCoScientist.conf.create_conf import conf
 
-    print(conf)
     st.session_state.backend = GraphBuilder(conf)
     # clean folder for new job here
     clean_folder(os.environ['DS_STORAGE_PATH'])
@@ -300,6 +299,8 @@ def _render_paper_uploader():
                         accept_multiple_files=True,
                         key="papers_file_uploader",
                         label_visibility="collapsed",
+                        type=['pdf'],
+                        help="Supported formats: PDF",
                     )
                     st.form_submit_button(
                         "Submit", use_container_width=True, on_click=load_papers
@@ -313,6 +314,8 @@ def _render_paper_uploader():
                         accept_multiple_files=True,
                         key="papers_file_uploader",
                         label_visibility="collapsed",
+                        type=['pdf'],
+                        help="Поддерживаемые форматы: PDF",
                     )
                     st.form_submit_button(
                         "Submit", use_container_width=True, on_click=load_papers
@@ -324,7 +327,6 @@ def _render_file_uploader():
     Renders file uploader
     """
     match st.session_state.language:
-
         case "English":
             with st.expander("Choose dataset files"):
                 with st.form(key="dataset_files_form", border=False):
@@ -357,7 +359,6 @@ def load_dataset():
     loads submited datasets to the session state on button click
     """
     files = st.session_state.file_uploader
-    print(files)
     uploaded_files = file_uploader(files)
     if uploaded_files:
         # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
@@ -365,17 +366,37 @@ def load_dataset():
         st.toast(f"Successfully loaded datasets", icon="✅")
 
 
-def load_papers():
+def load_papers():  # TODO: add russian version
     """
-    loads submited papers to the session state on button click
+    loads submitted papers to the session state on button click
     """
-    files = st.session_state.papers_file_uploader
-    print(files)
-    uploaded_files = papers_uploader(files)
-    if uploaded_files:
-        # st.session_state.dataset, st.session_state.dataset_name = StreamlitDatasetLoader.load(files=[file])
-        # st.toast(f"Successfully loaded dataset:\n {st.session_state.dataset_name}", icon="✅")
-        st.toast(f"Successfully loaded papers", icon="✅")
+    uploaded_papers = st.session_state.papers_file_uploader
+    if uploaded_papers is not None:
+        # Process file here
+        st.write("File uploaded and processed")
+
+        if uploaded_papers:
+            new_files_processed = False
+
+            with st.spinner("Processing uploaded files..."):
+                for uploaded_file in uploaded_papers:
+                    if uploaded_file.name not in [f["name"] for f in st.session_state.uploaded_papers]:
+                        try:
+                            # Process the uploaded file
+                            result = process_uploaded_paper(uploaded_file)
+
+                            if result["success"]:
+                                st.session_state.uploaded_papers.append({
+                                    "name": uploaded_file.name,
+                                    "size": uploaded_file.size,
+                                    "type": uploaded_file.type
+                                })
+                                # st.success(f"✅ Successfully processed: {uploaded_file.name}")
+                                new_files_processed = True
+                            else:
+                                st.error(f"❌ Error processing file: {result['error']}")
+                        except Exception as e:
+                            st.error(f"❌ Unexpected error processing {uploaded_file.name}: {str(e)}")
 
 
 def init_images():
@@ -393,7 +414,7 @@ def init_images():
 
 def init_papers():
     """
-    initializes images
+    initializes papers
     """
     images_files_container = st.container(border=True)
     with images_files_container:
@@ -468,6 +489,12 @@ def load_images():
 
 
 def side_bar():
+    # Display static examples at the top
+    # st.session_state.language = 'Русский'
+
+    # uncomment for start without pass model, key, etc (from gui)
+    init_backend()
+
     with st.sidebar:
         init_language()
         init_models()

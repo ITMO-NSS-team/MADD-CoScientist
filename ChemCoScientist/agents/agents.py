@@ -1,7 +1,10 @@
+import ast
+import logging
 import os
 import time
 from typing import Annotated
 import operator
+import streamlit as st
 
 from langgraph.types import Command
 from langgraph.graph import END
@@ -14,10 +17,15 @@ from ChemCoScientist.agents.agents_prompts import (
     ds_builder_prompt,
     worker_prompt,
 )
+from ChemCoScientist.tools import chem_tools, nanoparticle_tools, paper_analysis_tools
 from ChemCoScientist.paper_analysis.question_processing import process_question
 from ChemCoScientist.tools import chem_tools, nanoparticle_tools
 from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
 from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_all_files(directory):
@@ -183,27 +191,69 @@ def nanoparticle_node(state: dict, config: dict) -> Command:
     })
 
 
-def paper_analysis_node(state: dict, config: dict) -> Command:
+def paper_analysis_agent(state: dict, config: dict) -> Command:
+    """
+    The agent assists users by analyzing information from scientific papers.
+    It can do several things:
+    - answers the user's question using a DB with chemical scientific papers
+    - answers the user's question using papers that were uploaded by the user
+    - selects papers relevant to the user's question
+
+    Args:
+        state: The current execution.
+
+    Returns:
+        An object containing the next node to transition to ('replan' or `END`) and
+        an update to the execution state with recorded steps and responses.
+    """
     print("--------------------------------")
     print("Paper agent called")
     print("Current task:")
     print(state["task"])
     print("--------------------------------")
 
-    task = state["task"]
-    response = process_question(task)
+    llm: BaseChatModel = config["configurable"]["llm"]
 
-    updated_metadata = state.get("metadata", {}).copy()
-    updated_metadata["paper_analysis"] = response.get("metadata")
-    updated_metadata = {}
-    response = {'answer': 'Paper agent not supported now'}
-    
-    return Command(update={
-        "past_steps": Annotated[set, operator.or_](set([
-            (task, response.get("answer"))
-        ])),
-        "nodes_calls": Annotated[set, operator.or_](set([
-            ("paper_analysis_node", (("text", response.get("answer")),))
-        ])),
-        "metadata": Annotated[dict, operator.or_](updated_metadata),
+    task = state["task"]
+
+    # TODO: update this when proper frontend is added
+    try:
+        current_prompt = f'{worker_prompt}/n session_id = {st.session_state.session_id}'
+    except:
+        current_prompt = f'{worker_prompt}/n session_id is not needed in this case, pass None'
+
+    paper_analysis_agent = create_react_agent(
+        llm, paper_analysis_tools, state_modifier=current_prompt
+    )
+
+    for attempt in range(3):
+        try:
+            response = paper_analysis_agent.invoke({"messages": [("user", task)]})
+
+            result = ast.literal_eval(response["messages"][2].content)
+
+            updated_metadata = state.get("metadata", {}).copy()
+            pa_metadata = {"paper_analysis": result.get("metadata")}
+            if pa_metadata["paper_analysis"]:
+                updated_metadata.update(pa_metadata)
+
+            if type(result["answer"]) is list:
+                result["answer"] = ', '.join(result["answer"])
+
+            return Command(update={
+                "past_steps": Annotated[set, operator.or_](set([
+                    (task, result["answer"])
+                ])),
+                "nodes_calls": Annotated[set, operator.or_](set([
+                    ("paper_analysis_agent", (("text", result["answer"]),))
+                ])),
+                "metadata": Annotated[dict, operator.or_](updated_metadata),
+            })
+        except Exception as e:
+            print(f"Paper analysis agent error: {str(e)}. Retrying ({attempt + 1}/3)")
+            time.sleep(1.2 ** attempt)
+
+    return Command(goto=END, update={
+        "response": "I cannot answer your question right now using the DB or uploaded papers."
+                    "Can I help with something else?"
     })

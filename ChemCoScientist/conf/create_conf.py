@@ -7,10 +7,11 @@ from ChemCoScientist.agents.agents import (
     dataset_builder_agent,
     ml_dl_agent,
     nanoparticle_node,
-    paper_analysis_node,
+    paper_analysis_agent,
 )
 from CoScientist.scientific_agents.agents import coder_agent
-from tools import chem_tools_rendered, nano_tools_rendered, tools_rendered
+from ChemCoScientist.tools import chem_tools_rendered, nano_tools_rendered, tools_rendered, \
+    paper_analysis_tools_rendered
 
 # description for agent WITHOUT langchain-tools
 automl_agent_description = """
@@ -30,16 +31,16 @@ coder_agent_description = (
     "chemical libraries. Can perform calculations.\n "
 )
 
-paper_analysis_node_description = (
-    "'paper_analysis_node' - answers questions by retrieving and analyzing information "
-    "from a database of chemical scientific papers. Using this agent takes precedence over web search."
-)
+# paper_analysis_node_description = (
+#     "'paper_analysis_node' - answers questions by retrieving and analyzing information "
+#     "from a database of chemical scientific papers. Using this agent takes precedence over web search."
+# )
 
 additional_agents_description = (
     automl_agent_description
     + dataset_builder_agent_description
     + coder_agent_description
-    + paper_analysis_node_description
+    # + paper_analysis_node_description
 )
 
 conf = {
@@ -60,7 +61,7 @@ conf = {
             "ml_dl_agent",
             "dataset_builder_agent",
             "coder_agent",
-            "paper_analysis_node",
+            "paper_analysis_agent",
         ],
         # nodes for scenario agents
         "scenario_agent_funcs": {
@@ -69,7 +70,7 @@ conf = {
             "ml_dl_agent": ml_dl_agent,
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
-            "paper_analysis_node": paper_analysis_node,
+            "paper_analysis_agent": paper_analysis_agent,
         },
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
@@ -81,7 +82,7 @@ conf = {
             "dataset_builder_agent": [dataset_builder_agent_description],
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
-            "paper_analysis_node": [paper_analysis_node_description],
+            "paper_analysis_agent": [paper_analysis_tools_rendered],
             "web_search": [
                 "You can use web search to find information on the internet. "
             ],
@@ -115,11 +116,28 @@ conf = {
         },
         # These prompts will be added as hints in ProtoLLM
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
+            "supervisor": {
+                "problem_statement": None,
+                "problem_statement_continue": None,
+                "rules": None,
+                "additional_rules": None,
+                "examples": None,
+                "enhancemen_significance": None,
+            },
+            "planner": {
+                "problem_statement": None,
+                "rules": None,
+                "desc_restrictions": None,
+                "examples": None,
+                "additional_hints": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
                 If the user provides his dataset - immediately start training using ml_dl_agent (never call dataset_builder_agent)!\
                 To find an answer, use the paper search first! NOT the web search!\
-                If you are asked to generate a molecule, just schedule the generation using bl_dl_agent.",
-            "chat": """You are a chemical agent system. You can do the following:
+                If you are asked to generate a molecule, just schedule the generation using bl_dl_agent. \
+                To find an answer, use the paper search first! NOT the web search!",
+            },
+            "chat": {
+                "problem_statement": None,
+                "additional_hints": """You are a chemical agent system. You can do the following:
                     - train generative models (generate SMILES molecules), train predictive models (predict properties)
                     - prepare a dataset for training
                     - download data from chemical databases: ChemBL, BindingDB
@@ -129,8 +147,18 @@ conf = {
                     
                     If user ask something like "What can you do" - make answer yourself!
                     """,
-            "replanner": "When planning or correct plan to process any data always indicate the path to file, look for the path in the 'past_steps'.",
-            "summary": "Never write full paths! Only file names."
+            },
+            "summary": {
+                "problem_statement": None,
+                "rules": None,
+                "additional_hints": "Never write full paths! Only file names.",
+            },
+            "replanner": {
+                "problem_statement": None,
+                "rules": None,
+                "examples": None,
+                "additional_hints": "When planning or correct plan to process any data always indicate the path to file, look for the path in the 'past_steps'.",
+            },
         },
     },
 }
