@@ -149,7 +149,7 @@ def paper_management():
                     else:
                         st.warning("⚠️ Please select at least one paper to delete.")
 
-            st.divider()
+            # st.divider()
 
             # Display papers with checkboxes
             logger.info(f'scientific_papers: {scientific_papers}')
@@ -196,6 +196,3 @@ def paper_management():
         else:
             st.info(
                 "📄 No scientific papers uploaded yet. Upload some PDF files to get started!")
-
-
-
