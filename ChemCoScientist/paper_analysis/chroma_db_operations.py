@@ -110,6 +110,7 @@ class ChromaDBPaperStore:
         self.img_collection_name = "image_context"
 
         self.sum_chunk_num = 15
+        self.final_sum_chunk_num = 3
         self.txt_chunk_num = 15
         self.img_chunk_num = 2
 
@@ -169,7 +170,7 @@ class ChromaDBPaperStore:
         image_descriptions = []
         image_paths = []
         image_counter = 0
-        
+
         for filename in os.listdir(image_dir):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(image_dir, filename)
@@ -186,27 +187,36 @@ class ChromaDBPaperStore:
                 {"type": "image", "source": paper_name, "image_path": img_path} for img_path in image_paths
             ]
         )
-    
+
+
+    def search_for_papers(self,
+                          query: str,
+                          chunks_num: int = None,
+                          final_chunks_num: int = None) -> dict:
+        chunks_num = chunks_num if chunks_num else self.sum_chunk_num
+        final_chunks_num = final_chunks_num if final_chunks_num else self.final_sum_chunk_num
+
+        raw_docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=chunks_num)
+        docs = self.search_with_reranker(query, raw_docs, top_k=final_chunks_num)
+        res = [doc[2]["source"] for doc in docs]
+        return {'answer': res}
+
     def retrieve_context(
             self, query: str, relevant_papers: list = None
     ) -> tuple[list, dict]:
         if not relevant_papers:
-            raw_docs = self.client.query_chromadb(
-                self.sum_collection, query, chunk_num=self.sum_chunk_num
-            )
-            docs = self.search_with_reranker(query, raw_docs, top_k=3)
-            relevant_papers = [doc[2]["source"] for doc in docs]
+            relevant_papers = self.search_for_papers(query)
 
         raw_text_context = self.client.query_chromadb(
             self.txt_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.txt_chunk_num,
         )
         image_context = self.client.query_chromadb(
             self.img_collection,
             query,
-            {"source": {"$in": relevant_papers}},
+            {"source": {"$in": relevant_papers['answer']}},
             self.img_chunk_num,
         )
         text_context = self.search_with_reranker(query, raw_text_context, top_k=5)
@@ -220,7 +230,7 @@ class ChromaDBPaperStore:
         pairs = [[query, doc.replace("passage: ", "")] for doc in documents]
         
         rerank_scores = self.rerank(pairs)
-        
+
         scored_docs = list(zip(ids, documents, metadatas, rerank_scores))
         scored_docs.sort(key=lambda x: x[3], reverse=True)
 
@@ -337,7 +347,7 @@ def process_all_documents(base_dir: Path):
 
 
 if __name__ == "__main__":
-    
+
     p_path = PAPERS_PATH
     res_path = IMAGES_PATH
     

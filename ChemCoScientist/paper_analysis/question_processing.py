@@ -1,3 +1,4 @@
+import base64
 import os
 
 from dotenv import load_dotenv
@@ -5,9 +6,11 @@ from langchain_core.messages import SystemMessage
 from protollm.connectors import create_llm_connector
 
 from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
-from ChemCoScientist.paper_analysis.prompts import sys_prompt
+from ChemCoScientist.paper_analysis.prompts import sys_prompt, explore_my_papers_prompt
 from CoScientist.paper_parser.utils import convert_to_base64, prompt_func
 from definitions import CONFIG_PATH
+
+from ChemCoScientist.streamlit_app_old.utils import update_activity
 
 load_dotenv(CONFIG_PATH)
 
@@ -37,10 +40,41 @@ def query_llm(
     return res.content, res.response_metadata
 
 
+def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
+    if pdfs:
+        update_activity(os.path.dirname(pdfs[0]))
+
+    llm = create_llm_connector(model_url)
+
+    content = []
+
+    for paper_pdf in pdfs:
+        with open(paper_pdf, "rb") as f:
+            base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+        paper_part = {
+            "type": "file",
+            "file": {
+                "filename": paper_pdf,
+                "file_data": f"data:application/pdf;base64,{base64_pdf}",
+            },
+        }
+        content.append(paper_part)
+
+    text_part = {"type": "text", "text": f"USER QUESTION: {question}"}
+    content.append(text_part)
+    from langchain_core.messages import HumanMessage
+
+    messages = [
+        SystemMessage(content=explore_my_papers_prompt),
+        HumanMessage(content=content)
+    ]
+
+    res = llm.invoke(messages)
+    return {'answer': res.content}
+
+
 def process_question(question: str) -> dict:
-
     txt_data, img_data = PAPER_STORE.retrieve_context(question)
-
     txt_context = ""
     img_paths = set()
 
@@ -107,6 +141,22 @@ if __name__ == "__main__":
     # print(res.content)
     # print(res.response_metadata)
 
-    question = "how does the synthesis of Glionitrin A/B happen?"
+    question = 'how does the synthesis of Glionitrin A/B happen?'
+    question = 'what is the name of Figure 2 in the given paper?'
+    question = 'what is the time in the first line of table 1?'
+    question = 'what is the time in the second line of table 1?'
+    question = 'what is the elecrtophile in the 8th line of table 1?'
+
+    question = 'what is (R)-13b on scheme 1?'
+    question = 'what is depicted on graphs that are on scheme 1? give a detailed description. what conclusions can be made from them?'
+    question = 'what compounds are depicted above table 1?'
+    question = 'list all 13 chemical compounds that are depicted on scheme 1'
+    # res = process_question(question)
+    # print(res)
+
+    paper = "/Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/papers/koning-et-al-2021-total-synthesis.pdf"
+
+    # res = simple_query_llm(VISION_LLM_URL, question, [paper])
     res = process_question(question)
-    print(res)
+    from pprint import pprint
+    pprint(res)
