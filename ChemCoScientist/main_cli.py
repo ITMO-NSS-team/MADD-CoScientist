@@ -7,6 +7,7 @@ load_dotenv(CONFIG_PATH)
 
 from protollm.agents.builder import GraphBuilder
 from protollm.connectors import create_llm_connector
+from protollm.agents.universal_agents import web_search_node
 
 from ChemCoScientist.agents.agents import (
     chemist_node,
@@ -17,6 +18,7 @@ from ChemCoScientist.agents.agents import (
 )
 from CoScientist.scientific_agents.agents import coder_agent
 from ChemCoScientist.tools import chem_tools_rendered, nano_tools_rendered, tools_rendered, paper_analysis_tools_rendered
+
 
 # description for agent WITHOUT langchain-tools
 automl_agent_description = """
@@ -40,12 +42,14 @@ paper_analysis_node_description = (
     "'paper_analysis_node' - answers questions by retrieving and analyzing information "
     "from a database of chemical scientific papers. Using this agent takes precedence over web search."
 )
+web_search_description = "You can use web search to find information on the internet. "
 
 additional_agents_description = (
     automl_agent_description
     + dataset_builder_agent_description
     + coder_agent_description
     + paper_analysis_node_description
+    + web_search_description
 )
 
 conf = {
@@ -67,6 +71,7 @@ conf = {
             "dataset_builder_agent",
             "coder_agent",
             "paper_analysis_node",
+            "web_search"
         ],
         # nodes for scenario agents
         "scenario_agent_funcs": {
@@ -76,6 +81,7 @@ conf = {
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
             "paper_analysis_node": paper_analysis_agent,
+            "web_search": web_search_node
         },
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
@@ -86,14 +92,10 @@ conf = {
             "coder_agent": [coder_agent_description],
             "ml_dl_agent": [automl_agent_description],
             "paper_analysis_node": [paper_analysis_tools_rendered],
-            "web_search": [
-                "You can use web search to find information on the internet. "
-            ],
+            "web_search": [web_search_description],
         },
         # full descripton for agents tools
         "tools_descp": tools_rendered + additional_agents_description,
-        # set True if you want to use web search like black-box
-        "web_search": True,
         # add a key with the agent node name if you need to pass something to it
         "additional_agents_info": {
             "dataset_builder_agent": {
