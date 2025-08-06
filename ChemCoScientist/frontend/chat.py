@@ -202,8 +202,8 @@ def message_handler():
                         "Something went wrong. Please reload the page, initialize models and try again. If this happens again, check your base url and api key"
                     )
 
-            # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
-            st.session_state.messages[-1]["content"] = result["response"]
+                # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
+                st.session_state.messages[-1]["content"] = result["response"]
 
             if st.session_state.images_b64:  # get user's submitted images
                 st.session_state.messages[-1][
