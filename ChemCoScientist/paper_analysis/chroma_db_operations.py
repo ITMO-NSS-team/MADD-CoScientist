@@ -313,14 +313,16 @@ def process_single_document(folder_path: Path):
     with open(parsed_file_path, 'r', encoding='utf-8') as f:
         text = f.read()
     try:
-        llm = create_llm_connector(SUMMARY_LLM_URL, extra_body={"provider": {"only": allowed_providers}})
-        struct_llm = llm.with_structured_output(schema=ExpandedSummary)
-        process_local_store.add_paper_summary_to_db(str(paper_name_to_load), text, struct_llm)
-        
+        print(f"Starting post-processing paper: {paper_name}")
         parsed_paper = clean_up_html(folder_path, folder_path, text)
+        print(f"Finished post-processing paper: {paper_name}")
         documents = html_chunking(parsed_paper, paper_name)
         
+        llm = create_llm_connector(SUMMARY_LLM_URL, extra_body={"provider": {"only": allowed_providers}})
+        struct_llm = llm.with_structured_output(schema=ExpandedSummary)
+        
         print(f"Starting loading paper: {paper_name}")
+        process_local_store.add_paper_summary_to_db(str(paper_name_to_load), parsed_paper, struct_llm)
         process_local_store.store_text_chunks_in_chromadb(documents)
         process_local_store.store_images_in_chromadb_txt_format(str(folder_path), str(paper_name_to_load))
         print(f"Finished loading paper: {paper_name}")
