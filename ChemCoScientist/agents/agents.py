@@ -23,6 +23,8 @@ from ChemCoScientist.tools import chem_tools, nanoparticle_tools
 from ChemCoScientist.tools.chemist_tools import fetch_BindingDB_data, fetch_chembl_data
 from ChemCoScientist.tools.ml_tools import agents_tools as automl_tools
 
+from definitions import ROOT_DIR
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,7 +64,7 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
         ds_builder_prompt + config_cur_agent["ds_dir"] + "\nSo, user ask: \n" + task + additional_ds_builder_prompt
     )
 
-    files = get_all_files(os.environ["DS_STORAGE_PATH"])
+    files = get_all_files(os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"]))
 
     return Command(update={
         "past_steps": Annotated[set, operator.or_](set([(task, str(response))])),

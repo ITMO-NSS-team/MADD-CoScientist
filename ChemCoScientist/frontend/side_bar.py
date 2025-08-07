@@ -8,6 +8,8 @@ from ChemCoScientist.tools.utils import convert_to_base64
 from ChemCoScientist.frontend.utils import file_uploader, clean_folder
 from ChemCoScientist.frontend.streamlit_endpoints import process_uploaded_paper
 
+from definitions import ROOT_DIR
+
 
 def init_language():
     with st.container(border=True):
@@ -270,7 +272,7 @@ def init_backend():
 
     st.session_state.backend = GraphBuilder(conf)
     # clean folder for new job here
-    clean_folder(os.environ['DS_STORAGE_PATH'])
+    clean_folder(os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"]))
     clean_folder(os.environ['IMG_STORAGE_PATH'])
     clean_folder(os.environ['ANOTHER_STORAGE_PATH'])
 

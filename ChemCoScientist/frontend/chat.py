@@ -9,6 +9,8 @@ from langgraph.errors import GraphRecursionError
 from ChemCoScientist.tools.utils import convert_to_base64, convert_to_html
 from ChemCoScientist.frontend.streamlit_endpoints import explore_my_papers
 
+from definitions import ROOT_DIR
+
 # Create a separate logger for chat.py
 logger = logging.getLogger("chat_logger")
 logger.setLevel(logging.INFO)
@@ -305,7 +307,7 @@ def message_handler():
                     for img in gen_imgs:
                         st.components.v1.html(convert_to_html(img), height=200)
 
-                storage_path = os.environ.get("DS_STORAGE_PATH")
+                storage_path = os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"])
 
                 # search all files with 'users_dataset_'
                 pattern = os.path.join(storage_path, "users_dataset_*")
