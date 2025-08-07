@@ -107,7 +107,7 @@ conf = {
                 "model_name": os.environ["SCENARIO_LLM_MODEL"],
                 "url": os.environ["SCENARIO_LLM_URL"],
                 "api_key": os.environ["OPENAI_API_KEY"],
-                "ds_dir": os.environ["ANOTHER_STORAGE_PATH"],
+                "ds_dir": os.path.join(ROOT_DIR, os.environ["ANOTHER_STORAGE_PATH"]),
             },
             "ml_dl_agent": {
                 "model_name": os.environ["SCENARIO_LLM_MODEL"],

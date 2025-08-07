@@ -273,8 +273,8 @@ def init_backend():
     st.session_state.backend = GraphBuilder(conf)
     # clean folder for new job here
     clean_folder(os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"]))
-    clean_folder(os.environ['IMG_STORAGE_PATH'])
-    clean_folder(os.environ['ANOTHER_STORAGE_PATH'])
+    clean_folder(os.path.join(ROOT_DIR, os.environ["IMG_STORAGE_PATH"]))
+    clean_folder(os.path.join(ROOT_DIR, os.environ["ANOTHER_STORAGE_PATH"]))
 
 def init_dataset():
     """
@@ -473,11 +473,11 @@ def load_images():
 
     if files:
         images_b64 = []
-        os.makedirs(os.environ["IMG_STORAGE_PATH"], exist_ok=True)
+        os.makedirs(os.path.join(ROOT_DIR, os.environ["IMG_STORAGE_PATH"]), exist_ok=True)
 
         for image in files:
             # save the original file to dir
-            file_path = os.path.join(os.environ["IMG_STORAGE_PATH"], image.name)
+            file_path = os.path.join(ROOT_DIR, os.environ["IMG_STORAGE_PATH"], image.name)
 
             with open(file_path, "wb") as f:
                 f.write(image.getbuffer())
