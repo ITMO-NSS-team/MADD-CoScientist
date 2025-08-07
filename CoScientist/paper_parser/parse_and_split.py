@@ -4,8 +4,6 @@ from pathlib import Path
 import re
 
 from bs4 import BeautifulSoup, Tag
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc import ImageRefMode
 from dotenv import load_dotenv
 from langchain_text_splitters import HTMLSemanticPreservingSplitter
 from marker.config.parser import ConfigParser
@@ -17,6 +15,7 @@ from protollm.connectors import create_llm_connector
 from definitions import CONFIG_PATH, ROOT_DIR
 from CoScientist.paper_parser.parser_prompts import cls_prompt, table_extraction_prompt
 from CoScientist.paper_parser.utils import prompt_func, convert_to_base64
+from ChemCoScientist.paper_analysis.settings import allowed_providers
 
 _log = logging.getLogger(__name__)
 
@@ -31,12 +30,6 @@ LLM_SERVICE_KEY = os.getenv("LLM_SERVICE_KEY")
 MARKER_LLM = os.getenv("MARKER_LLM")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL")
 IMAGE_RESOLUTION_SCALE = 2.0
-        
-        
-def simple_conversion(path: str|Path):
-    converter = DocumentConverter()
-    result = converter.convert(path)
-    return result.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
 
 
 def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
@@ -66,12 +59,7 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     return file_name.stem, output_dir
 
 
-def clean_up_html(paper_name: str, doc_dir: Path) -> str:
-    
-    file_name = Path(paper_name + ".html")
-    parsed_file_path = Path(doc_dir, file_name)
-    with open(parsed_file_path, 'r', encoding='utf-8') as f:
-        html = f.read()
+def clean_up_html(doc_dir: Path, file_name: Path, html: str) -> str:
     
     soup = BeautifulSoup(html, "lxml")
     
@@ -98,7 +86,7 @@ def clean_up_html(paper_name: str, doc_dir: Path) -> str:
                 if isinstance(element, Tag):
                     element.decompose()
     
-    llm = create_llm_connector(VISION_LLM_URL)
+    llm = create_llm_connector(VISION_LLM_URL, extra_body={"provider": {"only": allowed_providers}})
     for img in soup.find_all('img'):
         img_path = str(doc_dir) + "/" + img.get("src")
         images = list(map(convert_to_base64, [img_path]))
@@ -170,6 +158,6 @@ if __name__ == "__main__":
     paper = "kowalska-et-al-2023-visible-light-promoted-3-2-cycloaddition-for-the-synthesis-of-cyclopenta-b-chromenocarbonitrile.pdf"
     paper_path = os.path.join(p_path, paper)
     f_name, dir_name = parse_with_marker(paper_name=paper_path)
-    parsed_paper = clean_up_html(paper_name=f_name, doc_dir=dir_name)
-    chunks = html_chunking(html_string=parsed_paper, paper_name=f_name)
-    print(chunks)
+    # parsed_paper = clean_up_html(paper_name=f_name, doc_dir=dir_name)
+    # chunks = html_chunking(html_string=parsed_paper, paper_name=f_name)
+    # print(chunks)
