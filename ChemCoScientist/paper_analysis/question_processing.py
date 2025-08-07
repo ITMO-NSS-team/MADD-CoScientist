@@ -10,6 +10,8 @@ from ChemCoScientist.paper_analysis.prompts import sys_prompt, explore_my_papers
 from CoScientist.paper_parser.utils import convert_to_base64, prompt_func
 from definitions import CONFIG_PATH
 
+from ChemCoScientist.frontend.utils import update_activity
+
 load_dotenv(CONFIG_PATH)
 
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
@@ -39,7 +41,6 @@ def query_llm(
 
 
 def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
-    from ChemCoScientist.frontend.utils import update_activity
     if pdfs:
         update_activity(os.path.dirname(pdfs[0]))
 
