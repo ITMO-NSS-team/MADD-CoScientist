@@ -105,9 +105,9 @@ class ChromaDBPaperStore:
 
         self.client = ChromaClient()
 
-        self.sum_collection_name = "paper_summaries_img2txt"
-        self.txt_collection_name = "text_context_img2txt"
-        self.img_collection_name = "image_context"
+        self.sum_collection_name = os.getenv("SUMMARIES_COLLECTION_NAME")
+        self.txt_collection_name = os.getenv("TEXTS_COLLECTION_NAME")
+        self.img_collection_name = os.getenv("IMAGES_COLLECTION_NAME")
 
         self.sum_chunk_num = 15
         self.final_sum_chunk_num = 3

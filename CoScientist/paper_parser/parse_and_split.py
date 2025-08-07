@@ -4,8 +4,6 @@ from pathlib import Path
 import re
 
 from bs4 import BeautifulSoup, Tag
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc import ImageRefMode
 from dotenv import load_dotenv
 from langchain_text_splitters import HTMLSemanticPreservingSplitter
 from marker.config.parser import ConfigParser
@@ -32,12 +30,6 @@ LLM_SERVICE_KEY = os.getenv("LLM_SERVICE_KEY")
 MARKER_LLM = os.getenv("MARKER_LLM")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL")
 IMAGE_RESOLUTION_SCALE = 2.0
-        
-        
-def simple_conversion(path: str|Path):
-    converter = DocumentConverter()
-    result = converter.convert(path)
-    return result.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
 
 
 def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
