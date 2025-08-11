@@ -47,7 +47,7 @@ def init_page():
 
 def reset_selection():
     """
-    util funcion for custom pills
+    util function for custom pills
     """
     st.session_state.selected_option = None
     st.session_state.reset_key += 1  # Increment the key to force update

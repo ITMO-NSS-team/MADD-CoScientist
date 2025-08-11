@@ -8,6 +8,7 @@ from ChemCoScientist.frontend.utils import get_user_data_dir, get_user_session_i
 from langgraph.errors import GraphRecursionError
 from ChemCoScientist.tools.utils import convert_to_base64, convert_to_html
 from ChemCoScientist.frontend.streamlit_endpoints import explore_my_papers
+from ChemCoScientist.frontend.utils import clean_folder
 from definitions import ROOT_DIR
 
 # Create a separate logger for chat.py
@@ -211,6 +212,10 @@ def message_handler():
 
                 # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
                 st.session_state.messages[-1]["content"] = result["response"]
+
+                clean_folder(os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"]))
+                clean_folder(os.path.join(ROOT_DIR, os.environ["IMG_STORAGE_PATH"]))
+                clean_folder(os.path.join(ROOT_DIR, os.environ["ANOTHER_STORAGE_PATH"]))
 
             if st.session_state.images_b64:  # get user's submitted images
                 st.session_state.messages[-1][
