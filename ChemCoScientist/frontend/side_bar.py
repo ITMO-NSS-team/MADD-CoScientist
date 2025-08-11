@@ -485,6 +485,7 @@ def load_images():
 
         # st.session_state.images = files
         st.session_state.images_b64 = images_b64
+        st.session_state.images = file_path
         st.toast(f"Successfully loaded images", icon="✅")
 
 

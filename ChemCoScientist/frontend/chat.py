@@ -101,6 +101,9 @@ def message_handler():
         config["configurable"]["user_data_dir"] = st.session_state.user_data_dir
 
     inputs = {"input": user_query}
+    # add path to users image from gui
+    if st.session_state.images:
+        inputs["attached_img"] = st.session_state.images
 
     try:
         with st.spinner("Give me a moment..."):
@@ -117,7 +120,7 @@ def message_handler():
                 st.session_state.messages[-1]["steps"] = []
 
             existing_steps = set(st.session_state.messages[-1]["steps"])
-
+            
             with expander:
                 steps_container = st.container()
 
@@ -128,10 +131,11 @@ def message_handler():
                 st.markdown(result["answer"])
 
                 st.session_state.messages[-1]["content"] = (result["answer"])
+                
             else:
                 # result = st.session_state.backend.invoke(input=inputs, config=config)
                 try:
-                    for result in st.session_state.backend.stream(inputs, "1"):
+                    for result in st.session_state.backend.stream(inputs):
                         print("=================new step=================")
                         print(result)
 
