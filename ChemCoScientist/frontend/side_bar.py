@@ -270,11 +270,7 @@ def init_backend():
     from ChemCoScientist.conf.create_conf import conf
 
     st.session_state.backend = GraphBuilder(conf)
-    # clean folder for new job here
-    # TODO: replace the commands below
-    # clean_folder(os.path.join(ROOT_DIR, os.environ["DS_STORAGE_PATH"]))
-    # clean_folder(os.path.join(ROOT_DIR, os.environ["IMG_STORAGE_PATH"]))
-    # clean_folder(os.path.join(ROOT_DIR, os.environ["ANOTHER_STORAGE_PATH"]))
+
 
 def init_dataset():
     """
