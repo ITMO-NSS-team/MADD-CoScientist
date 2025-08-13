@@ -59,7 +59,7 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     return file_name.stem, output_dir
 
 
-def clean_up_html(doc_dir: Path, file_name: Path, html: str) -> str:
+def clean_up_html(doc_dir: Path, file_name: Path, html: str, s3_service, paper_s3_prefix: str = None) -> (str, dict):
     
     soup = BeautifulSoup(html, "lxml")
     
@@ -87,20 +87,35 @@ def clean_up_html(doc_dir: Path, file_name: Path, html: str) -> str:
                     element.decompose()
     
     llm = create_llm_connector(VISION_LLM_URL, extra_body={"provider": {"only": allowed_providers}})
+    
+    image_url_mapping = {}
+    
     for img in soup.find_all('img'):
-        img_path = str(doc_dir) + "/" + img.get("src")
-        images = list(map(convert_to_base64, [img_path]))
+        img_src = img.get("src")
+        if not img_src:
+            continue
+        
+        local_img_path = str(Path(doc_dir) / img_src)
+        try:
+            images = list(map(convert_to_base64, [local_img_path]))
+        except OSError as e:
+            if e.errno == 2:
+                print(f"File not found: {e}")
+                continue
+            else:
+                print(f"Error from OS: {e}")
+                continue
         query = [prompt_func({"text": cls_prompt, "image": images})]
         res_1 = llm.invoke(query).content
         if res_1.strip() == "False":
             parent_p = img.find_parent('p')
             if parent_p:
                 parent_p.decompose()
-                os.remove(img_path)
+                # os.remove(img_path)
         else:
             table_query = [prompt_func({"text": table_extraction_prompt, "image": images})]
             res_2 = llm.invoke(table_query).content
-            if res_2 != "No table":
+            if res_2.strip() != "No table":
                 pattern = r'<table\b[^>]*>.*?</table>'
                 match = re.search(pattern, res_2, re.DOTALL)
                 if match:
@@ -109,11 +124,18 @@ def clean_up_html(doc_dir: Path, file_name: Path, html: str) -> str:
                     parent_p = img.find_parent('p')
                     if parent_p:
                         parent_p.replace_with(table_soup)
-
+            else:
+                s3_key = f"{paper_s3_prefix}/{img_src}"
+                s3_service.upload_file_object(paper_s3_prefix, img_src, local_img_path)
+                s3_url = f"{s3_service.endpoint.rstrip('/')}/{s3_service.bucket_name}/{s3_key}"
+                if s3_url:
+                    img['src'] = s3_url
+                    image_url_mapping[local_img_path] = s3_url
+    
     with open(Path(doc_dir, f"{file_name.stem}_processed.html"), "w", encoding='utf-8') as file:
         file.write(str(soup.prettify()))
 
-    return soup.prettify()
+    return soup.prettify(), image_url_mapping
     
 
 def html_chunking(html_string: str, paper_name: str) -> list:
@@ -136,16 +158,16 @@ def html_chunking(html_string: str, paper_name: str) -> list:
     documents = splitter.split_text(html_string)
     for doc in documents:
         doc.page_content = "passage: " + doc.page_content  # Maybe delete "passage: " addition
-        doc.metadata["imgs_in_chunk"] = str(extract_img_url(doc.page_content, paper_name))
+        doc.metadata["imgs_in_chunk"] = str(extract_img_url(doc.page_content))
         doc.metadata["source"] = paper_name + ".pdf"
         
     return documents
 
 
-def extract_img_url(doc_text: str, p_name: str):
+def extract_img_url(doc_text: str):
     pattern = r'!\[image:([^\]]+\.jpeg)\]\(([^)]+\.jpeg)\)'
     matches = re.findall(pattern, doc_text)
-    return [os.path.join(PARSE_RESULTS_PATH, p_name, entry[0]) for entry in matches]
+    return [entry[0] for entry in matches]
 
 
 if __name__ == "__main__":

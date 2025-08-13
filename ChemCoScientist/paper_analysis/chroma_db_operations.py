@@ -20,6 +20,7 @@ import requests
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
 from ChemCoScientist.paper_analysis.settings import allowed_providers
 from ChemCoScientist.paper_analysis.settings import settings as default_settings
+from ChemCoScientist.paper_analysis.s3_connection import s3_service
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
@@ -166,17 +167,19 @@ class ChromaDBPaperStore:
             metadatas=[{"type": "text", **text_chunk.metadata} for text_chunk in content]
         )
 
-    def store_images_in_chromadb_txt_format(self, image_dir: str, paper_name: str) -> None:
+    def store_images_in_chromadb_txt_format(self, image_dir: str, paper_name: str, url_mapping: dict) -> None:
         image_descriptions = []
         image_paths = []
         image_counter = 0
+        valid_paths = list(url_mapping.keys())
 
         for filename in os.listdir(image_dir):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 img_path = os.path.join(image_dir, filename)
-                image_descriptions.append(self._image_to_text(img_path))
-                image_paths.append(img_path)
-                image_counter += 1
+                if img_path in valid_paths:
+                    image_descriptions.append(self._image_to_text(img_path))
+                    image_paths.append(url_mapping[img_path])
+                    image_counter += 1
 
         embeddings = self.get_embeddings(image_descriptions)
         self.img_collection.add(
@@ -324,7 +327,7 @@ def process_single_document(folder_path: Path):
         text = f.read()
     try:
         print(f"Starting post-processing paper: {paper_name}")
-        parsed_paper = clean_up_html(folder_path, folder_path, text)
+        parsed_paper, mapping = clean_up_html(folder_path, folder_path, text, s3_service, paper_name)
         print(f"Finished post-processing paper: {paper_name}")
         documents = html_chunking(parsed_paper, paper_name)
         
@@ -334,7 +337,7 @@ def process_single_document(folder_path: Path):
         print(f"Starting loading paper: {paper_name}")
         process_local_store.add_paper_summary_to_db(str(paper_name_to_load), parsed_paper, struct_llm)
         process_local_store.store_text_chunks_in_chromadb(documents)
-        process_local_store.store_images_in_chromadb_txt_format(str(folder_path), str(paper_name_to_load))
+        process_local_store.store_images_in_chromadb_txt_format(str(folder_path), str(paper_name_to_load), mapping)
         print(f"Finished loading paper: {paper_name}")
     except Exception as e:
         print(f"Error in {paper_name}: {str(e)}")
