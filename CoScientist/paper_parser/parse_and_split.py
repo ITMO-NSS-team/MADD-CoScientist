@@ -16,6 +16,7 @@ from definitions import CONFIG_PATH, ROOT_DIR
 from CoScientist.paper_parser.parser_prompts import cls_prompt, table_extraction_prompt
 from CoScientist.paper_parser.utils import prompt_func, convert_to_base64
 from ChemCoScientist.paper_analysis.settings import allowed_providers
+from CoScientist.paper_parser.s3_connection import S3BucketService
 
 _log = logging.getLogger(__name__)
 
@@ -59,7 +60,9 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
     return file_name.stem, output_dir
 
 
-def clean_up_html(doc_dir: Path, file_name: Path, html: str, s3_service, paper_s3_prefix: str = None) -> (str, dict):
+def clean_up_html(
+        doc_dir: Path, file_name: Path, html: str, s3_service: S3BucketService = None, paper_s3_prefix: str = None
+) -> (str, dict):
     
     soup = BeautifulSoup(html, "lxml")
     
@@ -111,7 +114,6 @@ def clean_up_html(doc_dir: Path, file_name: Path, html: str, s3_service, paper_s
             parent_p = img.find_parent('p')
             if parent_p:
                 parent_p.decompose()
-                # os.remove(img_path)
         else:
             table_query = [prompt_func({"text": table_extraction_prompt, "image": images})]
             res_2 = llm.invoke(table_query).content
@@ -124,7 +126,7 @@ def clean_up_html(doc_dir: Path, file_name: Path, html: str, s3_service, paper_s
                     parent_p = img.find_parent('p')
                     if parent_p:
                         parent_p.replace_with(table_soup)
-            else:
+            elif s3_service and paper_s3_prefix:
                 s3_key = f"{paper_s3_prefix}/{img_src}"
                 s3_service.upload_file_object(paper_s3_prefix, img_src, local_img_path)
                 s3_url = f"{s3_service.endpoint.rstrip('/')}/{s3_service.bucket_name}/{s3_key}"

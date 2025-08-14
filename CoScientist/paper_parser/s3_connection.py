@@ -110,12 +110,6 @@ s3_service = S3BucketService(
     )
 
 if __name__ == "__main__":
-    s3_service = S3BucketService(
-        endpoint=os.getenv("ENDPOINT_URL"),
-        access_key=os.getenv("ACCESS_KEY"),
-        secret_key=os.getenv("SECRET_KEY"),
-        bucket_name=os.getenv("BUCKET_NAME")
-    )
     s3_client = s3_service.create_s3_client()
     # buckets = s3_client.list_buckets()
     # for bucket in buckets["Buckets"]:

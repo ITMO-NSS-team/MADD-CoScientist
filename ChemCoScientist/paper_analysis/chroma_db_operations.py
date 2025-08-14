@@ -20,7 +20,7 @@ import requests
 from ChemCoScientist.paper_analysis.prompts import summarisation_prompt
 from ChemCoScientist.paper_analysis.settings import allowed_providers
 from ChemCoScientist.paper_analysis.settings import settings as default_settings
-from ChemCoScientist.paper_analysis.s3_connection import s3_service
+from CoScientist.paper_parser.s3_connection import s3_service
 from CoScientist.paper_parser.parse_and_split import (
     clean_up_html,
     html_chunking,
@@ -180,6 +180,9 @@ class ChromaDBPaperStore:
                     image_descriptions.append(self._image_to_text(img_path))
                     image_paths.append(url_mapping[img_path])
                     image_counter += 1
+                    os.remove(img_path)
+                else:
+                    os.remove(img_path)
 
         embeddings = self.get_embeddings(image_descriptions)
         self.img_collection.add(

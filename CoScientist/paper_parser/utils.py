@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from langchain_core.messages import HumanMessage
 from PIL import Image
 
-from ChemCoScientist.paper_analysis.s3_connection import s3_service
+from CoScientist.paper_parser.s3_connection import s3_service
 
 
 def convert_to_base64(file_path):
