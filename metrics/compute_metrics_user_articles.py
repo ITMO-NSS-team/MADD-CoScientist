@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
+import time
 from typing import List
 
 import pandas as pd
@@ -84,11 +85,15 @@ def test_pipeline(
             "pdf": pdf_path,
             "question": question,
             "correct_answer": correct_answer,
-            "model_answer": ""
+            "model_answer": "",
+            "answer_generation_time": ""
             }
             
+            start_time = time.time()
             llm_res = simple_query_llm(VISION_LLM_URL, question, [str(pdf_path)])
+            end_time = time.time()
             row_data["model_answer"] = llm_res['answer']
+            row_data["answer_generation_time"] = end_time - start_time
             
             test_case = LLMTestCase(
                         input=question,
@@ -115,7 +120,9 @@ def test_pipeline(
                 with open(path_to_df, 'a', newline='', encoding='utf-8') as f:
                     row_df.to_csv(f, header=f.tell() == 0, index=False)
             raise
-    print("Pipeline finished.")
+    
+    results = pd.read_csv(path_to_df)
+    print(f"Pipeline finished!\nAverage GEval score: {results['Correctness (GEval)_score'].mean()}\nAverage answer generation time: {results.answer_generation_time.mean()}")
          
 if __name__ == "__main__":
     args = parse_arguments()

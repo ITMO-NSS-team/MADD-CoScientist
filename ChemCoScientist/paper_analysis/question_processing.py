@@ -10,8 +10,6 @@ from ChemCoScientist.paper_analysis.prompts import sys_prompt, explore_my_papers
 from CoScientist.paper_parser.utils import convert_to_base64, prompt_func
 from definitions import CONFIG_PATH
 
-from ChemCoScientist.streamlit_app_old.utils import update_activity
-
 load_dotenv(CONFIG_PATH)
 
 VISION_LLM_URL = os.environ["VISION_LLM_URL"]
@@ -41,6 +39,7 @@ def query_llm(
 
 
 def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
+    from ChemCoScientist.frontend.utils import update_activity
     if pdfs:
         update_activity(os.path.dirname(pdfs[0]))
 
@@ -141,20 +140,9 @@ if __name__ == "__main__":
     # print(res.content)
     # print(res.response_metadata)
 
-    question = 'how does the synthesis of Glionitrin A/B happen?'
-    question = 'what is the name of Figure 2 in the given paper?'
-    question = 'what is the time in the first line of table 1?'
-    question = 'what is the time in the second line of table 1?'
-    question = 'what is the elecrtophile in the 8th line of table 1?'
+    #######################################################
 
-    question = 'what is (R)-13b on scheme 1?'
-    question = 'what is depicted on graphs that are on scheme 1? give a detailed description. what conclusions can be made from them?'
-    question = 'what compounds are depicted above table 1?'
-    question = 'list all 13 chemical compounds that are depicted on scheme 1'
-    # res = process_question(question)
-    # print(res)
-
-    paper = "/Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/papers/koning-et-al-2021-total-synthesis.pdf"
+    question = 'What is the title of an article?'
 
     # res = simple_query_llm(VISION_LLM_URL, question, [paper])
     res = process_question(question)
