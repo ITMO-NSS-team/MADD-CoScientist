@@ -1,8 +1,9 @@
 import json
+from typing import List, Union 
 from pydantic import BaseModel
 import os
-from infrastructure.automl.utils.calculateble_prop_funcs import config
-
+from automl.utils.calculateble_prop_funcs import config
+from huggingface_hub import HfApi
 
 class BaseState(BaseModel):
     status:str = None
@@ -88,8 +89,8 @@ class TrainState:
     def gen_model_upd_data(self,
                            case:str,
                            data_path:str=None,
-                           feature_column:list[str] = None,
-                           target_column:list[str] = None
+                           feature_column:List[str] = None,
+                           target_column:List[str] = None
                            ):
         """Necessary to update the parameters of a generative model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -114,8 +115,8 @@ class TrainState:
     def ml_model_upd_data(self,
                         case:str,
                         data_path:str=None,
-                        feature_column:list[str] = None,
-                        target_column:list[str] = None,
+                        feature_column:List[str] = None,
+                        target_column:List[str] = None,
                         predictable_properties:dict = None):
         """Necessary to update the parameters of a ML model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -142,6 +143,13 @@ class TrainState:
         print(f"Data for ML models training has been updated! \
                \n Current predictable properties and tasks are {self.current_state[case]['ml_models']['Predictable properties']}")
         self.__save_state()
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="D:/Projects/CoScientist/automl/state/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
 
     def ml_model_upd_status(self,
                             case:str,
@@ -172,6 +180,14 @@ class TrainState:
         if not metric is None:
            self.current_state[case]["ml_models"]['metric'] =  metric
         self.__save_state()
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="automl/state/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
+            
 
     def gen_model_upd_status(self,
                              case:str,
