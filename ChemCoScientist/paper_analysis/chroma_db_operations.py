@@ -180,9 +180,6 @@ class ChromaDBPaperStore:
                     image_descriptions.append(self._image_to_text(img_path))
                     image_paths.append(url_mapping[img_path])
                     image_counter += 1
-                    os.remove(img_path)
-                else:
-                    os.remove(img_path)
 
         embeddings = self.get_embeddings(image_descriptions)
         self.img_collection.add(

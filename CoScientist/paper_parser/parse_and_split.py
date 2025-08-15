@@ -114,6 +114,7 @@ def clean_up_html(
             parent_p = img.find_parent('p')
             if parent_p:
                 parent_p.decompose()
+                os.remove(local_img_path)
         else:
             table_query = [prompt_func({"text": table_extraction_prompt, "image": images})]
             res_2 = llm.invoke(table_query).content
@@ -126,6 +127,7 @@ def clean_up_html(
                     parent_p = img.find_parent('p')
                     if parent_p:
                         parent_p.replace_with(table_soup)
+                        os.remove(local_img_path)
             elif s3_service and paper_s3_prefix:
                 s3_key = f"{paper_s3_prefix}/{img_src}"
                 s3_service.upload_file_object(paper_s3_prefix, img_src, local_img_path)
@@ -133,6 +135,7 @@ def clean_up_html(
                 if s3_url:
                     img['src'] = s3_url
                     image_url_mapping[local_img_path] = s3_url
+                os.remove(local_img_path)
     
     with open(Path(doc_dir, f"{file_name.stem}_processed.html"), "w", encoding='utf-8') as file:
         file.write(str(soup.prettify()))
