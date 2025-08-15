@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import shutil
 
 from bs4 import BeautifulSoup, Tag
 from dotenv import load_dotenv
@@ -31,6 +32,7 @@ LLM_SERVICE_KEY = os.getenv("LLM_SERVICE_KEY")
 MARKER_LLM = os.getenv("MARKER_LLM")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL")
 IMAGE_RESOLUTION_SCALE = 2.0
+USE_S3 = os.getenv("USE_S3") == "True"
 
 
 def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
@@ -61,7 +63,7 @@ def parse_with_marker(paper_name: str, use_llm: bool=False) -> (str, Path):
 
 
 def clean_up_html(
-        doc_dir: Path, file_name: Path, html: str, s3_service: S3BucketService = None, paper_s3_prefix: str = None
+        doc_dir: Path, file_name: str, html: str, s3_service: S3BucketService = None, paper_s3_prefix: str = None
 ) -> (str, dict):
     
     soup = BeautifulSoup(html, "lxml")
@@ -132,13 +134,18 @@ def clean_up_html(
                 s3_key = f"{paper_s3_prefix}/{img_src}"
                 s3_service.upload_file_object(paper_s3_prefix, img_src, local_img_path)
                 s3_url = f"{s3_service.endpoint.rstrip('/')}/{s3_service.bucket_name}/{s3_key}"
-                if s3_url:
-                    img['src'] = s3_url
-                    image_url_mapping[local_img_path] = s3_url
-                os.remove(local_img_path)
+                img['src'] = s3_url
+                image_url_mapping[local_img_path] = s3_url
+            else:
+                image_url_mapping[local_img_path] = local_img_path
     
-    with open(Path(doc_dir, f"{file_name.stem}_processed.html"), "w", encoding='utf-8') as file:
+    new_file_name = f"{file_name}_processed.html"
+    new_path = str(Path(doc_dir, new_file_name))
+    with open(new_path, "w", encoding='utf-8') as file:
         file.write(str(soup.prettify()))
+    
+    if s3_service and paper_s3_prefix:
+        s3_service.upload_file_object(paper_s3_prefix, new_file_name, new_path)
 
     return soup.prettify(), image_url_mapping
     
@@ -163,16 +170,30 @@ def html_chunking(html_string: str, paper_name: str) -> list:
     documents = splitter.split_text(html_string)
     for doc in documents:
         doc.page_content = "passage: " + doc.page_content  # Maybe delete "passage: " addition
-        doc.metadata["imgs_in_chunk"] = str(extract_img_url(doc.page_content))
+        doc.metadata["imgs_in_chunk"] = str(extract_img_url(doc.page_content, paper_name))
         doc.metadata["source"] = paper_name + ".pdf"
         
     return documents
 
 
-def extract_img_url(doc_text: str):
+def extract_img_url(doc_text: str, p_name: str):
     pattern = r'!\[image:([^\]]+\.jpeg)\]\(([^)]+\.jpeg)\)'
     matches = re.findall(pattern, doc_text)
-    return [entry[0] for entry in matches]
+    if USE_S3:
+        return [entry[0] for entry in matches]
+    else:
+        return [os.path.join(PARSE_RESULTS_PATH, p_name, entry[0]) for entry in matches]
+
+
+def clean_up_after_processing(doc_dir: str | Path):
+    if os.path.exists(doc_dir):
+        try:
+            shutil.rmtree(doc_dir)
+            print(f"Directory '{doc_dir}' and its contents removed successfully.")
+        except OSError as e:
+            print(f"Error: {e}")
+    else:
+        print(f"Directory '{doc_dir}' does not exist.")
 
 
 if __name__ == "__main__":
