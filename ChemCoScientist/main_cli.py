@@ -20,29 +20,47 @@ from CoScientist.scientific_agents.agents import coder_agent
 from ChemCoScientist.tools import chem_tools_rendered, nano_tools_rendered, tools_rendered, paper_analysis_tools_rendered
 
 
+# This prevents list/str concatenation errors and lets the web_search_agent run correctly alongside paper_analysis
+def web_search_wrapper(state, config):
+    plan = state.get("plan")
+    if isinstance(plan, list):
+        state = {**state, "plan": "\n".join(str(step) for step in plan)}
+    return web_search_node(state, config)
+
+
 # description for agent WITHOUT langchain-tools
 automl_agent_description = """
-'ml_dl_agent' - an agent that can run training of a generative model to generate SMILES, training of predictive models 
-to predict properties. It also already stores ready-made models for inference. You can also ask him to prepare an 
-existing dataset (you need to be specific in your request).
-It can generate medicinal molecules. You must use this agent for molecules generation!!!\n
-
+'ml_dl_agent' - trains generative models to create SMILES and predictive models to estimate properties. It also
+stores ready-made models for inference and can prepare an existing dataset (be specific in your request).
+Use this agent only when the user explicitly asks for model training, inference, or molecule generation. It is not
+suited for literature questions. 
 """
-dataset_builder_agent_description = "'dataset_builder_agent' - collects data from two databases - ChemBL and BindingDB. \
-    To collect data, it needs either the protein name or a specific id from a specific database. \
-        It can collect data from one specific database or from both. All data is saved locally. \
-        It also processes data: removes junk values, empty cells, and can filter if necessary.\n"
 
-coder_agent_description = (
-    "'coder_agent' - can write any simple python scientific code. Can use rdkit and other "
-    "chemical libraries. Can perform calculations.\n "
-)
+dataset_builder_agent_description = """
+'dataset_builder_agent' - collects data from ChemBL and BindingDB. 
+It requires either a protein name or a specific database id to gather data from one or both sources. All data is saved 
+locally and can be cleaned: junk values removed, empty cells dropped, optional filtering applied. 
+Use this agent only when the user asks to collect or preprocess data from chemical databases, never for literature 
+queries or model training.
+"""
 
-paper_analysis_node_description = (
-    "'paper_analysis_node' - answers questions by retrieving and analyzing information "
-    "from a database of chemical scientific papers. Using this agent takes precedence over web search."
-)
-web_search_description = "You can use web search to find information on the internet. "
+coder_agent_description = """
+'coder_agent' - writes simple scientific Python code using rdkit and other chemical libraries for calculations. 
+Use this agent solely when the user requests code generation or numerical computations.
+"""
+
+paper_analysis_node_description = """
+'paper_analysis_node' - retrieves and analyzes information from a database of chemical scientific papers. 
+Activate this agent when the user asks about articles or research findings. For such questions, first plan this 
+agent, then follow with 'web_search' for additional internet information. Do not involve other agents unless the 
+user explicitly requires them.
+"""
+
+web_search_description =""" 
+'web_search' - finds information on the internet to complement results from  
+'paper_analysis_node'.
+"""
+
 
 additional_agents_description = (
     automl_agent_description
@@ -81,7 +99,7 @@ conf = {
             "dataset_builder_agent": dataset_builder_agent,
             "coder_agent": coder_agent,
             "paper_analysis_node": paper_analysis_agent,
-            "web_search": web_search_node
+            "web_search": web_search_wrapper
         },
         # descripton for agents tools - if using langchain @tool
         # or description of agent capabilities in free format
@@ -132,27 +150,36 @@ conf = {
                 "rules": None,
                 "desc_restrictions": None,
                 "examples": None,
-                "additional_hints": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
-                If the user provides his dataset - immediately start training using ml_dl_agent (never call dataset_builder_agent)!\
-                        To find an answer, use the paper search first! NOT the web search!",
+                "additional_hints": """
+                Before starting model training, check data for garbage with 'dataset_builder_agent'. 
+                If the user already provides a dataset, go straight to 'ml_dl_agent' and skip 'dataset_builder_agent' 
+                For questions about papers, articles, or research findings, plan exactly two steps: 
+                first 'paper_analysis_node', then 'web_search'. 
+                Do not schedule any other agents for such research tasks.
+                Always choose the minimal set of agents necessary for the user's request.
+                """,
             },
             "chat": {
                 "problem_statement": None,
-                "additional_hints": """You are a chemical agent system. You can do the following:
-                    - train generative models (generate SMILES molecules), train predictive models (predict properties)
-                    - prepare a dataset for training
-                    - download data from chemical databases: ChemBL, BindingDB
-                    - perform calculations with chemical python libraries
-                    - solve problems of nanomaterial synthesis
-                    - analyze chemical articles
-                    
-                    If user ask something like "What can you do" - make answer yourself!
-                    """,
+                "additional_hints": """
+                You are a chemical agent system. You can do the following:
+                - train generative models (generate SMILES molecules), train predictive models (predict properties)
+                - prepare a dataset for training
+                - download data from chemical databases: ChemBL, BindingDB
+                - perform calculations with chemical python libraries
+                - solve problems of nanomaterial synthesis
+                - analyze chemical articles
+                Choose only the agents relevant to the user's question. For literature queries, use 'paper_analysis_node'
+                followed by 'web_search' and avoid calling other agents. If user ask something like "What can you do" - make answer yourself!
+                """,
             },
             "summary": {
                 "problem_statement": None,
                 "rules": None,
-                "additional_hints": "Never write full paths! Only file names.",
+                "additional_hints": """
+                Never write full paths! Only file names. If 'paper_analysis_node' and 'web_search' were used,  
+                present the final answer as: paper_analysis: <paper_analysis_agent result>   web_search: <web_search_node result>.
+                """,
             },
             "replanner": {
                 "problem_statement": None,
@@ -196,6 +223,8 @@ inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on res
 # inputs = {"input": "what papers have info on the Synthesis of Glionitrin A/B?"}
 # inputs = {"input": "what is the name of figure 1?"}
 # inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}
+
+
 
 # parallel examples
 # inputs = {"input": "Получи данные по KRAS G12C из ChemBL для Ki. Получи данные по MEK1 из ChemBL по Ki"}
