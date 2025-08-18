@@ -31,11 +31,11 @@ class TrainState:
         self.state_path = state_path
         if state_path is not None:
             self.current_state = self.__load_state()
-        elif os.path.isfile("automl/state/state.json"):
-            self.state_path = "automl/state/state.json"
+        elif os.path.isfile("infrastructure/automl/state.json"):
+            self.state_path = "infrastructure/automl/state.json"
             self.current_state = self.__load_state()
         else:
-            self.state_path = r'automl/state/state.json'
+            self.state_path = r'infrastructure/automl/state.json'
             self.current_state = {"Calculateble properties" : config}
             self.__save_state()
 
@@ -145,7 +145,7 @@ class TrainState:
         self.__save_state()
         api = HfApi(token=os.getenv("HF_TOKEN"))
         api.upload_file(
-            path_or_fileobj="D:/Projects/CoScientist/automl/state/state.json",
+            path_or_fileobj="infrastructure/automl/state.json",
             repo_id="SoloWayG/Molecule_transformer",
             repo_type="model",
             path_in_repo = 'state.json'
@@ -182,7 +182,7 @@ class TrainState:
         self.__save_state()
         api = HfApi(token=os.getenv("HF_TOKEN"))
         api.upload_file(
-            path_or_fileobj="automl/state/state.json",
+            path_or_fileobj="infrastructure/automl/state.json",
             repo_id="SoloWayG/Molecule_transformer",
             repo_type="model",
             path_in_repo = 'state.json'
@@ -222,12 +222,12 @@ class TrainState:
         return self.current_state["Calculateble properties"].keys()
 
     @staticmethod
-    def load_state(path:str = r'automl/state.json'):
+    def load_state(path:str = r'infrastructure/automl/state.json'):
         state = json.load(open(path))
         state["Calculateble properties"] = config
         return state
     
-    def save(self,path:str = r'automl/state.json'):
+    def save(self,path:str = r'infrastructure/automl/state.json'):
         saving_dict = self.current_state.copy()
         del saving_dict["Calculateble properties"]
         json.dump(self.current_state, open(saving_dict, 'w' ) )

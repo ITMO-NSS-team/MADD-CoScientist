@@ -46,7 +46,7 @@ if __name__=='__main__':
     # API operations
     @app.get("/check_state")
     def check_state():
-        state = TrainState(state_path='automl/state/state.json')
+        state = TrainState(state_path='infrastructure/automl/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
@@ -58,13 +58,19 @@ if __name__=='__main__':
     def train_ml_api(data:MLData=Body()):
         hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
                          filename="state.json",
-                         local_dir='automl/state',
-                         force_download=True)
+                         local_dir='infrastructure/automl',
+                         force_download=True,
+                         token='')
         train_ml_with_data(data)
 
     @app.post("/predict_ml")
     def predict_ml_api(data:MLData=Body()):
         print(data)
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                    filename="state.json",
+                    local_dir='infrastructure/automl',
+                    force_download=True,
+                    token='')
         return inference_ml(data)
     
 
