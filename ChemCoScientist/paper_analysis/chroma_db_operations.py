@@ -160,8 +160,17 @@ class ChromaDBPaperStore:
         res = model.invoke(messages)
         return res.content
 
-    def store_text_chunks_in_chromadb(self, content: list) -> None:
-        embeddings = self.get_embeddings([text_chunk.page_content for text_chunk in content])
+    def store_text_chunks_in_chromadb(self, content: list, window_size: int = 15) -> None:
+        chunks_num = len(content)
+        if chunks_num  > window_size:
+            embeddings = []
+            cuts = int(chunks_num / window_size)
+            for i in range(cuts + 1):
+                embeddings += self.get_embeddings(
+                    [text_chunk.page_content for text_chunk in content[i * window_size:(i + 1) * window_size]]
+                )
+        else:
+            embeddings = self.get_embeddings([text_chunk.page_content for text_chunk in content])
         self.txt_collection.add(
             ids=[str(uuid.uuid4()) for _ in range(len(content))],
             documents=[text_chunk.page_content for text_chunk in content],
@@ -169,7 +178,9 @@ class ChromaDBPaperStore:
             metadatas=[{"type": "text", **text_chunk.metadata} for text_chunk in content]
         )
 
-    def store_images_in_chromadb_txt_format(self, image_dir: str, paper_name: str, url_mapping: dict) -> None:
+    def store_images_in_chromadb_txt_format(
+            self, image_dir: str, paper_name: str, url_mapping: dict, window_size: int = 15
+    ) -> None:
         image_descriptions = []
         image_paths = []
         image_counter = 0
@@ -183,7 +194,13 @@ class ChromaDBPaperStore:
                     image_paths.append(url_mapping[img_path])
                     image_counter += 1
 
-        embeddings = self.get_embeddings(image_descriptions)
+        if image_counter > window_size:
+            embeddings = []
+            cuts = int(image_counter / window_size)
+            for i in range(cuts + 1):
+                embeddings += self.get_embeddings(image_descriptions[i * window_size:(i + 1) * window_size])
+        else:
+            embeddings = self.get_embeddings(image_descriptions)
         self.img_collection.add(
             ids=[str(uuid.uuid4()) for _ in range(image_counter)],
             documents=image_descriptions,
@@ -286,7 +303,7 @@ class ChromaDBPaperStore:
             response = requests.post(
                 embedding_service_url,
                 json=texts,
-                timeout=300
+                timeout=1000
             )
             response.raise_for_status()
             return response.json()["embeddings"]
@@ -303,7 +320,7 @@ class ChromaDBPaperStore:
             response = requests.post(
                 reranker_service_url,
                 json=pairs,
-                timeout=300
+                timeout=1000
             )
             response.raise_for_status()
             return response.json()["scores"]
