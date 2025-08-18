@@ -12,6 +12,7 @@ def get_state_from_server(case:str,url:str):
         print(f"Server error:{resp.status_code}")
         return
     state = json.loads(resp.content)
+    print(state['state'])
     return state['state'][case]
 
 def train_gen_with_data(
@@ -240,6 +241,7 @@ def call_for_gan_generation(
     }
     resp = requests.post(url, data=json.dumps(params))
     print("--- %s seconds ---" % (time.time() - start_time))
+    print(resp)
     print(json.loads(resp.json()))
     return resp, json.loads(resp.json())
 #ret = call_for_generation()
@@ -263,17 +265,17 @@ if __name__=='__main__':
     #                     epochs=2)
 
 
-    # train_gen_with_data(case = "Alzheimer_regression",
-    #                     url = "http://10.32.2.2:94/train_gan",
-    #                     feature_column=["smiles"],
-    #                     #classification_props = ['IC50'], #All propreties from dataframe you want to calculate in the end
-    #                     fine_tune=True,
-    #                     data_path='/projects/CoScientist/ChemCoScientist/generative_models/autotrain/data/data_mek.csv',
-    #                     epochs=2)
-    call_for_gan_generation(numb_mol=100,case_='Alzheimer_regression')
+    train_gan_gen_with_data(case = "Brain_cancer_test",
+                        url = "http://10.32.2.2:193/train_gan",
+                        feature_column=["canonical_smiles"],
+                        #classification_props = ['IC50'], #All propreties from dataframe you want to calculate in the end
+                        fine_tune=True,
+                        data_path='infrastructure/automl/data/base_cases/skl.csv',
+                        epochs=2)
+    #call_for_gan_generation(numb_mol=100,case_='Brain_cancer_test',url = "http://10.32.2.2:193/gan_case_generator")
 
     
-    #print(get_state_from_server(url = "http://10.64.4.247:81",case = "data_cyk_short"))
+    #print(get_state_from_server(url = "http://10.32.2.2:193",case = "Alzheimer_regression"))
 
 
     # print(generate_mol_by_case(case = "QED_4version",

@@ -1,4 +1,6 @@
 import pickle as pi
+
+from huggingface_hub import HfApi
 from autotrain.utils.base_state import TrainState
 from scripts.model import MolGen
 from typing import List
@@ -33,16 +35,23 @@ def auto_train(case,state,path_ds: str, lr: float = 0.0003, bs: int = 256, steps
     loader = gan_mol.create_dataloader(data, batch_size=bs, shuffle=True, num_workers=0)
     # train model for 10000 steps
     if fine_tune:
-        with open('/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl', "rb") as f:
+        with open('infrastructure/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl', "rb") as f:
             gan_mol = pi.load(f)
+    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/train_GAN_{case}',status=1)
     gan_mol.train_n_steps(loader, max_step=steps, evaluate_every=150)
  
-    if not os.path.isdir(f'autotrain/train_GAN_{case}'):
-        os.mkdir(f'autotrain/train_GAN_{case}')
+    if not os.path.isdir(f'infrastructure/generative_models/autotrain/train_GAN_{case}'):
+        os.mkdir(f'infrastructure/generative_models/autotrain/train_GAN_{case}')
     # save model
-    pi.dump(gan_mol, open(f'autotrain/train_GAN_{case}/gan_weights.pkl', 'wb'))
-    state.gen_model_upd_status(case=case,model_weight_path=f'autotrain/train_GAN_{case}',status=2)
-
+    pi.dump(gan_mol, open(f'infrastructure/generative_models/autotrain/train_GAN_{case}/gan_weights.pkl', 'wb'))
+    api = HfApi(token=os.getenv("HF_TOKEN"))
+    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/train_GAN_{case}',status=2)
+    api.upload_file(
+    path_or_fileobj="infrastructure/generative_models/autotrain/utils/state.json",
+    repo_id="SoloWayG/Molecule_transformer",
+    repo_type="model",
+    path_in_repo = 'state.json'
+)   
 
 # def main(server_dir = 'generative_models/train_dislip',
 #          conditions : List[str] = ['ic50'],

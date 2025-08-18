@@ -23,11 +23,11 @@ from generative_models.autodock_vina_python3.src.docking_score import docking_li
 import yaml
 
 
-with open("config.yaml", "r") as file:
+with open("infrastructure/generative_models/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 is_public_API = config['is_public_API']
-
+local_dir = 'infrastructure/generative_models/autotrain/utils'
 
 if __name__=='__main__':
     def get_ip():
@@ -187,18 +187,33 @@ if __name__=='__main__':
 
     @app.post("/gan_case_generator")
     def case_run(data:GenData=Body()):
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir=local_dir,
+                         force_download=True,
+                         token=os.getenv("HF_TOKEN"))
         return json.dumps(gan_auto_generator(data))
     
     @app.post("/train_gen_models")
     def case_run(data:TrainData=Body()):
         
-        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='autotrain/utils')
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir=local_dir,
+                         force_download=True,
+                         token=os.getenv("HF_TOKEN"))
         case_trainer(data)
         #return json.dumps()
 
     @app.post("/train_gan")
     def case_gan_run(data:TrainData=Body()):
-        hf_hub_download(repo_id="SoloWayG/Molecule_transformer", filename="state.json",local_dir='autotrain/utils')
+        print(os.getenv("HF_TOKEN"))
+        hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
+                         filename="state.json",
+                         local_dir=local_dir,
+                         force_download=True,
+                         token=os.getenv("HF_TOKEN"))
+        print('train')
         gan_case_trainer(data)
 
     @app.post("/generate_gen_models_by_case")
@@ -206,8 +221,9 @@ if __name__=='__main__':
         
         hf_hub_download(repo_id="SoloWayG/Molecule_transformer",
                          filename="state.json",
-                         local_dir='autotrain/utils',
-                         force_download=True)
+                         local_dir=local_dir,
+                         force_download=True
+                         ,token=os.getenv("HF_TOKEN"))
         ret = auto_generator(data)
         return json.dumps(ret)
     
@@ -215,7 +231,7 @@ if __name__=='__main__':
     
     @app.get("/check_state")
     def check_state():
-        state = TrainState(state_path='autotrain/utils/state.json')
+        state = TrainState(state_path=f'{local_dir}/state.json')
         calc_properies = state.show_calculateble_propreties()
         current_state = state().copy()
         
@@ -250,4 +266,4 @@ if __name__=='__main__':
         uvicorn_ip = ip
     else:
         uvicorn_ip = '127.0.0.1' 
-    uvicorn.run(app,host=uvicorn_ip,port=int(os.getenv('GEN_APP_PORT')),log_level='info')
+    uvicorn.run(app,host=uvicorn_ip,port=int(193),log_level='info')

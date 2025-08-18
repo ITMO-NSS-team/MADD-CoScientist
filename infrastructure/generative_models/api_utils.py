@@ -85,7 +85,7 @@ def case_trainer(data:TrainData=Body()):
     Returns:
         _type_: _description_
     """
-    state = TrainState(state_path='autotrain/utils/state.json')
+    state = TrainState(state_path='infrastructure/generative_models/autotrain/utils/state.json')
     try:
         if data.data is not None:
                     df = pd.DataFrame(data.data)
@@ -156,11 +156,11 @@ def gan_case_trainer(data:TrainData=Body()):
     Returns:
         _type_: _description_
     """
-    state = TrainState(state_path='autotrain/utils/state.json')
+    state = TrainState(state_path='infrastructure/generative_models/autotrain/utils/state.json')
     try:
         if data.data is not None:
                     df = pd.DataFrame(data.data)
-                    data.data_path = f"autotrain/data/{data.case}"
+                    data.data_path = f"infrastructure/generative_models/autotrain/data/{data.case}"
                     if not os.path.isdir(data.data_path):
                         os.mkdir(data.data_path)
                     data.data_path = data.data_path + '/data.csv'
@@ -197,7 +197,7 @@ def gan_case_trainer(data:TrainData=Body()):
         state.gen_model_upd_status(case=data.case,error=str(e))
 
 def gan_auto_generator(data:GenData=Body()):
-    state = TrainState(state_path='autotrain/utils/state.json')
+    state = TrainState(state_path='infrastructure/generative_models/autotrain/utils/state.json')
     
     with open(state(data.case_,'gen')['weights_path']+'/gan_weights.pkl', "rb") as f:
         gan_mol = pickle.load(f)
@@ -225,7 +225,7 @@ def gan_auto_generator(data:GenData=Body()):
 
 def auto_generator(data:TrainData=Body()):
      
-    state = TrainState(state_path='autotrain/utils/state.json')
+    state = TrainState(state_path='infrastructure/generative_models/autotrain/utils/state.json')
     if state(data.case,'gen')["status"] == "Trained":
         use_cond2dec = False
         gen_dict = main_generate(epochs=data.epochs,
