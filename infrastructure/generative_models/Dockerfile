@@ -3,8 +3,9 @@ FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
 # Установка временной зоны
 ENV TZ=Europe/Moscow
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-ARG GITHUB_TOKEN
 ARG HF_TOK
+ARG GITHUB_TOKEN
+
 # Установка базовых зависимостей
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential curl wget git cmake vim pkg-config unzip \
@@ -49,7 +50,7 @@ RUN cd /projects &&\
 WORKDIR /projects/CoScientist/infrastructure/generative_models
 
 RUN ~/miniconda3/envs/Mol_gen_env/bin/pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
-RUN ~/miniconda3/envs/Mol_gen_env/bin/pip install -r /projects/CoScientist/infrastructure/generative_models/requirements.txt
+RUN ~/miniconda3/envs/Mol_gen_env/bin/pip install -r requirements.txt
 
 RUN ~/miniconda3/envs/Mol_gen_env/bin/huggingface-cli download SoloWayG/Molecule_transformer --local-dir autotrain/
 
@@ -63,5 +64,5 @@ ENV PYTHONPATH="/projects/CoScientist/infrastructure:$PYTHONPATH"
 ENV GEN_APP_PORT='194'
 
 # Запуск
-RUN chmod +x /projects/CoScientist/generative_models/api.sh
+RUN chmod +x /projects/CoScientist/infrastructure/generative_models/api.sh
 ENTRYPOINT ["/bin/bash", "/projects/CoScientist/infrastructure/generative_models/api.sh"]
