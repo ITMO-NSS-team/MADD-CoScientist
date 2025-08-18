@@ -265,14 +265,14 @@ if __name__=='__main__':
     #                     epochs=2)
 
 
-    train_gan_gen_with_data(case = "Brain_cancer_test",
-                        url = "http://10.32.2.2:193/train_gan",
-                        feature_column=["canonical_smiles"],
-                        #classification_props = ['IC50'], #All propreties from dataframe you want to calculate in the end
-                        fine_tune=True,
-                        data_path='infrastructure/automl/data/base_cases/skl.csv',
-                        epochs=2)
-    #call_for_gan_generation(numb_mol=100,case_='Brain_cancer_test',url = "http://10.32.2.2:193/gan_case_generator")
+    # train_gan_gen_with_data(case = "Brain_cancer_test",
+    #                     url = "http://10.32.2.2:193/train_gan",
+    #                     feature_column=["canonical_smiles"],
+    #                     #classification_props = ['IC50'], #All propreties from dataframe you want to calculate in the end
+    #                     fine_tune=True,
+    #                     data_path='infrastructure/automl/data/base_cases/skl.csv',
+    #                     epochs=2)
+    call_for_gan_generation(numb_mol=100,case_='Brain_cancer_test',url = "http://10.32.2.2:193/gan_case_generator")
 
     
     #print(get_state_from_server(url = "http://10.32.2.2:193",case = "Alzheimer_regression"))
