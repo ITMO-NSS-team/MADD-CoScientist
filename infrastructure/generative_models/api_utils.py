@@ -174,14 +174,14 @@ def gan_case_trainer(data:TrainData=Body()):
         test_mode = False
         
     
-        if data.fine_tune==True:
-            load_weights = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
-            load_weights_fields = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
-            data.new_vocab = False
-        else:
-            load_weights=None
-            load_weights_fields = None
-            data.new_vocab = True
+        # if data.fine_tune==True:
+        #     load_weights = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
+        #     load_weights_fields = '/projects/CoScientist/ChemCoScientist/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl'
+        #     data.new_vocab = False
+        # else:
+        #     load_weights=None
+        #     load_weights_fields = None
+        #     data.new_vocab = True
         # if state(CASE) is None:#Check if case exist
         #     state.add_new_case(CASE,rewrite=False)
         
@@ -190,7 +190,12 @@ def gan_case_trainer(data:TrainData=Body()):
             state.gen_model_upd_status(case=data.case,status=3)
             return 0
 
-        auto_train(data.case,path_ds=data.data_path,fine_tune=data.fine_tune,state=state,feature_column=data.feature_column)
+        auto_train(data.case,
+                   path_ds=data.data_path,
+                   fine_tune=data.fine_tune,
+                   state=state,
+                   feature_column=data.feature_column,
+                   steps=data.epochs)
 
     except Exception as e:
         print(e)

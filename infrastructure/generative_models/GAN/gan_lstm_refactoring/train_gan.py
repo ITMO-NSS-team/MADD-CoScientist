@@ -37,21 +37,27 @@ def auto_train(case,state,path_ds: str, lr: float = 0.0003, bs: int = 256, steps
     if fine_tune:
         with open('infrastructure/generative_models/GAN/gan_lstm_refactoring/weights/v4_gan_mol_124_0.0003_8k.pkl', "rb") as f:
             gan_mol = pi.load(f)
-    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/train_GAN_{case}',status=1)
+    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/GAN_weights/train_GAN_{case}',status=1)
     gan_mol.train_n_steps(loader, max_step=steps, evaluate_every=150)
  
-    if not os.path.isdir(f'infrastructure/generative_models/autotrain/train_GAN_{case}'):
-        os.mkdir(f'infrastructure/generative_models/autotrain/train_GAN_{case}')
+    if not os.path.isdir(f'infrastructure/generative_models/autotrain/GAN_weights/train_GAN_{case}'):
+        os.mkdir(f'infrastructure/generative_models/autotrain/GAN_weights/train_GAN_{case}')
     # save model
-    pi.dump(gan_mol, open(f'infrastructure/generative_models/autotrain/train_GAN_{case}/gan_weights.pkl', 'wb'))
+    pi.dump(gan_mol, open(f'infrastructure/generative_models/autotrain/GAN_weights/train_GAN_{case}/gan_weights.pkl', 'wb'))
     api = HfApi(token=os.getenv("HF_TOKEN"))
-    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/train_GAN_{case}',status=2)
+    state.gen_model_upd_status(case=case,model_weight_path=f'infrastructure/generative_models/autotrain/GAN_weights/train_GAN_{case}',status=2)
     api.upload_file(
     path_or_fileobj="infrastructure/generative_models/autotrain/utils/state.json",
     repo_id="SoloWayG/Molecule_transformer",
     repo_type="model",
     path_in_repo = 'state.json'
 )   
+    api.upload_folder(repo_id='SoloWayG/Molecule_transformer',
+                              folder_path=f'infrastructure/generative_models/autotrain/GAN_weights',
+                              path_in_repo=f'GAN_weights',
+                              commit_message=f'Add GAN model for {case} case',
+                              #delete_patterns=True
+            )
 
 # def main(server_dir = 'generative_models/train_dislip',
 #          conditions : List[str] = ['ic50'],

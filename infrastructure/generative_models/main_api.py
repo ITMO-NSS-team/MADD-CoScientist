@@ -16,7 +16,7 @@ import pandas as pd
 import threading
 import pickle as pi
 import lightgbm
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download,snapshot_download
 
 ###Docking
 from generative_models.autodock_vina_python3.src.docking_score import docking_list
@@ -192,6 +192,11 @@ if __name__=='__main__':
                          local_dir=local_dir,
                          force_download=True,
                          token=os.getenv("HF_TOKEN"))
+        snapshot_download(repo_id="SoloWayG/Molecule_transformer",
+                    allow_patterns ="GAN_weights/*",
+                    local_dir='infrastructure/generative_models/autotrain/',
+                    force_download=True,
+                    token=os.getenv("HF_TOKEN"))
         return json.dumps(gan_auto_generator(data))
     
     @app.post("/train_gen_models")

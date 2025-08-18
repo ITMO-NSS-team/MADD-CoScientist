@@ -9,7 +9,7 @@ import json
 import_path = os.path.dirname(os.path.abspath(__file__))
 import socket
 import yaml
-from api_utils import *
+from infrastructure.automl.api_utils import *
 from infrastructure.automl.utils.base_state import TrainState
 from huggingface_hub import hf_hub_download
 
