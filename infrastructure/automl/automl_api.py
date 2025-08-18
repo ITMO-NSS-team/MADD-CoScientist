@@ -2,6 +2,7 @@ from logging import debug
 from fastapi import FastAPI,Body
 import os
 import sys
+print(sys.path)
 sys.path.append(os.getcwd())
 import uvicorn
 import json
@@ -9,16 +10,17 @@ import_path = os.path.dirname(os.path.abspath(__file__))
 import socket
 import yaml
 from api_utils import *
-from automl.utils.base_state import TrainState
+from infrastructure.automl.utils.base_state import TrainState
 from huggingface_hub import hf_hub_download
 
-with open("automl/config.yaml", "r") as file:
+with open("infrastructure/automl/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 is_public_API = config['is_public_API']
 
 
 if __name__=='__main__':
+    
     def get_ip():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0)

@@ -56,13 +56,13 @@ RUN ~/miniconda3/envs/Mol_gen_env/bin/huggingface-cli download SoloWayG/Molecule
 
 # Настройка переменных окружения
 ENV ML_MODEL_URL='http://10.64.4.247:81'
-ENV HF_TOKEN=HF_TOK
+ENV HF_TOKEN=$HF_TOK
 ENV LD_LIBRARY_PATH="/opt/conda/envs/Mol_gen_env/lib:$LD_LIBRARY_PATH"
 ENV PYTHONPATH="/projects/CoScientist/infrastructure/generative_models:$PYTHONPATH"
 ENV PYTHONPATH="/projects/CoScientist/:$PYTHONPATH"
 ENV PYTHONPATH="/projects/CoScientist/infrastructure:$PYTHONPATH"
-ENV GEN_APP_PORT='194'
+ENV GEN_APP_PORT='193'
 
 # Запуск
 RUN chmod +x /projects/CoScientist/infrastructure/generative_models/api.sh
-ENTRYPOINT ["/bin/bash", "/projects/CoScientist/infrastructure/generative_models/api.sh"]
+#ENTRYPOINT ["/bin/bash", "/projects/CoScientist/infrastructure/generative_models/api.sh"]

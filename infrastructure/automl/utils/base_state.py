@@ -2,7 +2,7 @@ import json
 from typing import List, Union 
 from pydantic import BaseModel
 import os
-from automl.utils.calculateble_prop_funcs import config
+from infrastructure.automl.utils.calculateble_prop_funcs import config
 from huggingface_hub import HfApi
 
 class BaseState(BaseModel):

@@ -10,7 +10,7 @@ from rdkit.Chem import AllChem
 import numpy as np
 import pandas as pd
 from fedot.core.pipelines.pipeline_builder import PipelineBuilder
-from automl.utils.base_state import *
+from infrastructure.automl.utils.base_state import *
 from fedot.api.main import Fedot,Pipeline
 import logging
 from fedot.core.data.data import InputData
