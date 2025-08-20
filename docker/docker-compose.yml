@@ -3,14 +3,14 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: chem-assistant
-    container_name: chem-assistant
+    image: chem-assistant-p12
+    container_name: chem-assistant-p12
     ports:
       - "8505:8501"
     volumes:
-      - /var/essdata/llm/chemcoscientist/pubchemcoscientist/papers:/app/PaperAnalysis/papers
-      - /var/essdata/llm/chemcoscientist/pubchemcoscientist/parse_results:/app/PaperAnalysis/parse_results
-      - /var/essdata/llm/chemcoscientist/pubchemcoscientist/temp_files:/app/PaperAnalysis/temp_files
+      - /Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/papers:/app/PaperAnalysis/papers
+      - /Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/parse_results:/app/PaperAnalysis/parse_results/
+      - /Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/chromadb_new:/app/PaperAnalysis/chromadb
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped

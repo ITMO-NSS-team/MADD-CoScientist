@@ -43,7 +43,7 @@ def query_llm(
 def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
     if pdfs:
         update_activity(os.path.dirname(pdfs[0]))
-
+    model_url = 'https://openrouter.ai/api/v1;openai/gpt-4o'
     llm = create_llm_connector(model_url)
 
     content = []
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     question = 'What is the title of an article?'
 
-    # res = simple_query_llm(VISION_LLM_URL, question, [paper])
-    res = process_question(question)
+    res = simple_query_llm(VISION_LLM_URL, question, [paper])
+    # res = process_question(question)
     from pprint import pprint
     pprint(res)
