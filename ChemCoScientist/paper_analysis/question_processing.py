@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     #######################################################
 
-    question = 'What is the title of an article?'
+    question = 'What components are involved in the synthesis of BASHY dyes, and what are the uses of these dyes?'
 
     # res = simple_query_llm(VISION_LLM_URL, question, [paper])
     res = process_question(question)
