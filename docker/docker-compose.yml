@@ -3,8 +3,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: chem-assistant-p12
-    container_name: chem-assistant-p12
+    image: chem-assistant-p12-l
+    container_name: chem-assistant-p12-l
     ports:
       - "8505:8501"
     volumes:
