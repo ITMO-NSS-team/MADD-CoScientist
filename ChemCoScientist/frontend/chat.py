@@ -73,52 +73,51 @@ def chat():
                 message_index = st.session_state.messages.index(message)
                 display_paper_analysis_metadata(message, message_index)
 
-    on_submit = st.chat_input(
-        "Enter a prompt here...", key="chat_input", disabled=False
-    )
+    streaming_placeholder = st.empty()
 
-    if on_submit:
-        # chat_logger.info(f'Submitted message: {st.session_state.chat_input}')
-        message_handler()
+    user_text = st.chat_input("Enter a prompt here...", key="chat_input")
+    if user_text:
+        st.session_state.messages.append({"role": "user", "content": user_text})
+        message_handler(user_text, streaming_placeholder)
+        # When finished, force rerun so chat history + input re-render in correct order
+        st.rerun()
 
 
-def message_handler():
+def message_handler(user_query: str, placeholder: st.delta_generator.DeltaGenerator):
     user_query = st.session_state.chat_input
-    st.session_state.messages.append({"role": "user", "content": user_query})
-
-    with st.chat_message("user"):
-        st.markdown(user_query)
-
-    images = st.session_state.images_b64
-
-    config = {
-        "recursion_limit": 30,
-        "configurable": {
-            "img_path": images,
-        },
-    }
-
-    if st.session_state.uploaded_files:
-        save_all_files(st.session_state.user_data_dir)
-        config["configurable"]["user_data_dir"] = st.session_state.user_data_dir
-
-    inputs = {"input": user_query}
 
     try:
-        with st.spinner("Give me a moment..."):
-            st.session_state.messages.append(
-                {"role": "assistant", "content": "", "steps": []}
-            )
+        images = st.session_state.images_b64
+        config = {
+            "recursion_limit": 30,
+            "configurable": {
+                "img_path": images,
+            },
+        }
+        if st.session_state.uploaded_files:
+            save_all_files(st.session_state.user_data_dir)
+            config["configurable"]["user_data_dir"] = st.session_state.user_data_dir
 
-            expander = st.expander(
-                "🔍 Intermediate Thoughts (click to expand)", expanded=False
-            )
+        inputs = {"input": user_query}
 
-            expander_placeholder = expander.empty()
-            if "steps" not in st.session_state.messages[-1]:
-                st.session_state.messages[-1]["steps"] = []
+        with placeholder.container():
+            with st.chat_message("user"):
+                st.markdown(user_query)
 
-            existing_steps = set(st.session_state.messages[-1]["steps"])
+            with st.spinner("Give me a moment..."):
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": "", "steps": []}
+                )
+
+                expander = st.expander(
+                    "🔍 Intermediate Thoughts (click to expand)", expanded=False
+                )
+
+                expander_placeholder = expander.empty()
+                if "steps" not in st.session_state.messages[-1]:
+                    st.session_state.messages[-1]["steps"] = []
+
+                existing_steps = set(st.session_state.messages[-1]["steps"])
 
             with expander:
                 steps_container = st.container()
@@ -137,75 +136,80 @@ def message_handler():
                         print("=================new step=================")
                         print(result)
 
-                        if result.get("plan"):
-                            plan = result["plan"]
+                            if result.get("plan"):
+                                plan = result["plan"]
 
-                            if not isinstance(plan, list):
-                                plan = [plan]
+                                if not isinstance(plan, list):
+                                    plan = [plan]
 
-                            for step in plan:
-                                raw_text = ""
-                                for i, task in enumerate(step):
-                                    raw_text += f"({i}) " + task + ' '
+                                for step in plan:
+                                    raw_text = ""
+                                    for i, task in enumerate(step):
+                                        raw_text += f"({i}) " + task + ' '
 
-                                if len(step) > 1:
-                                    formatted_text = (
-                                        f"📝 {raw_text}" if "Step" in raw_text else f"**�� Step with parallel launch:** {raw_text}"
-                                    )
-                                else:
-                                    formatted_text = (
-                                        f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
-                                    )
+                                        if len(step) > 1:
+                                            formatted_text = (
+                                                f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step with parallel launch:** {raw_text}"
+                                            )
+                                        else:
+                                            formatted_text = (
+                                                f"📝 {raw_text}" if "Step" in raw_text else f"**📝 Step:** {raw_text}"
+                                            )
 
-                                if formatted_text not in existing_steps:
-                                    st.session_state.messages[-1]["steps"].append(formatted_text)
-                                    existing_steps.add(formatted_text)
+                                        if formatted_text not in existing_steps:
+                                            st.session_state.messages[-1]["steps"].append(formatted_text)
+                                            existing_steps.add(formatted_text)
 
-                                    # Показываем только новые шаги
-                                    steps_container.markdown(formatted_text)
+                                with expander_placeholder.container():
+                                    if st.session_state.messages[-1]['steps']:  # Only render if steps exist
+                                        for step in st.session_state.messages[-1]['steps']:
+                                            st.markdown(step)
+                                        # Показываем только новые шаги
+                                        #st.markdown(plan)
 
-                        elif result.get("past_steps") and not result.get("automl_results"):
-                            text = f"**✅ Result of last step:** {result.get('past_steps')[0][1]}"
-                            st.session_state.messages[-1]["steps"].append(text)
+                            if result.get("past_steps") and not result.get("automl_results"):
+                                past_steps = result.get('past_steps')
+                                first_step = list(past_steps)[-1]
+                                text = f"**✅ Result of last step:** {first_step[1]}"
+                                if text not in st.session_state.messages[-1]["steps"]:
+                                    st.session_state.messages[-1]["steps"].append(text)
+                                    with expander_placeholder.container():
+                                        if st.session_state.messages[-1][
+                                            "steps"
+                                        ]:  # Only render if steps exist
+                                            for step in st.session_state.messages[-1]["steps"]:
+                                                st.markdown(step)
 
-                            with expander_placeholder.container():
-                                if st.session_state.messages[-1][
-                                    "steps"
-                                ]:  # Only render if steps exist
-                                    for step in st.session_state.messages[-1]["steps"]:
-                                        st.markdown(step)
-                                else:
-                                    st.write(" ")  # Ensures blank space instead of None
 
-                        elif result.get("automl_results"):
-                            text = f"**✅ Result of last step:** Automl is done"
-                            st.session_state.messages[-1]["steps"].append(text)
-                            with expander_placeholder.container():
-                                if st.session_state.messages[-1][
-                                    "steps"
-                                ]:  # Only render if steps exist
-                                    for step in st.session_state.messages[-1]["steps"]:
-                                        st.markdown(step)
-                                else:
-                                    st.write(" ")  # Ensures blank space instead of None
 
-                            st.session_state.messages[-1]["automl_results"] = result.get(
-                                "automl_results"
-                            )
-                except GraphRecursionError:
-                    result["response"] = (
-                        "Ooops.. It seems that I've caught a recursion limit. Could you simlify your question and try once more?"
-                    )
+                            elif result.get("automl_results"):
+                                text = f"**✅ Result of last step:** Automl is done"
+                                st.session_state.messages[-1]["steps"].append(text)
+                                with expander_placeholder.container():
+                                    if st.session_state.messages[-1][
+                                        "steps"
+                                    ]:  # Only render if steps exist
+                                        st.markdown(st.session_state.messages[-1]["steps"][-1])
+                                    else:
+                                        st.write(" ")  # Ensures blank space instead of None
 
-                except AttributeError as e:
-                    print(f"ERROR: {e}")
-                    result = dict()
-                    result["response"] = (
-                        "Something went wrong. Please reload the page, initialize models and try again. If this happens again, check your base url and api key"
-                    )
+                                st.session_state.messages[-1]["automl_results"] = result.get(
+                                    "automl_results"
+                                )
+                    except GraphRecursionError:
+                        result["response"] = (
+                            "Ooops.. It seems that I've caught a recursion limit. Could you simlify your question and try once more?"
+                        )
 
-                # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
-                st.session_state.messages[-1]["content"] = result["response"]
+                    except AttributeError as e:
+                        print(f"ERROR: {e}")
+                        result = dict()
+                        result["response"] = (
+                            "Something went wrong. Please reload the page, initialize models and try again. If this happens again, check your base url and api key"
+                        )
+
+                    # st.session_state.messages.append({'role': 'assistant', "content": result['response']})
+                    st.session_state.messages[-1]["content"] = result["response"]
 
             if st.session_state.images_b64:  # get user's submitted images
                 st.session_state.messages[-1][
