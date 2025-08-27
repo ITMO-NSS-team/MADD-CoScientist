@@ -134,7 +134,8 @@ conf = {
                 "examples": None,
                 "additional_hints": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent.\n \
                 If the user provides his dataset - immediately start training using ml_dl_agent (never call dataset_builder_agent)!\
-                        To find an answer, use the paper search first! NOT the web search!",
+                To find an answer, use the paper search first! NOT the web search!\
+                If paper_analysis_agent is called yoi MUST pass the original user query.",
             },
             "chat": {
                 "problem_statement": None,
@@ -193,6 +194,9 @@ conf = {
 # inputs = {"input": "What can you do?"}
 # inputs = {"input": "Запусти предсказание с помощью мл-модели на значение IC50 для молекулы Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1."}
 inputs = {"input": "What components are involved in the synthesis of BASHY dyes, and what are the uses of these dyes?"}
+
+
+inputs = {"input": "What IC50 values do weakly active and highly active Bruton's tyrosine kinase inhibitors have?"}
 # inputs = {"input": "what papers have info on the Synthesis of Glionitrin A/B?"}
 # inputs = {"input": "what is the name of figure 1?"}
 # inputs = {"input": "How does the synthesis of Glionitrin A/B happen based on research?"}

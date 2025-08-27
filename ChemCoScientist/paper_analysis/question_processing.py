@@ -10,7 +10,7 @@ from ChemCoScientist.paper_analysis.prompts import sys_prompt, explore_my_papers
 from CoScientist.paper_parser.utils import convert_to_base64, prompt_func
 from definitions import CONFIG_PATH
 
-from ChemCoScientist.frontend.utils import update_activity
+
 
 load_dotenv(CONFIG_PATH)
 
@@ -37,10 +37,12 @@ def query_llm(
     ]
 
     res = llm.invoke(messages)
+    print(f'RESULT: {res.content}')
     return res.content, res.response_metadata
 
 
 def simple_query_llm(model_url: str, question: str, pdfs: list,) -> dict:
+    from ChemCoScientist.frontend.utils import update_activity
     if pdfs:
         update_activity(os.path.dirname(pdfs[0]))
     llm = create_llm_connector(model_url)
@@ -144,6 +146,7 @@ if __name__ == "__main__":
 
     question = 'What is the title of an article?'
     question = 'What components are involved in the synthesis of BASHY dyes, and what are the uses of these dyes?'
+    question = 'What IC50 values do weakly active and highly active Bruton\'s tyrosine kinase inhibitors have?'
 
     # res = simple_query_llm(VISION_LLM_URL, question, [paper])
     res = process_question(question)
