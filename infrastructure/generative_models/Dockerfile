@@ -3,8 +3,9 @@ FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
 # Установка временной зоны
 ENV TZ=Europe/Moscow
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-ARG GITHUB_TOKEN
 ARG HF_TOK
+ARG GITHUB_TOKEN
+
 
 
 # Установка базовых зависимостей
