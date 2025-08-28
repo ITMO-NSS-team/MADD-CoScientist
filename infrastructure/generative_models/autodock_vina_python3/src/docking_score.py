@@ -3,7 +3,6 @@ from typing import List
 from vina import Vina
 import os
 import sys
-sys.path.append('..')
 from generative_models.autodock_vina_python3.src.utils.paths import get_project_path
 import numpy as np 
 from generative_models.autodock_vina_python3.src.utils.prepare_receptor import prepare_pdb, get_center_of_protein, get_bounding_box

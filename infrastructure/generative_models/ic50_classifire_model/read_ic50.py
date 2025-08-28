@@ -32,7 +32,7 @@ def Ic50(mol:List[str]):
     return ic50_scores,clear_mols
 if __name__ == "__main__":
     model = pi.load(open('utils/ic_50_models/skleroz_ic50_clf/checkpoints/ic50_btk_clf.pkl','rb'))  
-    mols = pd.read_csv('generative_models/transformer/train_data/alzh_gen_mols/mols_generated_mols0.csv')
+    mols = pd.read_csv('generative_models/train_data/alzh_gen_mols/mols_generated_mols0.csv')
     #pd.read_csv('/nfs/home/gsololvyev/AAAI_code/generative_models/TVAE/generate/cvae_gen/valid/valid_mols_wo_dupls_cvae_0.csv')['0']
     #pd.read_csv('/nfs/home/gsololvyev/AAAI_code/sber/altz/kinase_inhib.csv')['Smiles']#
     ic50_scores,clear_mols = Ic50(list(mols['0']),model)

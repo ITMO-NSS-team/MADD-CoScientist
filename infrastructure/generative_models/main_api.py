@@ -23,17 +23,16 @@ from generative_models.autodock_vina_python3.src.docking_score import docking_li
 import yaml
 
 
-with open("infrastructure/generative_models/config.yaml", "r") as file:
+with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 is_public_API = config['is_public_API']
-local_dir = 'infrastructure/generative_models/autotrain/utils'
-
+local_dir = '/projects/CoScientist/infrastructure/generative_models/autotrain/utils'
 if __name__=='__main__':
-    if not os.path.isdir('infrastructure/generative_models/many_prop_CVAE'):
+    if not os.path.isdir('many_prop_CVAE'):
         snapshot_download(repo_id="SoloWayG/Molecule_transformer",
                 allow_patterns ="many_prop_CVAE/*",
-                local_dir='infrastructure/generative_models/',
+                local_dir='.',
                 force_download=True,
                 token=os.getenv("HF_TOKEN"))
     def get_ip():
@@ -200,7 +199,7 @@ if __name__=='__main__':
                          token=os.getenv("HF_TOKEN"))
         snapshot_download(repo_id="SoloWayG/Molecule_transformer",
                     allow_patterns ="GAN_weights/*",
-                    local_dir='infrastructure/generative_models/autotrain/',
+                    local_dir='/projects/CoScientist/infrastructure/generative_models/autotrain/',
                     force_download=True,
                     token=os.getenv("HF_TOKEN"))
         return json.dumps(gan_auto_generator(data))
@@ -277,4 +276,4 @@ if __name__=='__main__':
         uvicorn_ip = ip
     else:
         uvicorn_ip = '127.0.0.1' 
-    uvicorn.run(app,host=uvicorn_ip,port=int(193),log_level='info')
+    uvicorn.run(app,host=uvicorn_ip,port=int(os.getenv('GEN_APP_PORT')),log_level='info')

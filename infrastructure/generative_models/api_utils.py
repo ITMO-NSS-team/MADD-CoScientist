@@ -202,11 +202,11 @@ def gan_case_trainer(data:TrainData=Body()):
         state.gen_model_upd_status(case=data.case,error=str(e))
 
 def gan_auto_generator(data:GenData=Body()):
-    state = TrainState(state_path='infrastructure/generative_models/autotrain/utils/state.json')
-    
+    print(sys.path)
+    state = TrainState(state_path='/projects/CoScientist/infrastructure/generative_models/autotrain/utils/state.json')
+
     with open(state(data.case_,'gen')['weights_path']+'/gan_weights.pkl', "rb") as f:
         gan_mol = pickle.load(f)
-
     gan_mol.eval()
     samples = gan_mol.generate_n(data.numb_mol)
     valid_mols = state()["Calculateble properties"]['Validity'](samples)
