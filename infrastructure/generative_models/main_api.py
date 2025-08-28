@@ -30,10 +30,10 @@ with open("config.yaml", "r") as file:
 is_public_API = config['is_public_API']
 local_dir = '/projects/CoScientist/infrastructure/generative_models/autotrain/utils'
 if __name__=='__main__':
-    if not os.path.isdir('many_prop_CVAE'):
+    if not os.path.isdir('infrastructure/generative_models/many_prop_CVAE'):
         snapshot_download(repo_id="SoloWayG/Molecule_transformer",
                 allow_patterns ="many_prop_CVAE/*",
-                local_dir='.',
+                local_dir='infrastructure/generative_models',
                 force_download=True,
                 token=os.getenv("HF_TOKEN"))
     def get_ip():
