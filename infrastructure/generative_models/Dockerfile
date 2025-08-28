@@ -46,7 +46,7 @@ RUN conda create -n Mol_gen_env python=3.8 && \
 
 
 RUN cd /projects &&\
-    git clone -b refactiring_arch https://${GITHUB_TOKEN}@github.com/ITMO-NSS-team/CoScientist.git
+    git clone https://${GITHUB_TOKEN}@github.com/ITMO-NSS-team/CoScientist.git
 #COPY . /projects/generative_models
 WORKDIR /projects/CoScientist/infrastructure/generative_models
 

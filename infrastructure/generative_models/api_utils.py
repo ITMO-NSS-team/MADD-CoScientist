@@ -98,7 +98,7 @@ def case_trainer(data:TrainData=Body()):
                     df.to_csv(data.data_path)
                     state.gen_model_upd_data(case=data.case,data_path=data.data_path)
         #CASE = 'CYK'
-        # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
+        # train_data = '/projects/generative_models_data/generative_models/docked_data_for_train/data_cyk_short.csv'
         # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
         test_mode = False
         
@@ -169,7 +169,7 @@ def gan_case_trainer(data:TrainData=Body()):
                     df.to_csv(data.data_path)
                     state.gen_model_upd_data(case=data.case,data_path=data.data_path,feature_column=data.feature_column)
         #CASE = 'CYK'
-        # train_data = '/projects/generative_models_data/generative_models/transformer/docked_data_for_train/data_cyk_short.csv'
+        # train_data = '/projects/generative_models_data/generative_models/docked_data_for_train/data_cyk_short.csv'
         # conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
         test_mode = False
         
@@ -364,12 +364,12 @@ def _gen_n(data):
             mol_list += df
         return mol_list
 
-docking_paths = {'Alzhmr' : 'generative_models/Transformer/autodock_vina_python3/data/4j1r.pdb',
-                 'Sklrz':'generative_models/Transformer/autodock_vina_python3/data/target_BTK.pdb'}
+docking_paths = {'Alzhmr' : 'generative_models/autodock_vina_python3/data/4j1r.pdb',
+                 'Sklrz':'generative_models/autodock_vina_python3/data/target_BTK.pdb'}
 
 opt = parsing()
-parser = configurate_parser(load_weights="generative_models/transformer/many_prop_CVAE/weights_8p_alzhmr",#weights_33k_trained
-                            load_weights_fields = "generative_models/transformer/many_prop_CVAE/weights_8p_alzhmr",
+parser = configurate_parser(load_weights="generative_models/many_prop_CVAE/weights_8p_alzhmr",#weights_33k_trained
+                            load_weights_fields = "generative_models/many_prop_CVAE/weights_8p_alzhmr",
                             cuda=False,
                             save_folder_name='alzh_gen_mols',
                             new_vocab = False,
@@ -378,95 +378,95 @@ parser = configurate_parser(load_weights="generative_models/transformer/many_pro
                                 )
 opt_Alz_multi = parser.parse_args()
 opt_sklrz = parser.parse_args()
-opt_sklrz.load_weights = "generative_models/transformer/many_prop_CVAE/weights_8p_sklrz"
-opt_sklrz.load_weights_fields = "generative_models/transformer/many_prop_CVAE/weights_8p_sklrz"
+opt_sklrz.load_weights = "generative_models/many_prop_CVAE/weights_8p_sklrz"
+opt_sklrz.load_weights_fields = "generative_models/many_prop_CVAE/weights_8p_sklrz"
 
 opt_cnsr = parser.parse_args()
-opt_cnsr.load_weights = 'generative_models/transformer/many_prop_CVAE/weights_8p_cnsr'
-opt_cnsr.load_weights_fields = 'generative_models/transformer/many_prop_CVAE/weights_8p_cnsr'
+opt_cnsr.load_weights = 'generative_models/many_prop_CVAE/weights_8p_cnsr'
+opt_cnsr.load_weights_fields = 'generative_models/many_prop_CVAE/weights_8p_cnsr'
 
 
 opt_tablet = parser.parse_args()
-opt_tablet.load_weights = 'generative_models/transformer/many_prop_CVAE/weights_8p_tablet'
-opt_tablet.load_weights_fields = 'generative_models/transformer/many_prop_CVAE/weights_8p_tablet'
+opt_tablet.load_weights = 'generative_models/many_prop_CVAE/weights_8p_tablet'
+opt_tablet.load_weights_fields = 'generative_models/many_prop_CVAE/weights_8p_tablet'
 
 opt_park = parser.parse_args()
-opt_park.load_weights = 'generative_models/transformer/many_prop_CVAE/weights_parkinson'
-opt_park.load_weights_fields = 'generative_models/transformer/many_prop_CVAE/weights_parkinson'
+opt_park.load_weights = 'generative_models/many_prop_CVAE/weights_parkinson'
+opt_park.load_weights_fields = 'generative_models/many_prop_CVAE/weights_parkinson'
 
 opt_dislip = parser.parse_args()
-opt_dislip.load_weights = 'generative_models/transformer/many_prop_CVAE/weights_dislip'
-opt_dislip.load_weights_fields = 'generative_models/transformer/many_prop_CVAE/weights_dislip'
+opt_dislip.load_weights = 'generative_models/many_prop_CVAE/weights_dislip'
+opt_dislip.load_weights_fields = 'generative_models/many_prop_CVAE/weights_dislip'
 
 # Case information
 cases = {'Alzhmr' : 
-         {'docking_path' : 'generative_models/transformer/autodock_vina_python3/data/4j1r.pdb',
+         {'docking_path' : 'generative_models/autodock_vina_python3/data/4j1r.pdb',
         'generative_model':multi_generator,
         'opt':opt_Alz_multi,
         'IC50':eval_ic_50_alzheimer,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_4j1r.csv'
+         'train_data_path':'generative_models/docked_data_for_train/data_4j1r.csv'
                      },
         #TODO update next cases
         'Sklrz':
-        {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/skleroz/target_BTK.pdb',
+        {'docking_path' :'generative_models/autodock_vina_python3/data/skleroz/target_BTK.pdb',
          'generative_model':multi_generator,
          'opt':opt_sklrz,
          'IC50':eval_ic_50_sklrz,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_5vfi.csv'#{'BMX':'generative_models/Transformer/autodock_vina_python3/data/skleroz/BMX_8x2a_protein.pdb'}
+         'train_data_path':'generative_models/docked_data_for_train/data_5vfi.csv'#{'BMX':'generative_models/autodock_vina_python3/data/skleroz/BMX_8x2a_protein.pdb'}
          },
 
          'Prkns':
-        {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/parkinson/tyrosine_protein_kinase_ABL.pdb',
+        {'docking_path' :'generative_models/autodock_vina_python3/data/parkinson/tyrosine_protein_kinase_ABL.pdb',
          'generative_model':multi_generator,
          'opt':opt_park,
          'IC50':parkenson_predict_ic50,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_ABL.csv'
+         'train_data_path':'generative_models/docked_data_for_train/data_ABL.csv'
          },
 
          'Cnsr':
-        {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/Canser/8afb_protein.pdb',
+        {'docking_path' :'generative_models/autodock_vina_python3/data/Canser/8afb_protein.pdb',
          'generative_model':multi_generator,
          'opt':opt_cnsr,
          'IC50':eval_ic_50_cancer,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_8afb.csv'#{'NRAS':'generative_models/Transformer/autodock_vina_python3/data/Canser/NRAS_3con_protein.pdb',
-                              #'HRAS':'generative_models/Transformer/autodock_vina_python3/data/Canser/HRAS_3k8y_protein.pdb'}
+         'train_data_path':'generative_models/docked_data_for_train/data_8afb.csv'#{'NRAS':'generative_models/autodock_vina_python3/data/Canser/NRAS_3con_protein.pdb',
+                              #'HRAS':'generative_models/autodock_vina_python3/data/Canser/HRAS_3k8y_protein.pdb'}
          },
 
          'Dslpdm':
-        {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/dislipidemia/ATP_citrate_synthase.pdb',
+        {'docking_path' :'generative_models/autodock_vina_python3/data/dislipidemia/ATP_citrate_synthase.pdb',
          'generative_model':multi_generator,
          'opt':opt_dislip,
          'IC50':dyslip_predict_ic50,
          'KI':dyslip_predict_ki,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_ATP.csv'
+         'train_data_path':'generative_models/docked_data_for_train/data_ATP.csv'
          },
 
          'TBLET':
-        {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/Signal_Transducer_and_Activator_of_Transcription_3.pdb',
+        {'docking_path' :'generative_models/autodock_vina_python3/data/Signal_Transducer_and_Activator_of_Transcription_3.pdb',
          'generative_model':multi_generator,
          'opt':opt_tablet,
          'IC50':drug_res_predict_ic50,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_stat3.csv'
+         'train_data_path':'generative_models/docked_data_for_train/data_stat3.csv'
          },
          'RNDM':
-         {'docking_path' :'generative_models/transformer/autodock_vina_python3/data/Signal_Transducer_and_Activator_of_Transcription_3.pdb',
+         {'docking_path' :'generative_models/autodock_vina_python3/data/Signal_Transducer_and_Activator_of_Transcription_3.pdb',
          'generative_model':generate,
          'opt':opt,
          'IC50':None,
          'KI':None,
          'anti_docking_path':None,
-         'train_data_path':'generative_models/transformer/docked_data_for_train/data_stat3.csv'
+         'train_data_path':'generative_models/docked_data_for_train/data_stat3.csv'
          },
         }
 
