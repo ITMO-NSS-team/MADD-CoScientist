@@ -2,8 +2,8 @@ import sys
 import os
 import shutil
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
-sys.path.append(os.getcwd())
+# sys.path.append(import_path)
+# sys.path.append(os.getcwd())
 import lightgbm
 from ic50_classifire_model.read_ic50 import Ic50
 from inference import generate_alzh,generate_alzh_for_agent

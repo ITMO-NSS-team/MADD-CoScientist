@@ -1,7 +1,7 @@
 import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
+# sys.path.append(import_path)
 from generative_models.autotrain.utils.read_state import TrainState
 from generative_models.train_data.utils.auto_train_loop import train_model
 from generative_models.train_data.utils.config import configurate_parser

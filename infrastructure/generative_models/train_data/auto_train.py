@@ -1,7 +1,7 @@
 import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
+#sys.path.append(import_path)
 from train_data.utils.auto_train_loop import train_model
 from train_data.utils.config import configurate_parser
 from Models import get_model
@@ -13,8 +13,7 @@ from ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')
-from utils.base_state import TrainState
-
+from infrastructure.generative_models.autotrain.utils.base_state import TrainState
 def main(server_dir = 'generative_models/transformer/train_dislip',
          conditions : List[str] = ['ic50'],
          case:str = 'Alzhmr',

@@ -3,15 +3,15 @@ import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(import_path)
-from generative_models.transformer.inference import generate_auto
-from generative_models.transformer.train_data.utils.auto_train_loop import train_model,train_model_auto
-from generative_models.transformer.train_data.utils.config import configurate_parser
-from generative_models.transformer.Models import get_model
-from generative_models.transformer.Process import *
-from generative_models.transformer.Optim import CosineWithRestarts
+from generative_models.inference import generate_auto
+from generative_models.train_data.utils.auto_train_loop import train_model,train_model_auto
+from generative_models.train_data.utils.config import configurate_parser
+from generative_models.Models import get_model
+from generative_models.Process import *
+from generative_models.Optim import CosineWithRestarts
 import dill as pickle
 import pandas as pd
-from generative_models.transformer.ic50_classifire_model.read_ic50 import Ic50
+from generative_models.ic50_classifire_model.read_ic50 import Ic50
 import warnings
 from typing import List
 warnings.filterwarnings('ignore')
@@ -19,10 +19,10 @@ from utils.base_state import TrainState
 from utils.config import Config
 
 
-def main(server_dir = 'generative_models/transformer/train_dislip',
+def main(server_dir = 'generative_models/train_dislip',
          conditions : List[str] = ['ic50'],
          case:str = 'Alzhmr',
-         data_path_with_conds = 'generative_models/transformer/docked_data_for_train/data_5vfi.csv',
+         data_path_with_conds = 'generative_models/docked_data_for_train/data_5vfi.csv',
          test_mode = False,
          state = None,
          *args,
@@ -119,13 +119,13 @@ def main(server_dir = 'generative_models/transformer/train_dislip',
 if __name__ == "__main__":
     state = TrainState(state_path='generative_models/autotrain/utils/state.json')
     CASE = 'CYK'
-    train_data = 'generative_models/transformer/docked_data_for_train/data_4j1r.csv'
+    train_data = 'generative_models/docked_data_for_train/data_4j1r.csv'
     conditions = ['docking_score','QED','Synthetic Accessibility','PAINS','SureChEMBL','Glaxo','Brenk','IC50']
     test_mode = False
     url = "http://10.64.4.247:81"
     n_samples = 10000
-    load_weights = '/projects/generative_models_data/generative_models/transformer/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
-    load_weights_fields = '/projects/generative_models_data/generative_models/transformer/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+    load_weights = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
+    load_weights_fields = '/projects/generative_models_data/generative_models/autotrain/train_ALZHEIMER_2/ALZHEIMER/weights/epo2'
     # if state(CASE) is None:#Check if case exist
     #     state.add_new_case(CASE,rewrite=False)
     spec_conds = [[-8,-12],[0.8,1],[0,2.99],[0,0],[0,0],[0,0],[0,0],[1,1]]
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     use_cond2dec = False
     main(conditions = state(CASE,'ml')['target_column'],
          case=CASE, 
-         server_dir = f'generative_models/transformer/autotrain/train_{CASE}',
+         server_dir = f'generative_models/autotrain/train_{CASE}',
          data_path_with_conds = train_data,
          test_mode=test_mode,
          state=state,

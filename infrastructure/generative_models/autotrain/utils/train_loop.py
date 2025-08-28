@@ -2,16 +2,16 @@ import time
 import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
-sys.path.append('~')
+# sys.path.append(import_path)
+# sys.path.append('~')
 import torch.nn as nn
-from generative_models.transformer.Process import *
-from generative_models.transformer.Batch import create_masks
-from generative_models.transformer.inference import validate_docking
+from generative_models.Process import *
+from generative_models.Batch import create_masks
+from generative_models.inference import validate_docking
 import warnings
 warnings.filterwarnings('ignore')
 import torch.nn.functional as F
-from generative_models.transformer.Optim import CosineWithRestarts
+from generative_models.Optim import CosineWithRestarts
 def KLAnnealer(opt, epoch):
     beta = opt.KLA_ini_beta + opt.KLA_inc_beta * ((epoch + 1) - opt.KLA_beg_epoch)
     return beta

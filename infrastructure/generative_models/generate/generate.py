@@ -2,8 +2,8 @@ import sys
 import os
 import shutil
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
-sys.path.append(os.getcwd())
+# sys.path.append(import_path)
+# sys.path.append(os.getcwd())
 import lightgbm
 
 from generative_models.ic50_classifire_model.read_ic50 import Ic50

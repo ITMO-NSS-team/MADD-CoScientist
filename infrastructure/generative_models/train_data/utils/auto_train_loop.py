@@ -2,8 +2,8 @@ import time
 import sys
 import os
 import_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(import_path)
-sys.path.append('~')
+# sys.path.append(import_path)
+# sys.path.append('~')
 import torch.nn as nn
 from Process import *
 from Batch import create_masks
