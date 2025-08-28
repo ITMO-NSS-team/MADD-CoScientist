@@ -1,8 +1,9 @@
 import json
+from typing import List, Union 
 from pydantic import BaseModel
 import os
 from infrastructure.automl.utils.calculateble_prop_funcs import config
-
+from huggingface_hub import HfApi
 
 class BaseState(BaseModel):
     status:str = None
@@ -30,11 +31,11 @@ class TrainState:
         self.state_path = state_path
         if state_path is not None:
             self.current_state = self.__load_state()
-        elif os.path.isfile("automl/state/state.json"):
-            self.state_path = "automl/state/state.json"
+        elif os.path.isfile("infrastructure/automl/state.json"):
+            self.state_path = "infrastructure/automl/state.json"
             self.current_state = self.__load_state()
         else:
-            self.state_path = r'automl/state/state.json'
+            self.state_path = r'infrastructure/automl/state.json'
             self.current_state = {"Calculateble properties" : config}
             self.__save_state()
 
@@ -88,8 +89,8 @@ class TrainState:
     def gen_model_upd_data(self,
                            case:str,
                            data_path:str=None,
-                           feature_column:list[str] = None,
-                           target_column:list[str] = None
+                           feature_column:List[str] = None,
+                           target_column:List[str] = None
                            ):
         """Necessary to update the parameters of a generative model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -114,8 +115,8 @@ class TrainState:
     def ml_model_upd_data(self,
                         case:str,
                         data_path:str=None,
-                        feature_column:list[str] = None,
-                        target_column:list[str] = None,
+                        feature_column:List[str] = None,
+                        target_column:List[str] = None,
                         predictable_properties:dict = None):
         """Necessary to update the parameters of a ML model state with the specified name ("case").
           The path to the training data, the type of the problem, and the columns
@@ -142,6 +143,13 @@ class TrainState:
         print(f"Data for ML models training has been updated! \
                \n Current predictable properties and tasks are {self.current_state[case]['ml_models']['Predictable properties']}")
         self.__save_state()
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="infrastructure/automl/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
 
     def ml_model_upd_status(self,
                             case:str,
@@ -172,6 +180,14 @@ class TrainState:
         if not metric is None:
            self.current_state[case]["ml_models"]['metric'] =  metric
         self.__save_state()
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        api.upload_file(
+            path_or_fileobj="infrastructure/automl/state.json",
+            repo_id="SoloWayG/Molecule_transformer",
+            repo_type="model",
+            path_in_repo = 'state.json'
+        )
+            
 
     def gen_model_upd_status(self,
                              case:str,
@@ -206,12 +222,12 @@ class TrainState:
         return self.current_state["Calculateble properties"].keys()
 
     @staticmethod
-    def load_state(path:str = r'automl/state.json'):
+    def load_state(path:str = r'infrastructure/automl/state.json'):
         state = json.load(open(path))
         state["Calculateble properties"] = config
         return state
     
-    def save(self,path:str = r'automl/state.json'):
+    def save(self,path:str = r'infrastructure/automl/state.json'):
         saving_dict = self.current_state.copy()
         del saving_dict["Calculateble properties"]
         json.dump(self.current_state, open(saving_dict, 'w' ) )
