@@ -128,7 +128,7 @@ def run_train_automl(case:str,
 
         if save_trained_data_to_sync_server:
             time.sleep(2)
-            api = HfApi(token="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")
+            api = HfApi(token=os.getenv("HF_TOKEN"))
             last_folder = path_to_save.split(sep='/')[-1]
             api.upload_folder(repo_id='SoloWayG/Molecule_transformer',
                               folder_path=path_to_save+f'_{case}'+f'_{problem}',

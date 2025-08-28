@@ -62,7 +62,7 @@ ENV LD_LIBRARY_PATH="/opt/conda/envs/Mol_gen_env/lib:$LD_LIBRARY_PATH"
 ENV PYTHONPATH="/projects/CoScientist/infrastructure/generative_models:$PYTHONPATH"
 ENV PYTHONPATH="/projects/CoScientist/:$PYTHONPATH"
 ENV PYTHONPATH="/projects/CoScientist/infrastructure:$PYTHONPATH"
-ENV GEN_APP_PORT='193'
+ENV GEN_APP_PORT='293'
 
 # Запуск
 RUN chmod +x /projects/CoScientist/infrastructure/generative_models/api.sh
