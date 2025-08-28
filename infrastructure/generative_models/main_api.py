@@ -21,7 +21,8 @@ from huggingface_hub import hf_hub_download,snapshot_download
 ###Docking
 from generative_models.autodock_vina_python3.src.docking_score import docking_list
 import yaml
-
+import sys
+print(sys.path)
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)

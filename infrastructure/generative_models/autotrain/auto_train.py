@@ -2,7 +2,7 @@ import random
 import sys
 import os
 import_path = os.getcwd()
-sys.path.append(import_path)
+# sys.path.append(import_path)
 from inference import generate_auto
 from train_data.utils.auto_train_loop import train_model,train_model_auto
 from train_data.utils.config import configurate_parser

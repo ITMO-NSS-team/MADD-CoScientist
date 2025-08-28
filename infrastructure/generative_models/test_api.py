@@ -4,7 +4,8 @@ import socket
 import time 
 import pandas as pd
 from multiprocessing import Process
-
+import sys
+print(sys.path)
 def get_state_from_server(case:str,url:str):
     url_ = url.split("http://")[1]
     resp = requests.get("http://"+url_.split('/')[0]+"/check_state")

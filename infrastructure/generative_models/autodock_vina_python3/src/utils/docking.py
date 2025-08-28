@@ -1,7 +1,7 @@
 from vina import Vina
 import os
 import sys
-sys.path.append('..')
+
 from utils.paths import get_project_path
 
 import numpy as np 
