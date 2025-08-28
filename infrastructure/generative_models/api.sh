@@ -1,4 +1,4 @@
 #!/bin/bash
-cd /projects/CoScientist/infrastructure/generative_models
+cd /projects/CoScientist
 source /root/miniconda3/bin/activate Mol_gen_env
-nohup python main_api.py > api.txt
+nohup python infrastructure/generative_models/main_api.py > api.txt
