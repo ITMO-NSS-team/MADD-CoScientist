@@ -1,7 +1,8 @@
 import datetime
 import logging
-from pathlib import Path
+import pandas as pd
 
+from pathlib import Path
 from deepeval.metrics import AnswerRelevancyMetric, GEval
 from deepeval.metrics import ContextualPrecisionMetric
 from deepeval.metrics import ContextualRecallMetric
@@ -10,13 +11,34 @@ from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from definitions import CONFIG_PATH
 from dotenv import load_dotenv
-import pandas as pd
+from langchain_core.messages import SystemMessage, HumanMessage
 
-from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
-from ChemCoScientist.paper_analysis.question_processing import query_llm
+from protollm.connectors import create_llm_connector
 
 load_dotenv(CONFIG_PATH)
 from protollm.metrics import model_for_metrics  # Иначе модель из конфига нормально не загружалась
+
+logging.basicConfig(level=logging.INFO)
+
+sys_prompt_LLM = (
+    "You are a helpful chemist assistant. Answer USER QUESTION in a direct tone. Give a "
+    " moderately detailed answer. Your audience is an expert, so be highly specific."
+    "\nRules:\n1. Your answer should be AS SHORT AS POSSIBLE.\n2. If you do not know the answer, it is STRICTLY"
+    " forbidden to write something just on the topic and come up with an answer. Just say you can't answer the"
+    " question.\n3. Add a unit of measurement to an answer only if appropriate.\n4. Use valid IUPAC or SMILES"
+    " notation if necessary to answer the question.\n\n"
+    "Here are some examples of questions and answers:\n"
+    "1. Question: When applying the V6O13-BA fluorescent system for glucose detection, what is the linear range for"
+    " glucose concentration and the corresponding detection limit?\n"
+    "Answer: For glucose detection, the linear range is 0.2 −12 μM, and the detection limit is 0.02 μM.\n"
+    "2. Question: What are the two main types of hydrophilic Polymers of Intrinsic Microporosity (PIMs) discussed for"
+    " ion-selective membranes, as illustrated by their chemical structures?\n"
+    "Answer: PIMs derived from Tröger's base (TB-PIMs) and dibenzodioxin-based PIMs with amidoxime groups (AO-PIMs).\n"
+    "3. Question: What is the optimal pH value for the extraction of quinolones from milk samples using a deep"
+    " eutectic solvent-based ferrofluid in a vortex-assisted liquid-liquid microextraction method?\n"
+    "Answer: 5.9"
+)
+
 
 metrics_init_params = {
     "model": model_for_metrics,
@@ -47,7 +69,18 @@ context_precision = ContextualPrecisionMetric(**metrics_init_params)
 context_recall = ContextualRecallMetric(**metrics_init_params)
 context_relevancy = ContextualRelevancyMetric(**metrics_init_params)
 
-logging.basicConfig(level=logging.INFO)
+
+def query_llm(model_url: str, question: str) -> tuple:
+
+    llm = create_llm_connector(model_url)
+
+    messages = [
+        SystemMessage(content=sys_prompt_LLM),
+        HumanMessage(content=f"USER QUESTION: {question}")
+    ]
+
+    res = llm.invoke(messages)
+    return res.content, res.response_metadata
 
 
 class Timer:
@@ -171,7 +204,7 @@ def pipeline_test_with_save(
 
             with Timer() as t:
                 try:
-                    llm_res, _ = query_llm(m_url, question, txt_context, list(img_paths))
+                    llm_res, _ = query_llm(m_url, question)
                     row_data["answer_from_model"] = llm_res
                 except Exception as e:
                     print(f"Answer generation failed: {str(e)}")
@@ -239,7 +272,7 @@ Short metrics results:
 
 if __name__ == "__main__":
     # papers_path = '../PaperAnalysis/papers'  # Папка со статьями
-    path_to_data = "../PaperAnalysis/questions/DataSet_FinalData.csv"  # Здесь указать файл с вопросами
+    path_to_data = "../PaperAnalysis/questions/DataSet_FinalData_FULL_FIXED.csv"  # Здесь указать файл с вопросами
     out_dir = Path("../PaperAnalysis/test_results")
     all_questions = pd.read_csv(path_to_data)
 
