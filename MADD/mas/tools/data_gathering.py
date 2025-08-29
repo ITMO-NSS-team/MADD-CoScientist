@@ -1,12 +1,10 @@
 import os
-from typing import Optional
+from typing import Dict, List, Optional
 from urllib.parse import quote
 
-import requests
-from typing import Dict, List, Optional
+import pandas as pd
 import requests
 from smolagents import tool
-import pandas as pd
 
 VALID_AFFINITY_TYPES = ["Ki", "Kd", "IC50"]
 
@@ -205,14 +203,10 @@ def fetch_chembl_data(
     return results
 
 
-
-
 if __name__ == "__main__":
     import os
 
-    DATASET_DIR = (
-        "data_store/datasets"
-    )
+    DATASET_DIR = "data_store/datasets"
     PROTEIN_NAME = "MEK1"
     AFFINITY_TYPE = "IC50"
     params = {

@@ -8,12 +8,215 @@ from typing import List, Tuple, Union
 
 import pandas as pd
 import requests
-from smolagents import tool
 
-from MADD.mas.utils import filter_valid_strings
+from MADD.mas.utils import filter_valid_strings, generate_for_base_case
 
 # TODO: get from load_env
 conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:94"}
+
+import time
+from datetime import datetime
+
+import pandas as pd
+from langchain.tools import tool
+from rdkit import Chem
+from rdkit.Chem import Draw
+
+from MADD.mas.prompts.props import props_descp_dict
+
+
+def get_props_description(props: list) -> str:
+    descp = """
+    """
+    for prop in props:
+        try:
+            descp += props_descp_dict[prop]
+        except:
+            continue
+
+    return descp
+
+
+def mols_vizualization(mols: list):
+    """Create vizualization for molecules in SMILES format.
+    Save png-images in directory 'vizualization'.
+
+    Args:
+        mols (list): SMILES string
+
+    Returns:
+        None
+    """
+    # randrange gives you an integral value
+    time = [str(datetime.now().time()) for i in range(len(mols))]
+
+    for i, mol in enumerate(mols):
+        img = Draw.MolToImage(Chem.MolFromSmiles(mol))
+        img.save(f"MADD/imgs/mol{time[i]}_{i}.png")
+
+    print(f"PROCESS: Saved: {i + 1} vizualizations of SMILES")
+
+
+def make_markdown_table(props: dict) -> str:
+    """Create a table in Markdown format dynamically based on dict keys.
+
+    Args:
+        props (dict): properties of molecules
+
+    Returns:
+        str: table with properties
+    """
+    # get all the keys for column headers
+    headers = list(props.keys())
+
+    # prepare the header row
+    markdown_table = "| " + " | ".join(headers) + " |\n"
+    markdown_table += "| " + " | ".join(["---"] * len(headers)) + " |\n"
+
+    # get the number of rows (assuming all lists in the dictionary are the same length)
+    num_rows = len(next(iter(props.values())))
+
+    # fill the table rows dynamically based on the keys
+    for i in range(num_rows):
+        row = [str(props[key][i]) for key in headers]
+        markdown_table += "| " + " | ".join(row) + " |\n"
+
+    return markdown_table
+
+
+def make_smiles_str(smiles: list) -> str:
+    """Convert list with molecules into string
+
+    Args:
+        smiles (list): molecules in SMILES
+
+    Returns:
+        str: molecules in SMILES
+    """
+    res = ""
+    for s in smiles:
+        res += s + " "
+    return res
+
+
+def gen_mols_alzheimer(num: int) -> list:
+    """
+    Generation of drug molecules for the treatment of Alzheimer's disease. GSK-3beta inhibitors with high activity. \
+    These molecules can bind to GSK-3beta protein, molecules has low brain-blood barrier permeability
+
+    Args:
+        num (int): number of molecules to generate
+
+    Returns:
+        list: list of generated molecules
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "Alzhmr"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
+
+
+def gen_mols_multiple_sclerosis(num: int) -> list:
+    """Generation of molecules for the treatment of multiple sclerosis.\
+    There are high activity tyrosine-protein kinase BTK inhibitors or highly potent non-covalent \
+    BTK tyrosine kinase inhibitors from the TEC family of tyrosine kinases that have the potential \
+    to affect B cells as a therapeutic target for the treatment of multiple sclerosis.
+
+    Args:
+        num (int): number of molecules to generate
+
+    Returns:
+        list: list of generated molecules
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "Sklrz"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
+
+
+def gen_mols_dyslipidemia(num: int) -> list:
+    """
+    Generation of molecules for the treatment of dyslipidemia.\
+    Molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and \
+    the ability to cross the BBB. Molecules have affinity to the protein ATP citrate synthase, enhances reverse cholesterol transport via ABCA1 upregulation\
+    , inhibits HMG-CoA reductase with improved safety profile compared to statins. It can be  PCSK9 inhibitors to enhance LDL receptor recycling and reduce LDL cholesterol levels.",
+        
+    Args:
+    num (int): number of molecules to generate
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "Dslpdm"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
+
+
+def gen_mols_acquired_drug_resistance(num: int) -> list:
+    """
+    Generation of molecules for acquired drug resistance. \
+    Molecules that selectively induce apoptosis in drug-resistant tumor cells.\
+    It significantly enhances the activity of existing therapeutic agents against drug-resistant pathogens.
+        
+    Args:
+    num (int): number of molecules to generate
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "TBLET"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
+
+
+def gen_mols_lung_cancer(num: int) -> list:
+    """
+    Generation of molecules for the treatment of lung cancer. \
+    Molecules are inhibitors of KRAS protein with G12C mutation. \
+    The molecules are selective, meaning they should not bind with HRAS and NRAS proteins.\
+    Its target KRAS proteins with all possible mutations, including G12A/C/D/F/V/S, G13C/D, \
+    V14I, L19F, Q22K, D33E, Q61H, K117N and A146V/T.
+    
+    Args:
+    num (int): number of molecules to generate
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "Cnsr"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
+
+
+def gen_mols_parkinson(num: int) -> list:
+    """
+    Generation of molecules for the treatment of Parkinson's disease.
+
+    Args:
+    num (int): number of molecules to generate
+    """
+    params = {"numb_mol": num, "cuda": True, "case_": "Prkns"}
+    _, mol_dict = generate_for_base_case(**params)
+
+    res = make_markdown_table(mol_dict)
+
+    mols_vizualization(mol_dict["Molecules"])
+
+    return [res, mol_dict]
 
 
 @tool
@@ -269,84 +472,6 @@ def ml_dl_training(
     print("Start training gen model for case: ", case)
 
 
-def ml_dl_training(
-    case: str,
-    path: str,
-    feature_column=["canonical_smiles"],
-    target_column=["docking_score"],
-    regression_props=["docking_score"],
-    classification_props=[],
-):
-    ml_ready = False
-    train_ml_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-    )
-    print("Start training ml model for case: ", case)
-    while not ml_ready:
-        print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, "pred")
-        if isinstance(st, dict):
-            if st["ml_models"]["status"] == "Trained":
-                ml_ready = True
-        time.sleep(60)
-
-    train_gen_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-        # TODO: rm after testing automl pipeline
-        # epoch=1,
-    )
-    print("Start training gen model for case: ", case)
-
-
-def ml_dl_training(
-    case: str,
-    path: str,
-    feature_column=["canonical_smiles"],
-    target_column=["docking_score"],
-    regression_props=["docking_score"],
-    classification_props=[],
-):
-    ml_ready = False
-    train_ml_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-    )
-    print("Start training ml model for case: ", case)
-    while not ml_ready:
-        print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, "pred")
-        if isinstance(st, dict):
-            if st["ml_models"]["status"] == "Trained":
-                ml_ready = True
-        time.sleep(60)
-
-    train_gen_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-        # TODO: rm after testing automl pipeline
-        # epoch=1,
-    )
-    print("Start training gen model for case: ", case)
-
-
 @tool
 def just_ml_training(
     case: str,
@@ -424,17 +549,73 @@ def just_ml_training(
     return True
 
 
+base_case_dict = {
+    "parkinson": gen_mols_parkinson,
+    "parkinson's": gen_mols_parkinson,
+    "parkinsons": gen_mols_parkinson,
+    "болезнь паркинсона": gen_mols_parkinson,
+    "lung cancer": gen_mols_lung_cancer,
+    "lung": gen_mols_lung_cancer,
+    "рак легких": gen_mols_lung_cancer,
+    "acquired drug resistance": gen_mols_acquired_drug_resistance,
+    "drug resistance": gen_mols_acquired_drug_resistance,
+    "resistance": gen_mols_acquired_drug_resistance,
+    "лекарственная устойчивость": gen_mols_acquired_drug_resistance,
+    "dyslipidemia": gen_mols_dyslipidemia,
+    "дислипидемия": gen_mols_dyslipidemia,
+    "multiple sclerosis": gen_mols_multiple_sclerosis,
+    "sclerosis": gen_mols_multiple_sclerosis,
+    "рассеянный склероз": gen_mols_multiple_sclerosis,
+    "alzheimer": gen_mols_alzheimer,
+    "alzheimer's": gen_mols_alzheimer,
+    "alzheimers": gen_mols_alzheimer,
+    "болезнь альцгеймера": gen_mols_alzheimer,
+}
+
+
 @tool
 def generate_mol_by_case(
-    case: str = "Alzheimer",
-    n_samples: int = 10,
+    case: str,
+    n_samples: int = 1,
 ) -> dict:
     """Runs molecules generation using inference-ready (previously trained) generative models.
 
+    IMPORTANT:
+    1. For pre-defined disease cases, use the complete and precise disease name as shown below.
+    These cases have fixed names that cannot be changed or written differently.
+
+    2. Additionally, user-trained custom models may be available. These custom cases must be
+    referenced exactly by the name used during training (case-sensitive).
+
+    Available pre-defined disease cases (fixed names - must be used exactly as shown):
+    - Alzheimer's disease: 'alzheimer', 'alzheimer's', 'alzheimers'
+    - Parkinson's disease: 'parkinson', 'parkinson's', 'parkinsons'
+    - Multiple sclerosis: 'multiple sclerosis', 'sclerosis'
+    - Dyslipidemia: 'dyslipidemia'
+    - Acquired drug resistance: 'acquired drug resistance', 'drug resistance'
+    - Lung cancer: 'lung cancer', 'lung'
+
+    Examples of correct usage for pre-defined cases:
+    - "Generate molecules for Alzheimer's disease"
+    - "Create compounds for multiple sclerosis"
+    - "Produce molecules targeting dyslipidemia"
+
+    For user-trained custom models:
+    - Use the exact case name specified during training
+    - Names are case-sensitive and must match exactly
+
     Args:
-        case (str, optional): Name of model (model names can be obtained by calling 'get_state_from_server').
+        case (str, optional): Name of disease case (use complete disease name for pre-defined cases,
+                            or exact training name for custom models).
         n_samples (int, optional): Number of molecules to generate. Default is 1
     """
+    case = case.strip().lower()
+
+    base_case_func = base_case_dict.get(case, None)
+    if base_case_func:
+        res = base_case_func(n_samples)
+        return res
+
     url = conf["url_gen"] + "/generate_gen_models_by_case"
 
     params = {
@@ -538,8 +719,10 @@ def run_ml_dl_training_by_daemon(
     ]
 
     try:
-        cwd_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # get root dir
-        
+        cwd_path = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        )  # get root dir
+
         subprocess.Popen(
             cmd,
             stdout=open("/tmp/ml_training.log", "a"),
@@ -561,4 +744,10 @@ automl_tools = [
     predict_prop_by_smiles,
 ]
 if __name__ == "__main__":
-    run_ml_dl_training_by_daemon('sars_cov', '/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets/users_dataset.csv', 'smiles', 'IC50', ['IC50'])
+    run_ml_dl_training_by_daemon(
+        "sars_cov",
+        "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets/users_dataset.csv",
+        "smiles",
+        "IC50",
+        ["IC50"],
+    )
