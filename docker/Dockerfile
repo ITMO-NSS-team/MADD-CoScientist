@@ -6,7 +6,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Install system packages
 RUN apt-get update && \
-    apt-get install -y build-essential vim && \
+    apt-get install -y build-essential vim git && \
     apt-get clean
 
 # Install poetry
@@ -31,5 +31,5 @@ COPY definitions.py .
 COPY config.env .
 
 EXPOSE 8501
-ENV PYTHONPATH=/app
+
 CMD ["streamlit", "run", "ChemCoScientist/streamlit_app.py"]

@@ -3,12 +3,12 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: chem-assistant-p12-l-slim
-    container_name: chem-assistant-p12-l-slim
+    image: chem-assistant
+    container_name: chem-assistant
     ports:
       - "8505:8501"
     volumes:
-      - /Users/lizzy/Documents/WORK/projects/CoScientist/PaperAnalysis/:/app/PaperAnalysis/
+      - /var/essdata/llm/chemcoscientist/pubchemcoscientist/:/app/PaperAnalysis/
     environment:
       - PYTHONPATH=/app
     restart: unless-stopped

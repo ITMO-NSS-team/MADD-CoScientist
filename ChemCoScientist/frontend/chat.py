@@ -4,12 +4,17 @@ import os
 import time
 
 import streamlit as st
-from ChemCoScientist.frontend.utils import get_user_data_dir, get_user_session_id, save_all_files
+from io import BytesIO
 from langgraph.errors import GraphRecursionError
+from PIL import Image
+from urllib.parse import urlparse
+
+from definitions import ROOT_DIR
+from ChemCoScientist.frontend.utils import get_user_data_dir, get_user_session_id, save_all_files
 from ChemCoScientist.tools.utils import convert_to_base64, convert_to_html
 from ChemCoScientist.frontend.streamlit_endpoints import explore_my_papers
 from ChemCoScientist.frontend.utils import clean_folder
-from definitions import ROOT_DIR
+from CoScientist.paper_parser.s3_connection import s3_service
 
 # Create a separate logger for chat.py
 logger = logging.getLogger("chat_logger")
@@ -129,7 +134,7 @@ def message_handler():
             if st.session_state.explore_mode:
                 print('In explore_mode section')
                 # Use explore_my_papers function instead of general AI assistant
-                result = explore_my_papers(inputs)
+                result = explore_my_papers(inputs.get('input', ''))
 
                 # st.markdown(result["answer"])
 
@@ -394,13 +399,14 @@ def display_paper_analysis_metadata(message, message_index):
             if images_context:
                 for i, image_item in enumerate(images_context):
                     img_key = f"img_checkbox_{message_index}_{i}"
+                    bucket_name, s3_key = urlparse(image_item).path.split('/', 2)[1:]
 
                     # Initialize image checkbox state if not present
                     if img_key not in st.session_state:
                         st.session_state[img_key] = False
 
                     show_img = st.checkbox(
-                        f"{i + 1}. {image_item}",
+                        f'{bucket_name}/{s3_key}',
                         value=st.session_state[img_key],
                         key=img_key
                     )
@@ -408,7 +414,9 @@ def display_paper_analysis_metadata(message, message_index):
                     # Display image if selected
                     if show_img:
                         try:
-                            st.image(image_item, caption=image_item, use_container_width=True)
+
+                            pil_image = Image.open(BytesIO(s3_service.get_image_bytes_from_s3(s3_key, bucket_name)))
+                            st.image(pil_image, caption=s3_key, use_container_width=True)
                         except Exception as e:
                             st.error(f"Could not display image: {image_item}. Error: {str(e)}")
             else:
