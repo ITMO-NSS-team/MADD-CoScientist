@@ -16,14 +16,13 @@ from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperSto
 from ChemCoScientist.paper_analysis.question_processing import query_llm
 
 load_dotenv(CONFIG_PATH)
-from protollm.metrics import model_for_metrics  # Иначе модель из конфига нормально не загружалась
+from protollm.metrics import model_for_metrics
 
 metrics_init_params = {
     "model": model_for_metrics,
     "verbose_mode": True,
     "async_mode": False,
 }
-# Можно переписать критерий для оценки. Текущий достаточно жестко оценивает
 correctness_metric = GEval(
     name="Correctness",
     evaluation_steps=[
@@ -129,7 +128,7 @@ def pipeline_test_with_save(
             question = row["question"].replace('"', "'")
             correct_answer = row["correct_answer"]
             correct_context = "\n".join(
-                [row["correct_txt_context"], row["correct_img_context"], row["correct_table_context"]]
+                [str(row["correct_txt_context"]), str(row["correct_img_context"]), str(row["correct_table_context"])]
             )
             
             row_data = {
@@ -238,17 +237,14 @@ Short metrics results:
 
 
 if __name__ == "__main__":
-    papers_path = '../PaperAnalysis/papers'  # Папка со статьями
-    path_to_data = "../PaperAnalysis/questions/complex_questions_draft.csv"  # Здесь указать файл с вопросами
+    path_to_data = "../PaperAnalysis/questions/DataSet_FinalData.csv"
     out_dir = Path("../PaperAnalysis/test_results")
     all_questions = pd.read_csv(path_to_data)
 
     model_name = "gemini-2.0-flash-001"
-    model_url = 'https://api.vsegpt.ru/v1;vis-google/gemini-2.0-flash-001'
+    model_url = 'https://openrouter.ai/api/v1;google/gemini-2.0-flash-001'
 
     paper_store = ChromaDBPaperStore()
-    # При первом запуске нужно создать векторные коллекции с помощью следующего кода
-    # paper_store.prepare_db(papers_path)
 
     v = 0.1
     pipeline_test_with_save(

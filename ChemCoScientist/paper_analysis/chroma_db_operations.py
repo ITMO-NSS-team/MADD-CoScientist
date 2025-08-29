@@ -126,7 +126,7 @@ class ChromaDBPaperStore:
         self.img_collection = self.client.get_or_create_chroma_collection(
             self.img_collection_name, CustomEmbeddingFunction()
         )
-        self.workers = 2
+        self.workers = 1
 
     @staticmethod
     def _image_to_base64(image_path: str) -> str:
@@ -199,8 +199,10 @@ class ChromaDBPaperStore:
             cuts = int(image_counter / window_size)
             for i in range(cuts + 1):
                 embeddings += self.get_embeddings(image_descriptions[i * window_size:(i + 1) * window_size])
-        else:
+        elif 0 < image_counter <= window_size:
             embeddings = self.get_embeddings(image_descriptions)
+        else:
+            return
         self.img_collection.add(
             ids=[str(uuid.uuid4()) for _ in range(image_counter)],
             documents=image_descriptions,
@@ -214,17 +216,20 @@ class ChromaDBPaperStore:
     def search_for_papers(self,
                           query: str,
                           chunks_num: int = None,
-                          final_chunks_num: int = None) -> dict:
+                          final_chunks_num: int = None,
+                          meta_filter: dict = None) -> dict:
         chunks_num = chunks_num if chunks_num else self.sum_chunk_num
         final_chunks_num = final_chunks_num if final_chunks_num else self.final_sum_chunk_num
 
-        raw_docs = self.client.query_chromadb(self.sum_collection, query, chunk_num=chunks_num)
+        raw_docs = self.client.query_chromadb(
+            self.sum_collection, query, chunk_num=chunks_num, metadata_filter=meta_filter
+        )
         docs = self.search_with_reranker(query, raw_docs, top_k=final_chunks_num)
         res = [doc[2]["source"] for doc in docs]
         return {'answer': res}
 
     def retrieve_context(
-            self, query: str, relevant_papers: list = None
+            self, query: str, relevant_papers: dict = None
     ) -> tuple[list, dict]:
         if not relevant_papers:
             relevant_papers = self.search_for_papers(query)
