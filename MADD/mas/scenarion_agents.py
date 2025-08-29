@@ -33,6 +33,8 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
     task_formatted = f"""\nYou are tasked with executing: {task}."""
 
     response = agent.invoke({"messages": [("user", task_formatted)]})
+    
+    ds_paths = [i for i in [os.environ.get('DS_FROM_CHEMBL', ''), os.environ.get('DS_FROM_BINDINGDB', '')] if i != '']
 
 
     return Command(
@@ -41,7 +43,7 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
             "nodes_calls": Annotated[set, operator.or_](
                 set([("dataset_builder_agent", (("text", response["messages"][-1].content),))])
             ),
-            "metadata": Annotated[dict, operator.or_]({"dataset_builder_agent": os.environ.get('DS_FROM_AGENT', None)}),
+            "metadata": Annotated[dict, operator.or_]({"dataset_builder_agent": ds_paths}),
         }
     )
 

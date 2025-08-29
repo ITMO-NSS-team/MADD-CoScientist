@@ -204,7 +204,7 @@ def fetch_chembl_data(
         except (KeyError, TypeError):
             continue
         
-    if len(len(results)) < 1:
+    if len(results) < 1:
         return 'No results found from ChemBL!'
         
     pd.DataFrame(results).to_csv(f'MADD/ds/molecules_{target_name}.csv')
