@@ -10,9 +10,12 @@ from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from definitions import CONFIG_PATH
 from dotenv import load_dotenv
+from langchain_core.messages import SystemMessage, HumanMessage
 import pandas as pd
+from protollm.connectors import create_llm_connector
 
 from ChemCoScientist.paper_analysis.chroma_db_operations import ChromaDBPaperStore
+from ChemCoScientist.paper_analysis.prompts import sys_prompt_LLM
 from ChemCoScientist.paper_analysis.question_processing import query_llm
 
 load_dotenv(CONFIG_PATH)
@@ -47,6 +50,19 @@ context_recall = ContextualRecallMetric(**metrics_init_params)
 context_relevancy = ContextualRelevancyMetric(**metrics_init_params)
 
 logging.basicConfig(level=logging.INFO)
+
+
+def query_pure_llm(model_url: str, question: str) -> tuple:
+
+    llm = create_llm_connector(model_url)
+
+    messages = [
+        SystemMessage(content=sys_prompt_LLM),
+        HumanMessage(content=f"USER QUESTION: {question}")
+    ]
+
+    res = llm.invoke(messages)
+    return res.content, res.response_metadata
 
 
 class Timer:
@@ -150,11 +166,14 @@ def pipeline_test_with_save(
             
             with Timer() as t:
                 try:
-                    txt_data, img_data = paper_store.retrieve_context(question)
+                    txt_data, img_data = paper_store.retrieve_context(
+                        question
+                    )  # for pure LLM test comment this method call
                     row_data["context_retrieve_time"] = t.seconds_from_start
                 except Exception as e:
                     print(f"Context retrieval failed: {str(e)}")
                     txt_context = ''
+                ### for pure LLM test comment next block of code ###
                 txt_context = ''
                 img_paths = set()
                 for idx, chunk in enumerate(txt_data, start=1):
@@ -165,12 +184,14 @@ def pipeline_test_with_save(
                     img_paths.update(eval(chunk_meta["imgs_in_chunk"]))
                 for img in img_data['metadatas'][0]:
                     img_paths.add(img['image_path'])
+                ### -------------------------------------------- ###
                 row_data["txt_context_from_db"] = txt_context
                 row_data["img_context_from_db"] = img_paths
                 
             with Timer() as t:
                 try:
                     llm_res, _ = query_llm(m_url, question, txt_context, list(img_paths))
+                    # llm_res, _ = query_pure_llm(m_url, question)  # comment out this line for pure LLM
                     row_data["answer_from_model"] = llm_res
                 except Exception as e:
                     print(f"Answer generation failed: {str(e)}")
@@ -244,7 +265,7 @@ if __name__ == "__main__":
     model_name = "gemini-2.0-flash-001"
     model_url = 'https://openrouter.ai/api/v1;google/gemini-2.0-flash-001'
 
-    paper_store = ChromaDBPaperStore()
+    paper_store = ChromaDBPaperStore()  # for pure LLM test you don't need to use this instance
 
     v = 0.1
     pipeline_test_with_save(
