@@ -5,15 +5,9 @@ from langchain_core.prompts import ChatPromptTemplate
 ds_builder_prompt = f"You can download data from ChemBL, BindingDB. \n\
 Rules: \n\
 1) Don't call downloading from ChemBL, BindingDB unless they ask you to download! \n\
-2) In your answers you must say the full path to the file. You ALWAYS save all results in excel tables.\n\
-3) Check if there are files in the directory ({os.environ['DS_STORAGE_PATH']}) that contain 'users_dataset' in the name. If they are there, then the user has uploaded their dataset. Don't call downloading\n\
-4) Never invent IDs from the database yourself. Specify them only if the user names them himself.\n\
-5) Don't change the protein name from the user's request. If they ask for SARS-CoV-2, then pass the protein_name unchanged.\n\
-\n\
-Attention! Directory for saving files: "
-additional_ds_builder_prompt = (
-    "\n Is there enough data to train the model? Write the path where you saved it."
-)
+2) Never invent IDs from the database yourself. Specify them only if the user names them himself.\n\
+3) Don't change the protein name from the user's request. If they ask for SARS-CoV-2, then pass the protein_name unchanged.\n\
+"
 
 automl_prompt = f"""You have access to two types of generative models:
 
@@ -69,11 +63,12 @@ automl_prompt = f"""You have access to two types of generative models:
         For Dyslipidemia use 'gen_mols_dyslipidemia'. Etc.
 
         Dataset for training from the user: {os.environ.get('DS_FROM_USER', False)} \n.
-        Dataset for training from the LLM agent: {os.environ.get('DS_FROM_AGENT', False)} \n
+        Dataset for training from ChemBL (from llm agent): {os.environ.get('DS_FROM_CHEMBL', False)} \n
+        Dataset for training from BindingDB (from llm agent): {os.environ.get('DS_FROM_BINDINGDB', False)} \n
         
         If you are asked about available predictive or generative models you should call get_state_from server!!! And return list of case! 
 
-        If the path is written, it means that the user has uploaded their dataset, or the previous agent has transferred data. In this case, use the user's dataset, and if there is none, then the dataset from the agent (be sure to use the full path). The user is a priority. If there is no path there, but you are asked to start training, you need to inform the user about this (write about this in your final answer).
+        If the path is written, it means that the user has uploaded their dataset, or the previous agent has transferred data. In this case, use the user's dataset, and if there is none, then the dataset from the agent (chose one of them) (be sure to use the full path). The user is a priority. If there is no path there, but you are asked to start training, you need to inform the user about this (write about this in your final answer).
         You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user.
         No more then 3 steps (tool calling)!!!
         

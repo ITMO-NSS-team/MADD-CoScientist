@@ -1,16 +1,16 @@
 import os
 from typing import Dict, List, Optional
 from urllib.parse import quote
+from langchain.tools import tool
 
 import pandas as pd
 import requests
-from smolagents import tool
 
 VALID_AFFINITY_TYPES = ["Ki", "Kd", "IC50"]
 
 
 @tool
-def fetch_BindingDB_data(params: Dict) -> List[Dict]:
+def fetch_BindingDB_data(params: Dict) -> str:
     """
     Tool for retrieving protein affinity data from BindingDB.
 
@@ -30,7 +30,7 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
             - id: Optional, UniProt ID
 
     Returns:
-        List[dict]: List of dictionaries containing affinity data for the specified protein.
+        str: Succes or not
     """
 
     try:
@@ -64,12 +64,16 @@ def fetch_BindingDB_data(params: Dict) -> List[Dict]:
 
         # Step 2: Retrieve affinity data from BindingDB
         affinity_entries = fetch_affinity_bindingdb(uniprot_id, affinity_type, cutoff)
-        print(f"Found {len(affinity_entries)} entrys for {protein_name}")
-        return affinity_entries
+        pd.DataFrame(affinity_entries).to_csv(f'MADD/ds/molecules_{params.get("protein_name")}.csv')
+        
+        txt_report = f"Found {len(affinity_entries)} entrys for {protein_name}. Saved to " + f'MADD/ds/molecules_{params.get("protein_name")}.csv'
+        print(txt_report)
+        
+        os.environ['DS_FROM_BINDINGDB'] = f'MADD/ds/molecules_{params.get("protein_name")}.csv'
+        return txt_report
 
     except Exception as e:
-        print(f"Processing error: {str(e)}")
-        return False
+        return f"Processing error: {str(e)}"
 
 
 def fetch_uniprot_id(protein_name: str) -> Optional[str]:
@@ -138,7 +142,7 @@ def fetch_affinity_bindingdb(
 @tool
 def fetch_chembl_data(
     target_name: str, target_id: str = "", affinity_type: str = "Ki"
-) -> list[dict]:
+) -> str:
     """Get Ki for activity by current protein from ChemBL database. Return
     dict with smiles and Ki values, format: [{"smiles": smiles, affinity_type: affinity_valie, "affinity_units": affinity_units}, ...]
 
@@ -199,15 +203,25 @@ def fetch_chembl_data(
             )
         except (KeyError, TypeError):
             continue
+        
+    if len(len(results)) < 1:
+        return 'No results found from ChemBL!'
+        
+    pd.DataFrame(results).to_csv(f'MADD/ds/molecules_{target_name}.csv')
+        
+    txt_report = f"Found {len(results)} entrys for {target_name}. Saved to " + f'MADD/ds/molecules_{target_name}.csv'
+    print(txt_report)
+        
+    os.environ['DS_FROM_CHEMBL'] = f'MADD/ds/molecules_{target_name}.csv'
+    return txt_report
 
-    return results
 
 
 if __name__ == "__main__":
     import os
 
     DATASET_DIR = "data_store/datasets"
-    PROTEIN_NAME = "MEK1"
+    PROTEIN_NAME = "KRAS"
     AFFINITY_TYPE = "IC50"
     params = {
         "protein_name": PROTEIN_NAME,
@@ -217,6 +231,8 @@ if __name__ == "__main__":
 
     binding_data = fetch_BindingDB_data(params)
     print(f"Data fetched: {len(binding_data)} entries")
+    
+    # fetch_chembl_data('KRAS', affinity_type="IC50")
 
     # Save data to Excel
     df = pd.DataFrame(
