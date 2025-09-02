@@ -7,12 +7,16 @@ from MADD.mas.create_graph import create_by_default_setup
 if __name__ == "__main__":
     os.environ['DS_FROM_BINDINGDB'] = str(False)
     os.environ['DS_FROM_CHEMBL'] = str(False)
-    os.environ['DS_FROM_USER'] = str(False)
-    
+    # os.environ['DS_FROM_USER'] = str(False)
+    os.environ['DS_FROM_USER'] = '/Users/alina/Desktop/ITMO/MADD-CoScientist/data_cyk_short.csv'
+        
     graph = create_by_default_setup()
     for step in graph.stream(
         {
-            "input": "Download data for KRAS with IC50."
+            # "input": 'What models are available now?'
+            # "input": 'Download data from ChemBL for GSK with IC50 values.'
+            "input": 'Start train model to predict IC50, use my data.'
+
         },
         user_id="1",
     ):

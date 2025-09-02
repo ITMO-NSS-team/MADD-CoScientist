@@ -2,6 +2,7 @@ import logging
 import operator
 import os
 from typing import Annotated
+import pandas as pd
 
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
@@ -55,14 +56,26 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
     print("--------------------------------")
 
     task = state["task"]
-
+    dataset = [os.environ['DS_FROM_BINDINGDB'] if not [os.environ['DS_FROM_CHEMBL'] 
+                                                       if not os.environ.get('DS_FROM_USER', False) 
+                                                       else os.environ.get('DS_FROM_USER', False)] 
+               else os.environ['DS_FROM_USER']]
+    if dataset != ['False']:
+        if dataset[0][-3:] == 'csv':
+            dataset_columns = pd.read_csv(dataset[0]).columns
+        elif dataset[0][-3:] == 'csv':
+            dataset_columns = pd.read_excel(dataset[0]).columns
+        
     agent = create_react_agent(
         config["configurable"]["llm"],
         automl_tools,
         state_modifier=automl_prompt,
         debug=True,
     )
-    task_formatted = f"""\nYou are tasked with executing: {task}."""
+    if dataset != ['False']:
+        task_formatted = f"""\nYou are tasked with executing: {task}. Attention: You must use 'run_ml_dl_training_by_daemon'!!! Columns in users dataset: """ + str(list(dataset_columns)) + f"You must pass target_column one of these column names. Feature column should be it must be something related to the SMILES string (find the correct name). Pass this path ({dataset[0]}) to 'path'!"
+    else:
+        task_formatted = f"""\nYou are tasked with executing: {task}. Don't take too many steps! You should use tools!!!"""
 
     response = agent.invoke({"messages": [("user", task_formatted)]})
 

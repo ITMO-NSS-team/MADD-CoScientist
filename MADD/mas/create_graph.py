@@ -22,10 +22,10 @@ def create_by_default_setup() -> GraphBuilder:
         "recursion_limit": 25,
         "configurable": {
             "user_id": "1",
-            "visual_model": create_llm_connector(os.environ["VISION_LLM_URL"]),
+            "visual_model": create_llm_connector(os.environ["VISION_LLM_URL"], temperature=0.0),
             "img_path": "image.png",
             "llm": create_llm_connector(
-                f"{os.environ['MAIN_LLM_URL']};{os.environ['MAIN_LLM_MODEL']}"
+                f"{os.environ['MAIN_LLM_URL']};{os.environ['MAIN_LLM_MODEL']}", temperature=0.0
             ),
             "max_retries": 3,
             # list of scenario agents
@@ -150,12 +150,19 @@ def create_by_default_setup() -> GraphBuilder:
                             }
                             
                             Example:
-                            Request: "Develop small molecules that inhibit KRAS G12C while showing no interaction with HRAS or NRAS. Ensure the compounds are designed for non-small cell lung cancer treatment. "Generate compounds designed to inhibit aggregation of tau proteins through the introduction of bulky side chains that hinder intermolecular interactions."
+                            Request: "Train model to predict IC50 on my data."
                             Response: {
-                                "steps": [
-                                    ['Generate 1 molecule for Lung Cancer using ml_dl_agent', 'Generate 1 molecule for Alzheimer with ml_dl_agent']
-                                ]
-                            }""",
+                                "steps": 
+                                    [['Train model to predict IC50 on users data. Select IC50 column, as target.']]
+                            }
+                            
+                            Example:
+                            Request: ""Generate GSK-3beta inhibitors with high activit. Suggest some small molecules that inhibit KRAS G12C - a target responsible for non-small cell lung cancer. Generate high activity tyrosine-protein kinase BTK inhibitors. Can you suggest molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and the ability to cross the BBB?"
+                            Response: {
+                                "steps": 
+                                    [['Generate 1 molecule for Alzheimer using ml_dl_agent'], ['Generate 1 molecule for Lung Cancer with ml_dl_agent'], ['Generate 1 molecule for sclerosis with ml_dl_agent'], ['Generate 1 molecule for dyslipidemia with ml_dl_agent']]
+                            }
+                            """,
                     "additional_hints": "If the user provides his dataset - \
                         immediately start training using ml_dl_agent (never call dataset_builder_agent)!",
                 },
@@ -185,12 +192,85 @@ def create_by_default_setup() -> GraphBuilder:
                 },
                 "replanner": {
                     "problem_statement": None,
-                    "rules": "Don't plan to predict anything if the molecules are generated and have some properties! Return the answer.",
+                    "rules": None,
                     "examples": None,
-                    "additional_hints": "Optimize the plan, transfer already existing answers from previous executions! For example, weather values.\
-                    Don't forget tasks!\You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user.\n\
+                    "additional_hints": """Attention: you must delete completed steps from the plan! Pay close attention to past_steps, do not plan what is done there. This is very, very important.\
+                        
+                    Don't plan to predict anything if the molecules are generated and have some properties! Return the answer. 
+                    BUT if there are no molecules for all cases in the plan - replan them! Adapt the plan.
+                    
+                    If you are asked to generate something, try to immediately understand which case it relates to and indicate the name of the disease in the plan.
+                    'Alzheimer' - generation of drug molecules for the treatment of Alzheimer's disease. \
+                    GSK-3beta inhibitors with high activity. \
+                    These molecules can bind to GSK-3beta protein, molecules has low brain-blood barrier permeability.\
+                    Compounds that contain heterocyclic moieties to enhance binding affinity for amyloid-beta aggregates.\
+                    Hot keys: inhibitory activity against glycogen synthase kinase 3 beta (GSK-3β); compound should \
+                    demonstrate a permeability coefficient of at least 1.5 to ensure effective crossing of the blood-brain barrier; \
+                    tau protein kinases with an IC50 value lower than 50 nM.\
+                    'Sclerosis' - Generation of molecules for the treatment of multiple sclerosis.\
+                    There are high activity tyrosine-protein kinase BTK inhibitors or highly potent non-covalent \
+                    BTK tyrosine kinase inhibitors from the TEC family of tyrosine kinases that have the potential \
+                    to affect B cells as a therapeutic target for the treatment of multiple sclerosis.\
+                    Hot keys: high activity tyrosine-protein kinase BTK inhibitors;  inhibit Bruton's tyrosine kinase \
+                    through non-covalent interaction; non-covalent BTK inhibitors with enhanced permeability across the blood-brain \
+                    barrier and high selectivity for Cytoplasmic tyrosine-protein kinase BMX;  immune signaling pathways \
+                    to treat multiple sclerosis.\
+                    'Parkinson' - Generation of molecules for the treatment of Parkinson's disease.\
+                    These compounds should possess high bioavailability, cross the blood-brain barrier efficiently, and show \
+                    minimal metabolic degradation.\
+                    Hot keys: derivatives from amino acid groups with modifications in side chains to enhance bioactivity; \
+                    heterocyclic compounds featuring nitrogen and sulfur to improve pharmacokinetics; molecules using a \
+                    fragment-based approach, combining elements of natural alkaloids; molecules with properties of glutamate \
+                    receptor antagonists for neuroprotection; compounds that inhibit monoamine oxidase B (MAO-B);\
+                    dopamine agonist with improved blood-brain barrier penetration; dual-action molecule combining D2 \
+                    receptor agonism and A2A antagonism;  PDE10A inhibitor with enhanced selectivity and potency.\
+                    'Lung Cancer' - Generation of molecules for the treatment of lung cancer. \
+                    Molecules are inhibitors of KRAS protein with G12C mutation. \
+                    The molecules are selective, meaning they should not bind with HRAS and NRAS proteins.\
+                    Its target KRAS proteins with all possible mutations, including G12A/C/D/F/V/S, G13C/D, \
+                    V14I, L19F, Q22K, D33E, Q61H, K117N, G12C and A146V/T.\
+                    Hot keys: HRAS and NRAS proteins; KRAS G12C protein mutation, which drives cancer growth in lung cancer;\
+                    avoiding binding to HRAS and NRAS; low cross-reactivity with other RAS isoforms;  molecules to specifically bind and inhibit KRAS G12C\
+                    'dyslipidemia' - Generation of molecules for the treatment of dyslipidemia.\
+                    Molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and \
+                    the ability to cross the BBB. Molecules have affinity to the protein ATP citrate synthase, enhances reverse cholesterol transport via ABCA1 upregulation\
+                    , inhibits HMG-CoA reductase with improved safety profile compared to statins. It can be  PCSK9 inhibitors to enhance LDL receptor recycling and reduce LDL cholesterol levels.\
+                    Hot keys: molecules that disrupt the interaction between CD36 and oxidized LDL; ligands for SREBP-1c \
+                    inhibition to regulate fatty acid and triglyceride synthesis; dual-action agents that modulate both HDL \
+                    and LDL for improved cardiovascular outcomes; AMPK pathway to promote fatty acid oxidation;\
+                    IC50 value lower than 50 µM for inhibiting CETP;  Tmax of less than 2 hours for rapid action in lipid regulation;\
+                    a negative logD at pH 7.4 for improved selectivity in tissues; ANGPTL3 inhibitor to reduce plasma triglycerides;\
+                    PPARα agonist with reduced side;  ApoC-III antisense oligonucleotide with enhanced cellular uptake.\
+                    'drug resistance' - Generation of molecules for acquired drug resistance. \
+                    Molecules that selectively induce apoptosis in drug-resistant tumor cells.\
+                    It significantly enhances the activity of existing therapeutic agents against drug-resistant pathogens.\
+                    Hot keys: molecular structures targeting drug resistance mechanisms in cancer cells;\
+                    ABC transporters involved in multidrug resistance; molecules that selectively induce apoptosis in drug-resistant tumor cells;\
+                    counteracting drug resistance in oncological therapies; treatment sensitivity in resistant tumors; compounds that enhance the \
+                    efficacy of existing anti-resistance treatments; synergistic compound that significantly enhances the activity of existing therapeutic \
+                    agents against drug-resistant pathogens; selectively target the Ras-Raf-MEK-ERK signaling pathway\
+                    molecules targeting the efflux pumps responsible for drug resistance.
+                    
+                    Example:
+                    Request: Generate GSK-3beta inhibitors with high activit. Suggest some small molecules that inhibit KRAS G12C - a target responsible for non-small cell lung cancer. Generate high activity tyrosine-protein kinase BTK inhibitors. Can you suggest molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and the ability to cross the BBB?"
+                    Response: {
+                        "steps": [
+                            ['Generate 1 molecule for Alzheimer using ml_dl_agent'], ['Generate 1 molecule for Lung Cancer with ml_dl_agent'], ['Generate 1 molecule for sclerosis with ml_dl_agent'], ['Generate 1 molecule for dyslipidemia with ml_dl_agent']
+                        ]
+                    }
+                    Example:
+                        Request: "Train model to predict IC50 on my data."
+                        Response: {
+                            "steps": 
+                                [['Train model to predict IC50 on users data. Select IC50 column, as target.']]
+                    }
+                    
+                    If you are asked to train a model, plan the training! 
+                    \
+                    Optimize the plan, transfer already existing answers from previous executions.\
+                    Don't forget tasks.\You must return the molecules without modifications. Do not lose symbols. All molecules must be transferred to the user.\n\
                     Be more careful about which tasks can be performed in parallel and which ones can be performed sequentially.\
-                    For example, you cannot fill a table and save it in parallel.",
+                    For example, you cannot fill a table and save it in parallel.""",
                 },
             },
         },

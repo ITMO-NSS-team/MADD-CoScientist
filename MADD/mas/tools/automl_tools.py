@@ -12,7 +12,7 @@ import requests
 from MADD.mas.utils import filter_valid_strings, generate_for_base_case
 
 # TODO: get from load_env
-conf = {"url_pred": "http://10.64.4.247:81", "url_gen": "http://10.32.2.2:94"}
+conf = {"url_pred": "http://10.64.4.254:81", "url_gen": "http://10.32.2.2:94"}
 
 import time
 from datetime import datetime
@@ -24,6 +24,7 @@ from rdkit.Chem import Draw
 
 from MADD.mas.prompts.props import props_descp_dict
 
+temp = ['| Molecules | QED | Synthetic Accessibility | PAINS | SureChEMBL | Glaxo | Brenk | BBB | IC50 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Cc1ccc(C2=C(c3ccc(N4CCN(C)CC4)cc(=O)n3)C(=O)N(C)C2=O)c(C(=O)N2CCCC2)c1 | 0.59 | 2.81 | 0 | 0 | 0 | 1 | 1 | 1 |\n', {'Molecules': ['Cc1ccc(C2=C(c3ccc(N4CCN(C)CC4)cc(=O)n3)C(=O)N(C)C2=O)c(C(=O)N2CCCC2)c1'], 'QED': [0.59], 'Synthetic Accessibility': [2.81], 'PAINS': [0], 'SureChEMBL': [0], 'Glaxo': [0], 'Brenk': [1], 'BBB': [1], 'IC50': [1]}]
 
 def get_props_description(props: list) -> str:
     descp = """
@@ -110,14 +111,19 @@ def gen_mols_alzheimer(num: int) -> list:
     Returns:
         list: list of generated molecules
     """
+    print('TOOL: alzheimer')
     params = {"numb_mol": num, "cuda": True, "case_": "Alzhmr"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
 
     return [res, mol_dict]
+
 
 
 def gen_mols_multiple_sclerosis(num: int) -> list:
@@ -132,13 +138,16 @@ def gen_mols_multiple_sclerosis(num: int) -> list:
     Returns:
         list: list of generated molecules
     """
+    print('TOOL: sclerosis')
     params = {"numb_mol": num, "cuda": True, "case_": "Sklrz"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
-
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
     return [res, mol_dict]
 
 
@@ -152,13 +161,16 @@ def gen_mols_dyslipidemia(num: int) -> list:
     Args:
     num (int): number of molecules to generate
     """
+    print('TOOL: dyslipidemia')
     params = {"numb_mol": num, "cuda": True, "case_": "Dslpdm"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
-
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
     return [res, mol_dict]
 
 
@@ -171,13 +183,16 @@ def gen_mols_acquired_drug_resistance(num: int) -> list:
     Args:
     num (int): number of molecules to generate
     """
+    print('TOOL: Drug_Resistance')
     params = {"numb_mol": num, "cuda": True, "case_": "TBLET"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
-
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
     return [res, mol_dict]
 
 
@@ -192,13 +207,16 @@ def gen_mols_lung_cancer(num: int) -> list:
     Args:
     num (int): number of molecules to generate
     """
+    print('TOOL: lung cancer')
     params = {"numb_mol": num, "cuda": True, "case_": "Cnsr"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
-
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
     return [res, mol_dict]
 
 
@@ -209,13 +227,16 @@ def gen_mols_parkinson(num: int) -> list:
     Args:
     num (int): number of molecules to generate
     """
+    print('TOOL: Parkinson')
     params = {"numb_mol": num, "cuda": True, "case_": "Prkns"}
     _, mol_dict = generate_for_base_case(**params)
 
     res = make_markdown_table(mol_dict)
 
     mols_vizualization(mol_dict["Molecules"])
-
+    print('GEN_MOLECULES: ')
+    print(mol_dict)
+    print('END_GEN_MOLECULES')
     return [res, mol_dict]
 
 
@@ -641,9 +662,10 @@ def run_ml_dl_training_by_daemon(
     classification_props: list = [],
 ) -> Union[bool, str]:
     """
-    Simultaneously starts training the predictive and generative models (this is normal
+    Starts training the predictive and generative models (this is normal
     if the user asks for only one thing).
     The status can be checked with "get_state_case_from_server".
+    Use it to train models!!!
 
     Args:
         case (str): Name of model.
@@ -706,7 +728,7 @@ def run_ml_dl_training_by_daemon(
         sys.executable,
         "-c",
         (
-            "from ChemCoScientist.tools.ml_tools import ml_dl_training;"
+            "from MADD.mas.tools.automl_tools import ml_dl_training;"
             "ml_dl_training("
             f"case='{case}',"
             f"path='{path}',"

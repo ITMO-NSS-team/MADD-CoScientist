@@ -67,6 +67,7 @@ automl_prompt = f"""You have access to two types of generative models:
         Dataset for training from BindingDB (from llm agent): {os.environ.get('DS_FROM_BINDINGDB', False)} \n
         
         If you are asked about available predictive or generative models you should call get_state_from server!!! And return list of case! 
+        If you are asked to train a model, plan the training!
 
         If the path is written, it means that the user has uploaded their dataset, or the previous agent has transferred data. In this case, use the user's dataset, and if there is none, then the dataset from the agent (chose one of them) (be sure to use the full path). The user is a priority. If there is no path there, but you are asked to start training, you need to inform the user about this (write about this in your final answer).
         You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user.
