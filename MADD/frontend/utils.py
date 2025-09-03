@@ -14,7 +14,7 @@ from streamlit_pills import pills
 
 from definitions import ROOT_DIR, CONFIG_PATH
 
-load_dotenv(CONFIG_PATH)
+load_dotenv('config.env')
 
 BASE_DATA_DIR = "datasets"
 PATH_TO_TEMP_FILES = os.environ["PATH_TO_TEMP_FILES"]

@@ -188,7 +188,7 @@ def create_by_default_setup() -> GraphBuilder:
                 "summary": {
                     "problem_statement": None,
                     "rules": None,
-                    "additional_hints": "Never write full paths! Only file names. You must output all the molecules! And all the tables! You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user.",
+                    "additional_hints": "Never write full paths! Only file names. You must output all the molecules (if they exist)! And all the tables (if exist)! You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user (if they exist).",
                 },
                 "replanner": {
                     "problem_statement": None,

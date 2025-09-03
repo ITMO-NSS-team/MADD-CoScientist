@@ -3,7 +3,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from MADD.frontend.utils import get_user_data_dir, get_user_session_id
 
-load_dotenv()
+load_dotenv('config.env')
 
 
 def init_page():

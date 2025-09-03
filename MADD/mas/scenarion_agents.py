@@ -82,7 +82,7 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
             state_modifier=automl_prompt,
             debug=True,
         )
-        task_formatted = f"""\n{task}. Attention: Check if there is a case on the server, if there no such case, do not start generation or prediction. If it is in the learning process, tell the user that it cannot be launched until the learning process is complete. You should run tool!!!"""
+        task_formatted = f"""\n{task}. Attention: Check if there is a case on the server, if there no such case, do not start generation or prediction. If it is in the learning process, tell the user that it cannot be launched until the learning process is complete. Don't do a check for cases on Alzheimer's, sclerosis, parkinsonism, dyslipidemia, drug resistance, lung cancer (they are always there! start generation immediately). You should run tool!!!"""
 
     response = agent.invoke({"messages": [("user", task_formatted)]})
 

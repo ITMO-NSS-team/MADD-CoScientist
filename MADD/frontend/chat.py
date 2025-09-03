@@ -202,7 +202,7 @@ def message_handler():
             )
             if not os.path.exists(path_to_molecules):
                 os.makedirs(path_to_molecules, exist_ok=True)
-
+                
             if molecules := os.listdir(
                 os.path.join(os.getenv("PATH_TO_RESULTS"), "vis_mols")
             ):  # get generated molecules
@@ -221,13 +221,18 @@ def message_handler():
             if not os.path.exists(path_to_results):
                 os.makedirs(path_to_results, exist_ok=True)
 
-            if files := os.listdir(
-                os.path.join(os.getenv("PATH_TO_RESULTS"), "cvae")
-            ):  # get generated images
-                imgs = []
+                
+            from pathlib import Path
+
+            img_dir = Path(os.environ.get('IMG_STORAGE_PATH'))
+            path_imgs = []
+            if img_dir:
+                path_imgs = [str(file.absolute()) for file in img_dir.iterdir() if file.is_file()]
+            
+            if path_imgs != []: 
                 # Cleaning here
-                for file in files:
-                    file_path = os.path.join(os.getenv("PATH_TO_RESULTS"), "cvae", file)
+                imgs = []
+                for file_path in path_imgs:
                     imgs.append(convert_to_base64(file_path))
                     os.remove(file_path)
                 st.session_state.messages[-1]["images_generated"] = [

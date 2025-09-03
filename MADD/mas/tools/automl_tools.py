@@ -5,14 +5,15 @@ import sys
 import time
 from multiprocessing import Process
 from typing import List, Tuple, Union
-
+from dotenv import load_dotenv
 import pandas as pd
 import requests
 
 from MADD.mas.utils import filter_valid_strings, generate_for_base_case
 
-# TODO: get from load_env
-conf = {"url_pred": "http://10.64.4.254:81", "url_gen": "http://10.32.2.2:293"}
+load_dotenv('conf.env')
+
+conf = {"url_pred": os.environ['URL_PRED'], "url_gen": os.environ['URL_GEN']}
 
 import time
 from datetime import datetime
@@ -282,6 +283,14 @@ def get_case_state_from_server(case: str, url: str = "pred") -> Union[dict, str]
         url = conf["url_pred"]
     else:
         url = conf["url_gen"]
+        
+    if case in """- Alzheimer's disease: 'alzheimer', 'alzheimer's', 'alzheimers'
+    - Parkinson's disease: 'parkinson', 'parkinson's', 'parkinsons'
+    - Multiple sclerosis: 'multiple sclerosis', 'sclerosis'
+    - Dyslipidemia: 'dyslipidemia'
+    - Acquired drug resistance: 'acquired drug resistance', 'drug resistance'
+    - Lung cancer: 'lung cancer', 'lung'""":
+        return {case: 'generative model is exist!'}
 
     url_ = url.split("http://")[1]
     resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
@@ -480,14 +489,14 @@ def ml_dl_training(
         except:
             return f"Case with name: {case} not found"
     ml_ready = False
-    # train_ml_with_data(
-    #     case=case,
-    #     data_path=path,
-    #     feature_column=feature_column,
-    #     target_column=target_column,
-    #     regression_props=regression_props,
-    #     classification_props=classification_props,
-    # )
+    train_ml_with_data(
+        case=case,
+        data_path=path,
+        feature_column=feature_column,
+        target_column=target_column,
+        regression_props=regression_props,
+        classification_props=classification_props,
+    )
     print("Start training ml model for case: ", case)
     while not ml_ready:
         time.sleep(7)
@@ -657,9 +666,9 @@ def generate_mol_by_case(
                             or exact training name for custom models).
         n_samples (int, optional): Number of molecules to generate. Default is 1
     """
-    case = case.strip().lower()
+    case_low = case.strip().lower()
 
-    base_case_func = base_case_dict.get(case, None)
+    base_case_func = base_case_dict.get(case_low, None)
     if base_case_func:
         res = base_case_func(n_samples)
         return res
