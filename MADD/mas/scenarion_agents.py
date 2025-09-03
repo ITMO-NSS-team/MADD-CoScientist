@@ -66,16 +66,23 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
         elif dataset[0][-3:] == 'csv':
             dataset_columns = pd.read_excel(dataset[0]).columns
         
-    agent = create_react_agent(
-        config["configurable"]["llm"],
-        automl_tools,
-        state_modifier=automl_prompt,
-        debug=True,
-    )
     if dataset != ['False']:
-        task_formatted = f"""\nYou are tasked with executing: {task}. Attention: You must use 'run_ml_dl_training_by_daemon'!!! Columns in users dataset: """ + str(list(dataset_columns)) + f"You must pass target_column one of these column names. Feature column should be it must be something related to the SMILES string (find the correct name). Pass this path ({dataset[0]}) to 'path'!"
+        agent = create_react_agent(
+            config["configurable"]["llm"],
+            automl_tools,
+            state_modifier=automl_prompt,
+            debug=True,
+        )
+        task_formatted = f"""\nYou are tasked with executing: {task}. Attention: Check if there is a case on the server, if there is one, do not start the training. If there no such case, you must use 'run_ml_dl_training_by_daemon'!!! Columns in users dataset: """ + str(list(dataset_columns)) + f"You must pass target_column one of these column names. Feature column should be it must be something related to the SMILES string (find the correct name). Pass this path ({dataset[0]}) to 'path'!"
     else:
-        task_formatted = f"""\nYou are tasked with executing: {task}. Don't take too many steps! You should use tools!!!"""
+        agent = create_react_agent(
+            config["configurable"]["llm"],
+            automl_tools[1:],
+            # no ml_dl_training without datadet existing
+            state_modifier=automl_prompt,
+            debug=True,
+        )
+        task_formatted = f"""\n{task}. Attention: Check if there is a case on the server, if there no such case, do not start generation or prediction. If it is in the learning process, tell the user that it cannot be launched until the learning process is complete. You should run tool!!!"""
 
     response = agent.invoke({"messages": [("user", task_formatted)]})
 

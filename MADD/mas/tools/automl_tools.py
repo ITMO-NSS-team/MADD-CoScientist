@@ -12,7 +12,7 @@ import requests
 from MADD.mas.utils import filter_valid_strings, generate_for_base_case
 
 # TODO: get from load_env
-conf = {"url_pred": "http://10.64.4.254:81", "url_gen": "http://10.32.2.2:94"}
+conf = {"url_pred": "http://10.64.4.254:81", "url_gen": "http://10.32.2.2:293"}
 
 import time
 from datetime import datetime
@@ -269,6 +269,7 @@ def get_state_from_server(url: str = "pred") -> Union[dict, str]:
 def get_case_state_from_server(case: str, url: str = "pred") -> Union[dict, str]:
     """Get information about a specific case/model (if found),
     its status (in training, trained), metrics, etc.
+    Example of user query: 'Check status for 'Ki_predictor''.
 
     Important note: if the returned dictionary has the status key not Training, Trained, None, but text content.
     Then an error occurred. And this is its description. Notify the user about it.
@@ -339,7 +340,7 @@ def train_gen_with_data(
     ],  # Column name with data for regression tasks (That not include in calculcateble propreties)
     classification_props=[],  # Column name with data for classification tasks (That not include in calculcateble propreties)
     description="Descrption not provided",
-    timeout=5,  # min
+    timeout=2,  # min
     url: str = conf["url_gen"] + "/train_gen_models",
     fine_tune: bool = True,
     n_samples=10,
@@ -400,7 +401,7 @@ def train_ml_with_data(
     regression_props=["Docking score"],
     classification_props=[],
     description="",
-    timeout=5,
+    timeout=2,
 ) -> Union[bool, str]:
     """
     Trains a predictive machine learning model using user-provided or prepared by a special agent dataset.
@@ -462,35 +463,61 @@ def ml_dl_training(
     regression_props=["docking_score"],
     classification_props=[],
 ):
+    def get_case_state_from_server(case: str, url: str = "pred") -> Union[dict, str]:
+        if url == "pred":
+            url = conf["url_pred"]
+        else:
+            url = conf["url_gen"]
+
+        url_ = url.split("http://")[1]
+        resp = requests.get("http://" + url_.split("/")[0] + "/check_state")
+        if resp.status_code == 500:
+            print(f"Server error:{resp.status_code}")
+            return "Server error"
+        state = json.loads(resp.content)
+        try:
+            return state["state"][case]
+        except:
+            return f"Case with name: {case} not found"
     ml_ready = False
-    train_ml_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-    )
+    # train_ml_with_data(
+    #     case=case,
+    #     data_path=path,
+    #     feature_column=feature_column,
+    #     target_column=target_column,
+    #     regression_props=regression_props,
+    #     classification_props=classification_props,
+    # )
     print("Start training ml model for case: ", case)
     while not ml_ready:
+        time.sleep(7)
         print("Training ml-model in progress for case: ", case)
-        st = get_case_state_from_server(case, "pred")
-        if isinstance(st, dict):
-            if st["ml_models"]["status"] == "Trained":
-                ml_ready = True
-        time.sleep(60)
+        try:
+            st = get_case_state_from_server(case, "pred")
+            if isinstance(st, dict):
+                if st["ml_models"]["status"] == "Trained":
+                    ml_ready = True
+            time.sleep(7)
+        except:
+            print('Something went wrong!!!')
+        
+    if ml_ready:
+        print('ML-model is ready.')
+    try:
+        train_gen_with_data(
+            case=case,
+            data_path=path,
+            feature_column=feature_column,
+            target_column=target_column,
+            regression_props=regression_props,
+            classification_props=classification_props,
+            # TODO: rm after testing automl pipeline
+            # epoch=1,
+        )
+        print("Start training gen model for case: ", case)
+    except:
+        print('Something went wrong!!!')
 
-    train_gen_with_data(
-        case=case,
-        data_path=path,
-        feature_column=feature_column,
-        target_column=target_column,
-        regression_props=regression_props,
-        classification_props=classification_props,
-        # TODO: rm after testing automl pipeline
-        # epoch=1,
-    )
-    print("Start training gen model for case: ", case)
 
 
 @tool
@@ -766,10 +793,11 @@ automl_tools = [
     predict_prop_by_smiles,
 ]
 if __name__ == "__main__":
-    run_ml_dl_training_by_daemon(
-        "sars_cov",
-        "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets/users_dataset.csv",
-        "smiles",
-        "IC50",
-        ["IC50"],
-    )
+    # run_ml_dl_training_by_daemon(
+    #     "sars_cov",
+    #     "/Users/alina/Desktop/ITMO/ChemCoScientist/ChemCoScientist/data_store/datasets/users_dataset.csv",
+    #     "smiles",
+    #     "IC50",
+    #     ["IC50"],
+    # )
+    ml_dl_training('IC50_prediction', '/Users/alina/Desktop/ITMO/MADD-CoScientist/data_cyk_short.csv')

@@ -73,7 +73,7 @@ def message_handler():
         os.environ['DS_FROM_USER'] = st.session_state.user_data_dir
         
     user_query = st.session_state.chat_input
-    st.session_state.messages.append({"role": "user", "content": user_query + '(user attached file)'})
+    st.session_state.messages.append({"role": "user", "content": user_query})
 
     with st.chat_message("user"):
         st.markdown(user_query)
@@ -297,8 +297,15 @@ def message_handler():
                         os.remove(file_path)
                     except Exception as e:
                         print(f"Cannot delete {file_path}: {e}")
+                        
+                os.environ['DS_FROM_BINDINGDB'] = str(False)
+                os.environ['DS_FROM_CHEMBL'] = str(False)
+                os.environ['DS_FROM_USER'] = str(False)
 
     except Exception as e:
+        os.environ['DS_FROM_BINDINGDB'] = str(False)
+        os.environ['DS_FROM_CHEMBL'] = str(False)
+        os.environ['DS_FROM_USER'] = str(False)
         logger.exception(
             f"Chat failed with error: {str(e)}\t State: {st.session_state}"
         )
