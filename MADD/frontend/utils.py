@@ -101,6 +101,7 @@ def save_uploaded_file(file: UploadedFile, directory: Path):
     if not os.path.exists(file_path):
         with open(file_path, "wb") as f:
             f.write(file.getbuffer())
+    return file_path
 
 
 def save_all_files(user_data_dir: Path):
@@ -112,7 +113,8 @@ def save_all_files(user_data_dir: Path):
     """
     clear_directory(user_data_dir)
     for _, file_data in st.session_state.uploaded_files.items():
-        save_uploaded_file(file_data["file"], user_data_dir)
+        path = save_uploaded_file(file_data["file"], user_data_dir)
+    return path
 
 
 def file_uploader(uploaded_files):

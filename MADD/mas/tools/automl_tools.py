@@ -284,7 +284,7 @@ def get_case_state_from_server(case: str, url: str = "pred") -> Union[dict, str]
     else:
         url = conf["url_gen"]
         
-    if case in """- Alzheimer's disease: 'alzheimer', 'alzheimer's', 'alzheimers'
+    if case.strip().lower() in """- Alzheimer's disease: 'alzheimer', 'alzheimer's', 'alzheimers'
     - Parkinson's disease: 'parkinson', 'parkinson's', 'parkinsons'
     - Multiple sclerosis: 'multiple sclerosis', 'sclerosis'
     - Dyslipidemia: 'dyslipidemia'

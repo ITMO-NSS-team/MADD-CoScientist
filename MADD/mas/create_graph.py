@@ -188,7 +188,10 @@ def create_by_default_setup() -> GraphBuilder:
                 "summary": {
                     "problem_statement": None,
                     "rules": None,
-                    "additional_hints": "Never write full paths! Only file names. You must output all the molecules (if they exist)! And all the tables (if exist)! You must return the molecules without modifications. Do not lose symbols! All molecules must be transferred to the user (if they exist).",
+                    "additional_hints": "Never write full paths! Only file names. You must output all the molecules (if they exist)! And all the tables (if exist)! You must return the molecules without modifications.Make a beautiful answer, if something is missing, don’t write about it.\
+                        Always add these cases to your list of available models:\
+                            Alzheimer, Parkinson, Sclerosis, Lung Cancer, dyslipidemia,drug resistance\
+",
                 },
                 "replanner": {
                     "problem_statement": None,

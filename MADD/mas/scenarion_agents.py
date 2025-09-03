@@ -73,7 +73,7 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
             state_modifier=automl_prompt,
             debug=True,
         )
-        task_formatted = f"""\nYou are tasked with executing: {task}. Attention: Check if there is a case on the server, if there is one, do not start the training. If there no such case, you must use 'run_ml_dl_training_by_daemon'!!! Columns in users dataset: """ + str(list(dataset_columns)) + f"You must pass target_column one of these column names. Feature column should be it must be something related to the SMILES string (find the correct name). Pass this path ({dataset[0]}) to 'path'!"
+        task_formatted = f"""\nYou are tasked with executing: {task}. Attention: Check if there is a case on the server, if there is one, do not start the training. If there no such case, you MUST use 'run_ml_dl_training_by_daemon'!!! Columns in users dataset: """ + str(list(dataset_columns)) + f"You must pass target_column one of these column names. Feature column should be it must be something related to the SMILES string (find the correct name). Pass this path ({dataset[0]}) to 'path'! YOU MUST ALWAYS CALL TOOLS!"
     else:
         agent = create_react_agent(
             config["configurable"]["llm"],
@@ -83,8 +83,11 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
             debug=True,
         )
         task_formatted = f"""\n{task}. Attention: Check if there is a case on the server, if there no such case, do not start generation or prediction. If it is in the learning process, tell the user that it cannot be launched until the learning process is complete. Don't do a check for cases on Alzheimer's, sclerosis, parkinsonism, dyslipidemia, drug resistance, lung cancer (they are always there! start generation immediately). You should run tool!!!"""
-
-    response = agent.invoke({"messages": [("user", task_formatted)]})
+    
+    for _ in range(3):
+        response = agent.invoke({"messages": [("user", task_formatted)]})
+        if len(response['messages']) > 2:
+            break
 
     return Command(
         update={

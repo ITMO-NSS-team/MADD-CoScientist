@@ -69,8 +69,9 @@ def chat():
 
 def message_handler():
     if st.session_state.uploaded_files:
-        save_all_files(st.session_state.user_data_dir)
-        os.environ['DS_FROM_USER'] = st.session_state.user_data_dir
+        print(st.session_state.uploaded_files)
+        path = save_all_files(os.environ['DS_STORAGE_PATH'])
+        os.environ['DS_FROM_USER'] = path
         
     user_query = st.session_state.chat_input
     st.session_state.messages.append({"role": "user", "content": user_query})
@@ -255,6 +256,8 @@ def message_handler():
                     if "dataset_builder_agent" in result["metadata"].keys():
                         st.markdown("### Dataset Builder Agent Results")
                         for file in result["metadata"]["dataset_builder_agent"]:
+                            if file == 'False':
+                                continue
                             file_name = os.path.basename(file)
                             st.markdown(f"- {file_name}")
 
