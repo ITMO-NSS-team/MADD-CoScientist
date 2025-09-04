@@ -1,6 +1,6 @@
-# CoScientist
+# MADD
 
-## ChemCoScientist Query Examples
+## Query Examples
 
 ### 🧪 Start communication with
 ```python
@@ -8,26 +8,26 @@
 ```
 ### 🧪Dataset preparation
 ```python
-"Download data from ChemBL on the MEK1 protein with IC_50 calculations. Be sure to prepare them for training - remove junk data"
-"Prepare data for training from the file ./data_dir_for_coder/ChEMBL_data.xlsx - delete all values ​​where docking_score > -6."
-"Download data from BindingDB on MEK1 protein with Ki calculations. Remove junk data."
+"Download data from ChemBL on KRAS protein with IC50 values."
+"Download data from BindingDB on KRAS protein with IC50."
 ```
 ### 🧪AutoML/DL
 ```python
-"Run training of the generative model on data from ./data_dir_for_coder/processed_MEK1_IC50_data.xlsx , specify the IC50 target, name the case MEK1."
-"Check the status of the training for the MEK1 case"
-"Start generating molecules for the MEK1 case."
-"Predict the properties of COc1ccc(-c2cc3ncn(C)c(=O)c3c(NC3CC3)n2)cc1OC using the MEK1 ml model."
-"Find out for which cases there are generative models ready for inference?"
+"Run training of the generative model to predict IC50 on my attached data."
+"Check the status of the training for the 'IC50_predictor'."
+"Generate molecules to inhibit the KRAS G12C protein mutation, focusing on selective binding and ensuring that HRAS and NRAS are not affected."
+"Create compounds with electron-donating groups that can stabilize radical intermediates, reducing oxidative damage in neurons."
+"Predict IC50 for CN(C)CCOC(C1=CC=CC=C1)C1=CC=CC=C1 by 'IC50_predictor' model."
 ```
 ## Agent system diagram
 ![Multi-Agent System](./diagram.png)
 
 ### Environment Setup for Development
 ```commandline
-poetry install
-poetry run pip install --no-deps git+https://github.com/aimclub/ProtoLLM.git@main
+pip install .
 ```
+
+
 
 
 
