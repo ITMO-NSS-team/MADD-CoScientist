@@ -8,8 +8,9 @@
 ```
 ### 🧪Dataset preparation
 ```python
-"Download data from ChemBL on KRAS protein with IC50 values."
-"Download data from BindingDB on KRAS protein with IC50."
+"Download data from ChemBL with KRAS protein and IC50 values."
+"Download data from BindingDB with KRAS protein and IC50."
+"Download data from DB_NAME with PROTEIN_NAME and PROPERTY."
 ```
 ### 🧪Molecule generation
 ```python
