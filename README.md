@@ -27,6 +27,22 @@
 pip install .
 ```
 
+### Start MADD with GUI
+Run in CLI:
+```commandline
+streamlit run MADD/streamlit_app.py
+```
+
+You should look something like thise:
+```commandline
+You can now view your Streamlit app in your browser.
+
+Local URL: http://localhost:8501
+Network URL: http://192.168.0.12:8501
+```
+Click on the URL, the link will open.
+
+
 
 
 
