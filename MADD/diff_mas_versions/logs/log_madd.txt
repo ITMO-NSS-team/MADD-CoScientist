@@ -1,0 +1,236 @@
+﻿—---------------------new step—---------------------
+- __start__ -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score ',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': '',
+ 'nodes_calls': [],
+ 'past_steps': [],
+ 'plan': [],
+ 'response': '',
+ 'translation': '',
+ 'visualization': ''}
+ —---------------------new step—---------------------
+- chat -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score ',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': '',
+ 'nodes_calls': [],
+ 'past_steps': [],
+ 'plan': [],
+ 'response': '',
+ 'translation': '',
+ 'visualization': ''}
+ —---------------------new step—---------------------
+- decomposer -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score '',
+ 'language': '',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': 'decomposer',
+ 'nodes_calls': [],
+ 'past_steps': [],
+ 'plan': [],
+ 'response': None,
+ 'translation': '',
+ 'visualization': None}
+ —---------------------new step—---------------------
+- orchestrator -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score ',
+ 'language': '',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': 'decomposer',
+ 'nodes_calls': [],
+ 'past_steps': [],
+ 'plan': ['Run inference by ml_dl_agent to generate medicinal molecules for Alzheimer case with high docking score'],
+ 'response': None,
+ 'translation': '',
+ 'visualization': None}
+ —---------------------new step—---------------------
+- ml_dl_agent -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score ',
+ 'language': '',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': 'ml_dl_agent',
+ 'nodes_calls': [],
+ 'past_steps': [],
+ 'plan': ['Run inference by ml_dl_agent to generate medicinal molecules for Alzheimer case with high docking score'],
+ 'response': None,
+ 'translation': '',
+ 'visualization': None}
+ —---------------------new step—---------------------
+{'next': 'ml_dl_agent'}
+ ─ Executing parsed code: ─────────────────────────────────── 
+  # Check the existing cases and their statuses               
+  cases_info = get_state_from_server(url="gen")               
+  print(cases_info)                                           
+ ──────────────────────────────────────────────────────────── 
+Execution logs:
+{... 'Alzheimer': {'description': 'Case for Alzheimer 
+with trained pipelines for predict "docking_score", and 
+"IC50"', 'generative_models': {'data_path': 
+'docked_data_for_train/data_4j1r.csv', 'feature_column': None,
+'target_column': None, 'problem': None, 'status': 'Trained', 
+'weights_path': 'autotrain/Alzheimer/weights', 'arch_type': 
+None, 'metric': None}, 'ml_models': {'data_path': 
+'automl/data/Alzheimer/data.csv', 'feature_column': 
+['canonical_smiles'], 'target_column': ['docking_score', 
+'QED', 'Synthetic Accessibility', 'PAINS', 'SureChEMBL', 
+'Glaxo', 'Brenk', 'IC50'], 'status': 'Trained', 
+'weights_path': {'regression': … }}
+
+
+Out: None
+[Step 1: Duration 2.54 seconds| Input tokens: 12,449 | Output 
+tokens: 410]
+
+
+ ─ Executing parsed code: ─────────────────────────────────── 
+  # Generate molecules for Alzheimer case                     
+  generated_molecules =                                       
+  generate_mol_by_case(case="Alzheimer", n_samples=2)         
+  print("Generated molecules:", generated_molecules)          
+                                                              
+  # Predict docking scores for the generated molecules        
+  docking_scores =                                            
+  predict_prop_by_smiles(smiles_list=generated_molecules,     
+  case="Alzheimer", timeout=10)                               
+  print("Predicted docking scores:", docking_scores)          
+ ─────────────────────────────────────────────────────────
+--- 730.5958881378174 seconds ---
+Execution logs:
+Generated molecules: {'Smiles': {'0': 
+'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', '1': 
+'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12'}, 'Brenk': {'0': 1, '1':
+1}, 'QED': {'0': 0.6659151892865874, '1': 0.5518930924346868},
+'Synthetic Accessibility': {'0': 6.318638954400437, '1': 
+6.99049763255538}, 'LogP': {'0': 0.8166, '1': 
+-0.12532000000000032}, 'Polar Surface Area': {'0': 38.84, '1':
+76.20000000000002}, 'H-bond Donors': {'0': 1, '1': 0}, 'H-bond
+Acceptors': {'0': 0, '1': 1}, 'Rotatable Bonds': {'0': 0, '1':
+2}, 'Aromatic Rings': {'0': 4, '1': 7}, 'Glaxo': {'0': 1, '1':
+0}, 'SureChEMBL': {'0': 1, '1': 1}, 'PAINS': {'0': 0, '1': 0},
+'Validity': {'0': 0.4, '1': 0.4}, 'Duplicates': {'0': 0.0, 
+'1': 0.0}, 'docking_score': {'0': -6.355107186862401, '1': 
+-6.792000033855438}, 'IC50': {'0': 0.9795267767533643, '1': 
+0.991441069703229}}
+Predicted docking scores: (<Response [422]>, {'detail': 
+[{'type': 'list_type', 'loc': ['body', 'smiles_list'], 'msg': 
+'Input should be a valid list', 'input': {'Smiles': {'0': 
+'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', '1': 
+'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12'}, 'Brenk': {'0': 1, '1':
+1}, 'QED': {'0': 0.6659151892865874, '1': 0.5518930924346868},
+'Synthetic Accessibility': {'0': 6.318638954400437, '1': 
+6.99049763255538}, 'LogP': {'0': 0.8166, '1': 
+-0.12532000000000032}, 'Polar Surface Area': {'0': 38.84, '1':
+76.20000000000002}, 'H-bond Donors': {'0': 1, '1': 0}, 'H-bond
+Acceptors': {'0': 0, '1': 1}, 'Rotatable Bonds': {'0': 0, '1':
+2}, 'Aromatic Rings': {'0': 4, '1': 7}, 'Glaxo': {'0': 1, '1':
+0}, 'SureChEMBL': {'0': 1, '1': 1}, 'PAINS': {'0': 0, '1': 0},
+'Validity': {'0': 0.4, '1': 0.4}, 'Duplicates': {'0': 0.0, 
+'1': 0.0}, 'docking_score': {'0': -6.355107186862401, '1': 
+-6.792000033855438}, 'IC50': {'0': 0.9795267767533643, '1': 
+0.991441069703229}}}]})
+
+
+Out: None
+[Step 2: Duration 741.10 seconds| Input tokens: 32,195 | 
+Output tokens: 1,180]
+
+
+ ─ Executing parsed code: ─────────────────────────────────── 
+  # Prepare the final answer with generated molecules and     
+  their docking scores                                        
+  final_result = {                                            
+      "Generated Molecules": {                                
+          "Molecule 1": {                                     
+              "SMILES":                                       
+  "OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3",                  
+              "Docking Score": -6.355107186862401             
+          },                                                  
+          "Molecule 2": {                                     
+              "SMILES":                                       
+  "COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12",                      
+              "Docking Score": -6.792000033855438             
+          }                                                   
+      },                                                      
+      "Note": "Lower docking scores indicate higher binding   
+  affinity."                                                  
+  }                                                           
+                                                              
+  final_answer(final_result)                                  
+ ──────────────────────────────────────────────────────────── 
+Out - Final answer: {'Generated Molecules': {'Molecule 1': 
+{'SMILES': 'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking
+Score': -6.355107186862401}, 'Molecule 2': {'SMILES': 
+'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': 
+-6.792000033855438}}, 'Note': 'Lower docking scores indicate 
+higher binding affinity.'}
+[Step 3: Duration 4.64 seconds| Input tokens: 55,229 | Output 
+tokens: 2,247]
+ —---------------------new step—---------------------
+- summary -> { 
+ 'input': 'Generate molecule of GSK-3beta inhibitors with high docking score ',
+ 'language': '',
+ 'last_memory': '',
+ 'metadata': {},
+ 'next': 'ml_dl_agent',
+ 'nodes_calls': [('ml_dl_agent',
+                  "{'Generated Molecules': {'Molecule 1': {'SMILES': "
+                  "'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking Score': "
+                  "-6.355107186862401}, 'Molecule 2': {'SMILES': "
+                  "'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': "
+                  "-6.792000033855438}}, 'Note': 'Lower docking scores "
+                  "indicate higher binding affinity.'}"),
+                 ('ml_dl_agent',
+                  "{'Generated Molecules': {'Molecule 1': {'SMILES': "
+                  "'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking Score': "
+                  "-6.355107186862401}, 'Molecule 2': {'SMILES': "
+                  "'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': "
+                  "-6.792000033855438}}, 'Note': 'Lower docking scores "
+                  "indicate higher binding affinity.'}")],
+ 'past_steps': [('Run inference by ml_dl_agent to generate medicinal molecules '
+                 'for Alzheimer case with high docking score',
+                 "{'Generated Molecules': {'Molecule 1': {'SMILES': "
+                 "'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking Score': "
+                 "-6.355107186862401}, 'Molecule 2': {'SMILES': "
+                 "'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': "
+                 "-6.792000033855438}}, 'Note': 'Lower docking scores indicate "
+                 "higher binding affinity.'}"),
+                ('Run inference by ml_dl_agent to generate medicinal molecules '
+                 'for Alzheimer case with high docking score',
+                 "{'Generated Molecules': {'Molecule 1': {'SMILES': "
+                 "'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking Score': "
+                 "-6.355107186862401}, 'Molecule 2': {'SMILES': "
+                 "'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': "
+                 "-6.792000033855438}}, 'Note': 'Lower docking scores indicate "
+                 "higher binding affinity.'}")],
+ 'plan': ['Run inference by ml_dl_agent to generate medicinal molecules for '
+          'Alzheimer case with high docking score'],
+ 'response': "{'Generated Molecules': {'Molecule 1': {'SMILES': "
+             "'OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3', 'Docking Score': "
+             "-6.355107186862401}, 'Molecule 2': {'SMILES': "
+             "'COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12', 'Docking Score': "
+             "-6.792000033855438}}, 'Note': 'Lower docking scores indicate "
+             "higher binding affinity.'}",
+ 'translation': '',
+ 'visualization': None}
+ —---------------------new step—---------------------
+FINALLY ANSWER:  **Generated Molecules for GSK-3beta Inhibitors with High Docking Score**
+
+
+Two molecules have been generated with high docking scores for Alzheimer case:
+
+
+1. **Molecule 1**: 
+        * SMILES: `OC12C3C=C(Br)C4=NCC5(CN6CC65)C4N1CC2CC3`
+        * Docking Score: `-6.36`
+2. **Molecule 2**: 
+        * SMILES: `COC1(OC)C2C3C4CCN(C#N)C3C41c1nncn12`
+        * Docking Score: `-6.79`
+
+
+To achieve the answer the following scenario agents were used: 'ml_dl_agent'.

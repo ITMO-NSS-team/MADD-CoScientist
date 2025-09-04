@@ -1,0 +1,14 @@
+llama_api_key: API
+attemps: 1
+conductor_model: meta-llama/llama-3.1-70b-instruct
+frontend_address: 127.0.0.1
+frontend_port: 7869
+is_many_funcs: true
+models_port: 81
+models_address: 10.32.2.2
+prompt_type: 2
+url: URL
+validation_path: /projects/multi_agent_system/experiment1_clear_distil.xlsx
+
+
+
