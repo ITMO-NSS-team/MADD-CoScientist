@@ -11,13 +11,24 @@
 "Download data from ChemBL on KRAS protein with IC50 values."
 "Download data from BindingDB on KRAS protein with IC50."
 ```
-### 🧪AutoML/DL
+### 🧪Molecule generation
 ```python
-"Run training of the generative model to predict IC50 on my attached data."
-"Check the status of the training for the 'IC50_predictor'."
+"Generate GSK-3beta inhibitors with high activity"
 "Generate molecules to inhibit the KRAS G12C protein mutation, focusing on selective binding and ensuring that HRAS and NRAS are not affected."
 "Create compounds with electron-donating groups that can stabilize radical intermediates, reducing oxidative damage in neurons."
+"Generate compounds with high affinity for sigma-1 receptors that may have neuroprotective effects in Parkinson's disease."
+```
+### 🧪Prediction
+```python
 "Predict IC50 for CN(C)CCOC(C1=CC=CC=C1)C1=CC=CC=C1 by 'IC50_predictor' model."
+"Predict PAINS for CN(C)CCOC(C1=CC=CC=C1)C1=CC=CC=C1 by ml-model."
+```
+
+### 🧪AutoML/DL
+```python
+"What generative models are available now?"
+"Run training model to predict IC50 on my attached data."
+"Check the status of the training for the 'IC50_predictor'."
 ```
 ## Agent system diagram
 ![Multi-Agent System](./diagram.png)
