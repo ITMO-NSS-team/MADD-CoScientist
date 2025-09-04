@@ -24,6 +24,8 @@
 
 ### Environment Setup for Development
 ```commandline
+git clone https://github.com/alinzh/MADD-CoScientist.git
+cd MADD-CoScientist
 pip install .
 ```
 
