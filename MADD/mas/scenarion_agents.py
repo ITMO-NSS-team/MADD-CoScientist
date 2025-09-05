@@ -19,6 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 def dataset_builder_agent(state: dict, config: dict) -> Command:
+    """
+    Agent for download data from external sources.
+    
+    Fetches data from BindingDB and ChEMBL databases according to the provided task,
+    using a React agent for decision making. Saves paths to the created datasets
+    and maintains execution history.
+
+    Args:
+        state: State dictionary containing a 'task' key with task description
+        config: Configuration with customizable parameters (including LLM)
+
+    Returns:
+        Command: Command object with updates for:
+            - past_steps: History of executed steps
+            - nodes_calls: Record of node calls
+            - metadata: Paths to created datasets
+    """
     print("--------------------------------")
     print("Dataset builder agent called")
     print(state["task"])
@@ -50,6 +67,22 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
 
 
 def ml_dl_agent(state: dict, config: dict) -> Command:
+    """
+    Agent for machine learning, deep learning tasks.
+    
+    Handles automated ML/DL training, generation, and prediction tasks. Determines
+    the appropriate dataset source (BindingDB, ChEMBL, or user-provided) and
+    configures the agent accordingly. Manages training constraints and server case checks.
+
+    Args:
+        state: State dictionary containing a 'task' key with task description
+        config: Configuration with customizable parameters (including LLM)
+
+    Returns:
+        Command: Command object with updates for:
+            - past_steps: History of executed steps
+            - nodes_calls: Record of node calls
+    """
     print("--------------------------------")
     print("ml_dl agent called")
     print(state["task"])

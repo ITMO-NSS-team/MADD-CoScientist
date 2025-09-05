@@ -8,6 +8,10 @@ setup(
         "langchain",
         "langgraph"
         "openai",
+        "pandas",
+        "protollm",
+        "requests",
+        "streamlit"
     ],
     description="MADD package",
     classifiers=[

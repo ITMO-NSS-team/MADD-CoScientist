@@ -10,7 +10,8 @@ if __name__ == "__main__":
     os.environ['DS_FROM_CHEMBL'] = str(False)
     os.environ['DS_FROM_USER'] = str(False)
     
-    ds = pd.read_excel('experiment3 (1).xlsx').iterrows()
+    
+    ds = pd.read_excel('MADD/benchmark/experiment3.xlsx').iterrows()
     
     graph = create_by_default_setup()
     for idx, sample in ds:

@@ -12,7 +12,7 @@ import streamlit as st
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from streamlit_pills import pills
 
-from definitions import ROOT_DIR, CONFIG_PATH
+from definitions import ROOT_DIR
 
 load_dotenv('config.env')
 
