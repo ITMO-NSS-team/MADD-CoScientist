@@ -20,7 +20,7 @@ if __name__ == "__main__":
                 # "input": 'Start train model to predict PAINS, use my data.'
                 # "input": "Generate 2 molecules by 'PAINS_predictor'."
                 # "input": "Check status of training for generative model with case 'PAINS_predictor'"
-                "input":  'Download data from ChemBL for GSK with IC50 values.'
+                "input": input()
             },
             user_id="1",
         ):
