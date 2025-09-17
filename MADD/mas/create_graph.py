@@ -20,7 +20,7 @@ def create_by_default_setup() -> GraphBuilder:
     )
     conf = {
         # maximum number of recursions (be careful!)
-        "recursion_limit": 35,
+        "recursion_limit": 50,
         "configurable": {
             "user_id": "1",
             "visual_model": create_llm_connector(f"{os.environ['VISION_LLM_URL']}", temperature=0.0),
