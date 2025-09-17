@@ -22,7 +22,7 @@ def create_by_default_setup() -> GraphBuilder:
         "recursion_limit": 25,
         "configurable": {
             "user_id": "1",
-            "visual_model": create_llm_connector(os.environ["VISION_LLM_URL"], temperature=0.0),
+            "visual_model": create_llm_connector(f"{os.environ['VISION_LLM_URL']};{os.environ['VISION_LLM_MODEL']}", temperature=0.0),
             "img_path": "image.png",
             "llm": create_llm_connector(
                 f"{os.environ['MAIN_LLM_URL']};{os.environ['MAIN_LLM_MODEL']}", temperature=0.0

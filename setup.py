@@ -6,7 +6,7 @@ setup(
     packages=find_packages(include=["MADD", "MADD.*"]),
     install_requires=[
         "langchain",
-        "langgraph"
+        "langgraph",
         "openai",
         "pandas",
         "protollm",
