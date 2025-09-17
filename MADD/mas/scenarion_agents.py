@@ -17,10 +17,9 @@ from MADD.mas.tools.data_gathering import fetch_BindingDB_data, fetch_chembl_dat
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def dataset_builder_agent(state: dict, config: dict) -> Command:
     """
-    Agent for download data from external sources.
+    Agent JUST for DOWNLOAD data from external sources.
     
     Fetches data from BindingDB and ChEMBL databases according to the provided task,
     using a React agent for decision making. Saves paths to the created datasets
@@ -37,7 +36,7 @@ def dataset_builder_agent(state: dict, config: dict) -> Command:
             - metadata: Paths to created datasets
     """
     print("--------------------------------")
-    print("Dataset builder agent called")
+    print("DataGathering agent called")
     print(state["task"])
     print("--------------------------------")
     task = state["task"]
@@ -132,3 +131,6 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
             ),
         }
     )
+
+def create_dataset_agent_fake():
+    return 'Dataset created!'

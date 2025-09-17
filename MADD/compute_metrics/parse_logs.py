@@ -95,11 +95,11 @@ def compute_accuracy(results: List[Dict[str, Any]]) -> float:
                 
     print(f"Total Samples: {len(results)}")
     print("TS (tool selection, %): ", ts / len(results) * 100)
-    print("SSA (summary, %): ", ssa / len(results) * 100)
-    print('Finally accuracy (%): ', (ts + ssa) / (2 * len(results)) * 100)
+    print("SSA (summary, %): ", ssa / (len(results) - 1) * 100)
+    print('Finally accuracy (%): ', (ssa / (len(results) - 1) * ts / len(results))*100)
 
 if __name__ == "__main__":
-    path = 'result_2.txt'
+    path = '/Users/alina/Desktop/ITMO/MADD-CoScientist/logs_17_09_ds2.txt'
     with open(path, 'r') as f:
         log_text = f.read()
 

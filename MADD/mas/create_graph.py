@@ -10,7 +10,7 @@ from MADD.mas.prompts.prompts import (
     automl_agent_description,
     dataset_builder_agent_description,
 )
-from MADD.mas.scenarion_agents import dataset_builder_agent, ml_dl_agent
+from MADD.mas.scenarion_agents import dataset_builder_agent, ml_dl_agent, create_dataset_agent_fake
 
 
 def create_by_default_setup() -> GraphBuilder:
@@ -18,11 +18,11 @@ def create_by_default_setup() -> GraphBuilder:
         automl_agent_description + dataset_builder_agent_description
     )
     conf = {
-        # maximum number of recursions
-        "recursion_limit": 25,
+        # maximum number of recursions (be careful!)
+        "recursion_limit": 35,
         "configurable": {
             "user_id": "1",
-            "visual_model": create_llm_connector(f"{os.environ['VISION_LLM_URL']};{os.environ['VISION_LLM_MODEL']}", temperature=0.0),
+            "visual_model": create_llm_connector(f"{os.environ['VISION_LLM_URL']}", temperature=0.0),
             "img_path": "image.png",
             "llm": create_llm_connector(
                 f"{os.environ['MAIN_LLM_URL']};{os.environ['MAIN_LLM_MODEL']}", temperature=0.0
@@ -32,17 +32,20 @@ def create_by_default_setup() -> GraphBuilder:
             "scenario_agents": [
                 "ml_dl_agent",
                 "dataset_builder_agent",
+                "create_dataset_agent"
             ],
             # nodes for scenario agents
             "scenario_agent_funcs": {
                 "ml_dl_agent": ml_dl_agent,
                 "dataset_builder_agent": dataset_builder_agent,
+                "create_dataset_agent": create_dataset_agent_fake
             },
             # descripton for agents tools - if using langchain @tool
             # or description of agent capabilities in free format
             "tools_for_agents": {
                 "dataset_builder_agent": [dataset_builder_agent_description],
                 "ml_dl_agent": [automl_agent_description],
+                "create_dataset_agent": ['Can create chemical dataset by raw data.']
             },
             # full descripton for agents tools
             "tools_descp": functional_description,
@@ -145,7 +148,7 @@ def create_by_default_setup() -> GraphBuilder:
                     "examples": """Request: "Design molecules that specifically inhibit KRAS G12C, a target for lung cancer treatment. These molecules should have high binding affinity for KRAS G12C and low cross-reactivity with other RAS isoforms"
                             Response: {
                                 "steps": [
-                                    ["Generate molecule for Lung Cancer"]
+                                    ["Generate molecule for case 'Lung Cancer'"]
                                 ]
                             }
                             
@@ -160,7 +163,7 @@ def create_by_default_setup() -> GraphBuilder:
                             Request: ""Generate GSK-3beta inhibitors with high activit. Suggest some small molecules that inhibit KRAS G12C - a target responsible for non-small cell lung cancer. Generate high activity tyrosine-protein kinase BTK inhibitors. Can you suggest molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and the ability to cross the BBB?"
                             Response: {
                                 "steps": 
-                                    [['Generate 1 molecule for Alzheimer using ml_dl_agent'], ['Generate 1 molecule for Lung Cancer with ml_dl_agent'], ['Generate 1 molecule for sclerosis with ml_dl_agent'], ['Generate 1 molecule for dyslipidemia with ml_dl_agent']]
+                                    [['Generate 1 molecule by model with name "Alzheimer"'], ['Generate 1 molecule by model "Lung Cancer"'], ['Generate 1 molecule by model "sclerosis"'], ['Generate 1 molecule by model "dyslipidemia"']]
                             }
                             """,
                     "additional_hints": "If the user provides his dataset - \
@@ -258,7 +261,7 @@ def create_by_default_setup() -> GraphBuilder:
                     Request: Generate GSK-3beta inhibitors with high activit. Suggest some small molecules that inhibit KRAS G12C - a target responsible for non-small cell lung cancer. Generate high activity tyrosine-protein kinase BTK inhibitors. Can you suggest molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and the ability to cross the BBB?"
                     Response: {
                         "steps": [
-                            ['Generate 1 molecule for Alzheimer using ml_dl_agent'], ['Generate 1 molecule for Lung Cancer with ml_dl_agent'], ['Generate 1 molecule for sclerosis with ml_dl_agent'], ['Generate 1 molecule for dyslipidemia with ml_dl_agent']
+                            [['Generate 1 molecule by model with name "Alzheimer"'], ['Generate 1 molecule by model "Lung Cancer"'], ['Generate 1 molecule by model "sclerosis"'], ['Generate 1 molecule by model "dyslipidemia"']]
                         ]
                     }
                     Example:

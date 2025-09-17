@@ -32,7 +32,7 @@
 "Check the status of the training for the 'IC50_predictor'."
 ```
 ## Agent system diagram
-![Multi-Agent System](./diagram.png)
+![Multi-Agent System (temporary img!)](./diagram.png)
 
 ### Environment Setup for Development
 ```commandline
