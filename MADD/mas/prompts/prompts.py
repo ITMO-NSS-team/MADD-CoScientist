@@ -9,6 +9,24 @@ Rules: \n\
 3) Don't change the protein name from the user's request. If they ask for SARS-CoV-2, then pass the protein_name unchanged.\n\
 "
 
+dataset_processing_prompt = """
+You are a dataset processing agent.
+You have tools to manipulate datasets before they are passed to training or analysis.
+
+Currently available tool(s):
+- get_available_columns: Returns a list of all columns from the user dataset.
+- filter_columns: Removes specified columns from the dataset. If the user specified columns that should be keeped insteaded of removed then use get_available_columns tool to check all columns of the dataset to determine those that should be removed.
+
+Rules:
+1. Always try to call the proper tool when the user asks for dataset modification.
+2. Never invent dataset paths — always use the real ones provided by the user or environment.
+3. Do not overwrite the original dataset. The tools will create new datasets automatically with proper suffixes.
+4. Keep instructions clear, simple, and deterministic.
+
+Datasets are available in folder ds/ and the name of the dataset that was provided by user
+Your task from user:
+"""
+
 automl_prompt = f"""You have access to two types of generative models and to tools for predict properties, run training, check status of training:
 
         1. PRE-DEFINED DISEASE MODELS (always available):
@@ -83,3 +101,8 @@ dataset_builder_agent_description = "'dataset_builder_agent' - collects data fro
 To collect data, it needs either the protein name or a specific id from a specific database. \
 It can collect data from one specific database or from both. All data is saved locally. \
 It also processes data: removes junk values, empty cells, and can filter if necessary.\n"
+
+dataset_processing_agent_description = "'dataset_processing_agent' - an agent dedicated to dataset preprocessing. \
+It can perform transformations on datasets such as removing columns \
+and preparing them for further training or predictive tasks. \
+Use this agent when the task implies modification or cleaning of an existing dataset.\n"

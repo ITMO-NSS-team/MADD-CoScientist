@@ -10,9 +10,11 @@ from langgraph.types import Command
 from MADD.mas.prompts.prompts import (
     automl_prompt,
     ds_builder_prompt,
+    dataset_processing_prompt,
 )
 from MADD.mas.tools.automl_tools import automl_tools
 from MADD.mas.tools.data_gathering import fetch_BindingDB_data, fetch_chembl_data
+from MADD.mas.tools.dataset_tools import filter_columns
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -132,5 +134,86 @@ def ml_dl_agent(state: dict, config: dict) -> Command:
         }
     )
 
-def create_dataset_agent_fake():
-    return 'Dataset created!'
+def dataset_processing_agent(state: dict, config: dict) -> Command:
+    """
+    Agent for dataset preprocessing (e.g. filtering columns).
+
+    This agent modifies datasets according to user requests before they
+    are passed into ML/DL training or prediction stages.
+
+    Args:
+        state (dict): Contains keys like 'task' that describe the user request.
+        config (dict): Configuration object with a Language Model (LLM).
+
+    Returns:
+        Command: Update object including past steps, node calls, and responses.
+    """
+
+    print("--------------------------------")
+    print("Dataset processing agent called")
+    print(state["task"])
+    print("--------------------------------")
+
+    agent = create_react_agent(
+        config["configurable"]["llm"],
+        [filter_columns],
+        state_modifier=dataset_processing_prompt,
+        debug=True,
+    )
+
+    task_formatted = f"\nYou are tasked with processing dataset: {state['task']}"
+
+    response = agent.invoke({"messages": [("user", task_formatted)]})
+
+    return Command(
+        update={
+            "past_steps": Annotated[set, operator.or_](
+                set([(state["task"], response["messages"][-1].content)])
+            ),
+            "nodes_calls": Annotated[set, operator.or_](
+                set([("dataset_processing_agent", (("text", response["messages"][-1].content),))])
+            ),
+        }
+    )
+
+def dataset_processing_agent(state: dict, config: dict) -> Command:
+    """
+    Agent for dataset preprocessing (e.g. filtering columns).
+
+    This agent modifies datasets according to user requests before they
+    are passed into ML/DL training or prediction stages.
+
+    Args:
+        state (dict): Contains keys like 'task' that describe the user request.
+        config (dict): Configuration object with a Language Model (LLM).
+
+    Returns:
+        Command: Update object including past steps, node calls, and responses.
+    """
+
+    print("--------------------------------")
+    print("Dataset processing agent called")
+    print(state["task"])
+    print("--------------------------------")
+
+    agent = create_react_agent(
+        config["configurable"]["llm"],
+        [filter_columns],
+        state_modifier=dataset_processing_prompt,
+        debug=True,
+    )
+
+    task_formatted = f"\nYou are tasked with processing dataset: {state['task']}"
+
+    response = agent.invoke({"messages": [("user", task_formatted)]})
+
+    return Command(
+        update={
+            "past_steps": Annotated[set, operator.or_](
+                set([(state["task"], response["messages"][-1].content)])
+            ),
+            "nodes_calls": Annotated[set, operator.or_](
+                set([("dataset_processing_agent", (("text", response["messages"][-1].content),))])
+            ),
+        }
+    )

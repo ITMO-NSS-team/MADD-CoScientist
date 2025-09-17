@@ -9,13 +9,14 @@ from protollm.connectors import create_llm_connector
 from MADD.mas.prompts.prompts import (
     automl_agent_description,
     dataset_builder_agent_description,
+    dataset_processing_agent_description,
 )
-from MADD.mas.scenarion_agents import dataset_builder_agent, ml_dl_agent, create_dataset_agent_fake
+from MADD.mas.scenarion_agents import dataset_builder_agent, ml_dl_agent, dataset_processing_agent
 
 
 def create_by_default_setup() -> GraphBuilder:
     functional_description = (
-        automl_agent_description + dataset_builder_agent_description
+        automl_agent_description + dataset_builder_agent_description + dataset_processing_agent_description
     )
     conf = {
         # maximum number of recursions (be careful!)
@@ -32,20 +33,20 @@ def create_by_default_setup() -> GraphBuilder:
             "scenario_agents": [
                 "ml_dl_agent",
                 "dataset_builder_agent",
-                "create_dataset_agent"
+                "dataset_processing_agent",
             ],
             # nodes for scenario agents
             "scenario_agent_funcs": {
                 "ml_dl_agent": ml_dl_agent,
                 "dataset_builder_agent": dataset_builder_agent,
-                "create_dataset_agent": create_dataset_agent_fake
+                 "dataset_processing_agent": dataset_processing_agent,
             },
             # descripton for agents tools - if using langchain @tool
             # or description of agent capabilities in free format
             "tools_for_agents": {
                 "dataset_builder_agent": [dataset_builder_agent_description],
                 "ml_dl_agent": [automl_agent_description],
-                "create_dataset_agent": ['Can create chemical dataset by raw data.']
+                "dataset_processing_agent": [dataset_processing_agent_description],
             },
             # full descripton for agents tools
             "tools_descp": functional_description,
@@ -62,6 +63,12 @@ def create_by_default_setup() -> GraphBuilder:
                     "url": os.environ["SCENARIO_LLM_URL"],
                     "api_key": os.environ["OPENAI_API_KEY"],
                     "ds_dir": os.environ["DS_STORAGE_PATH"],
+                },
+                "dataset_processing_agent": {
+                "model_name": os.environ["SCENARIO_LLM_MODEL"],
+                "url": os.environ["SCENARIO_LLM_URL"],
+                "api_key": os.environ["OPENAI_API_KEY"],
+                "ds_dir": os.environ["DS_STORAGE_PATH"],
                 },
             },
             # These prompts will be added in ProtoLLM
